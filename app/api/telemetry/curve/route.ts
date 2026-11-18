@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAggregatedChartData } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,13 +26,16 @@ export async function GET(request: NextRequest) {
       endDate
     );
 
-    return NextResponse.json({
-      success: true,
-      stationId,
-      range,
-      date: dateStr || (chartData.timeLabels.length > 0 ? chartData.timeLabels[0] : null),
-      chartData,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        stationId,
+        range,
+        date: dateStr || (chartData.timeLabels.length > 0 ? chartData.timeLabels[0] : null),
+        chartData,
+      },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
   } catch (error: any) {
     console.error("Error in /api/telemetry/curve:", error);
     return NextResponse.json(

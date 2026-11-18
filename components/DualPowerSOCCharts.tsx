@@ -26,29 +26,38 @@ export default function DualPowerSOCCharts({
   const socChartInstance = useRef<echarts.ECharts | null>(null);
 
   // Fetch chart data from Supabase-backed API
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      let url = `/api/telemetry/curve?stationId=${stationId}&range=${range}`;
-      if (range === "day") {
-        url += `&date=${currentDate}`;
-      } else if (range === "month") {
-        url += `&date=${currentMonth}`;
+  const fetchData = useCallback(
+    async (isInitial = false) => {
+      if (isInitial) setLoading(true);
+      try {
+        let url = `/api/telemetry/curve?stationId=${stationId}&range=${range}`;
+        if (range === "day") {
+          url += `&date=${currentDate}`;
+        } else if (range === "month") {
+          url += `&date=${currentMonth}`;
+        }
+        const res = await fetch(url, { cache: "no-store" });
+        const data = await res.json();
+        if (data.success && data.chartData) {
+          setChartData(data.chartData);
+        }
+      } catch (err) {
+        console.error("Failed to load curve data:", err);
+      } finally {
+        if (isInitial) setLoading(false);
       }
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success && data.chartData) {
-        setChartData(data.chartData);
-      }
-    } catch (err) {
-      console.error("Failed to load curve data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [stationId, range, currentDate, currentMonth]);
+    },
+    [stationId, range, currentDate, currentMonth]
+  );
 
+  // Initial load and automated 2-minute refresh
   useEffect(() => {
-    fetchData();
+    fetchData(true);
+    const interval = setInterval(() => {
+      fetchData(false); // silent 2-minute auto-refresh from database
+    }, 120_000);
+
+    return () => clearInterval(interval);
   }, [fetchData]);
 
   // Date Navigation handlers
@@ -507,7 +516,7 @@ export default function DualPowerSOCCharts({
 
           {/* Quick Refresh Button */}
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             disabled={loading}
             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors ml-1"
             title="Refresh Charts"
@@ -544,7 +553,7 @@ export default function DualPowerSOCCharts({
 
           {/* Refresh icon */}
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             className="text-slate-400 hover:text-slate-600 p-1 rounded-full transition-colors"
             title="Refresh"
           >
@@ -581,7 +590,7 @@ export default function DualPowerSOCCharts({
 
           {/* Refresh icon */}
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             className="text-slate-400 hover:text-slate-600 p-1 rounded-full transition-colors"
             title="Refresh"
           >

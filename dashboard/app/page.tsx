@@ -23,10 +23,10 @@ function SinglePageDashboard() {
     }
   }, [stationIdParam]);
 
-  // Load plants
+  // Load plants from database
   const loadPlants = useCallback(async () => {
     try {
-      const res = await fetch("/api/plants");
+      const res = await fetch("/api/plants", { cache: "no-store" });
       const data = await res.json();
       if (data.success && Array.isArray(data.plants)) {
         setPlants(data.plants);
@@ -40,16 +40,14 @@ function SinglePageDashboard() {
     }
   }, [selectedStationId]);
 
-  useEffect(() => {
-    loadPlants();
-  }, [loadPlants]);
-
   // Load latest telemetry for selected plant
-  const loadTelemetry = useCallback(async () => {
+  const loadTelemetry = useCallback(async (isInitial = false) => {
     if (!selectedStationId) return;
-    setLoading(true);
+    if (isInitial) setLoading(true);
     try {
-      const res = await fetch(`/api/telemetry/latest?stationId=${selectedStationId}`);
+      const res = await fetch(`/api/telemetry/latest?stationId=${selectedStationId}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (data.success && data.telemetry) {
         setTelemetry(data.telemetry);
@@ -59,13 +57,25 @@ function SinglePageDashboard() {
     } catch (err) {
       console.error("Error loading telemetry:", err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }, [selectedStationId]);
 
+  // Initial load on mount or station selection change
   useEffect(() => {
-    loadTelemetry();
-  }, [loadTelemetry]);
+    loadPlants();
+    loadTelemetry(true);
+  }, [loadPlants, loadTelemetry]);
+
+  // 2-minute automated background refresh from database
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadPlants();
+      loadTelemetry(false); // silent background update without spinner
+    }, 120_000);
+
+    return () => clearInterval(interval);
+  }, [loadPlants, loadTelemetry]);
 
   const currentPlant = plants.find((p) => p.id === selectedStationId);
   const plantName = currentPlant?.name || telemetry?.station_name || "Solis Client";
@@ -78,7 +88,7 @@ function SinglePageDashboard() {
         telemetry={telemetry}
         onRefresh={() => {
           loadPlants();
-          loadTelemetry();
+          loadTelemetry(true);
         }}
         loading={loading}
       />
@@ -102,7 +112,7 @@ function SinglePageDashboard() {
               </span>
             </h2>
             <span className="text-xs font-medium text-slate-500">
-              SolisCloud Telemetry & Battery Analytics
+              SolisCloud Telemetry & Battery Analytics • Auto-updates every 2m
             </span>
           </div>
 
