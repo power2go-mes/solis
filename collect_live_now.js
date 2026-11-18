@@ -1,9 +1,9 @@
 /**
- * SolisCloud Live Data Collector — Automated Sync Engine
+ * SolisCloud Live Data Collector — High-Performance Automated Sync Engine
  * Targets: 5 Active Client Plants
  * Collects live detailMix, latest 5-min curves, and today's energy totals,
  * then writes directly to Supabase solis_telemetry_latest, solis_battery_power_curve,
- * and solis_daily_energy.
+ * and solis_daily_energy using multi-row batch upserts.
  */
 
 const https = require("https");
@@ -32,6 +32,8 @@ function loadEnvFile(filePath) {
 const localEnv = {
   ...loadEnvFile(path.join(__dirname, ".env.local")),
   ...loadEnvFile(path.join(__dirname, ".env.test")),
+  ...loadEnvFile(path.join(__dirname, "..", ".env.local")),
+  ...loadEnvFile(path.join(__dirname, "..", ".env.test")),
 };
 
 const solisUser = process.env.SOLIS_USERNAME || localEnv.SOLIS_USERNAME;
@@ -156,12 +158,70 @@ function getPktMonthStr() {
   return pktDate.toISOString().slice(0, 7);
 }
 
+async function uploadCurveBatch(rows) {
+  if (!rows || rows.length === 0) return 0;
+  const batchSize = 50;
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const chunk = rows.slice(i, i + batchSize);
+    const valueClauses = [];
+    const params = [];
+    let pIdx = 1;
+
+    for (const r of chunk) {
+      valueClauses.push(
+        `($${pIdx}, $${pIdx + 1}, $${pIdx + 2}, $${pIdx + 3}, $${pIdx + 4}, $${pIdx + 5}, $${pIdx + 6}, $${pIdx + 7}, $${pIdx + 8}, $${pIdx + 9}, $${pIdx + 10}, $${pIdx + 11}, $${pIdx + 12}, $${pIdx + 13})`
+      );
+      params.push(
+        r.stationId,
+        r.dateStr,
+        r.epoch,
+        r.tStr,
+        r.bW,
+        r.bKw,
+        r.bState,
+        r.soc,
+        r.sW,
+        r.sKw,
+        r.gW,
+        r.gKw,
+        r.lW,
+        r.lKw
+      );
+      pIdx += 14;
+    }
+
+    const batchSql = `
+      INSERT INTO solis_battery_power_curve (
+        station_id, curve_date, timestamp_epoch, time_str,
+        battery_power_w, battery_power_kw, battery_state,
+        battery_soc, solar_power_w, solar_power_kw,
+        grid_power_w, grid_power_kw, load_power_w, load_power_kw
+      ) VALUES ${valueClauses.join(", ")}
+      ON CONFLICT (station_id, curve_date, time_str) DO UPDATE SET
+        timestamp_epoch = EXCLUDED.timestamp_epoch,
+        battery_power_w = EXCLUDED.battery_power_w,
+        battery_power_kw = EXCLUDED.battery_power_kw,
+        battery_state = EXCLUDED.battery_state,
+        battery_soc = EXCLUDED.battery_soc,
+        solar_power_w = EXCLUDED.solar_power_w,
+        solar_power_kw = EXCLUDED.solar_power_kw,
+        grid_power_w = EXCLUDED.grid_power_w,
+        grid_power_kw = EXCLUDED.grid_power_kw,
+        load_power_w = EXCLUDED.load_power_w,
+        load_power_kw = EXCLUDED.load_power_kw
+    `;
+
+    await pool.query(batchSql, params);
+  }
+  return rows.length;
+}
+
 async function run() {
   const todayDateStr = getPktDateStr();
   const todayMonthStr = getPktMonthStr();
 
   console.log("=================================================================");
-  console.log("   SOLISCLOUD — LIVE TELEMETRY & CURVE UPDATE");
+  console.log("   SOLISCLOUD — HIGH SPEED LIVE SYNC (BATCH MODE)");
   console.log(`   PKT Timestamp: ${new Date(Date.now() + 5 * 3600 * 1000).toISOString().replace("Z", "+05:00")}`);
   console.log(`   Sync Date: ${todayDateStr} (Month: ${todayMonthStr})`);
   console.log("   Target Plants: 5 Active Client Plants");
@@ -216,29 +276,8 @@ async function run() {
         const loadPowerArray = dayData.familyLoadPowerList || dayData.bypassLoadPowerList || [];
         const socArray = dayData.batteryCapacitySocList || [];
 
-        let curvePointsCount = 0;
+        const curveRows = [];
         let latestCurvePoint = null;
-
-        const curveUpsertSql = `
-          INSERT INTO solis_battery_power_curve (
-            station_id, curve_date, timestamp_epoch, time_str,
-            battery_power_w, battery_power_kw, battery_state, battery_soc,
-            solar_power_w, solar_power_kw, grid_power_w, grid_power_kw,
-            load_power_w, load_power_kw
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-          ) ON CONFLICT (station_id, curve_date, time_str) DO UPDATE SET
-            battery_power_w = EXCLUDED.battery_power_w,
-            battery_power_kw = EXCLUDED.battery_power_kw,
-            battery_state = EXCLUDED.battery_state,
-            battery_soc = EXCLUDED.battery_soc,
-            solar_power_w = EXCLUDED.solar_power_w,
-            solar_power_kw = EXCLUDED.solar_power_kw,
-            grid_power_w = EXCLUDED.grid_power_w,
-            grid_power_kw = EXCLUDED.grid_power_kw,
-            load_power_w = EXCLUDED.load_power_w,
-            load_power_kw = EXCLUDED.load_power_kw;
-        `;
 
         for (let idx = 0; idx < timeArray.length; idx++) {
           let epoch = Number(timeArray[idx]);
@@ -265,23 +304,22 @@ async function run() {
           if (bKw > 0.05) bState = "Discharging";
           else if (bKw < -0.05) bState = "Charging";
 
-          await pool.query(curveUpsertSql, [
-            p.id,
-            todayDateStr,
+          curveRows.push({
+            stationId: p.id,
+            dateStr: todayDateStr,
             epoch,
             tStr,
             bW,
             bKw,
             bState,
-            sc,
+            soc: sc,
             sW,
             sKw,
             gW,
             gKw,
             lW,
             lKw,
-          ]);
-          curvePointsCount++;
+          });
 
           latestCurvePoint = {
             timeStr: tStr,
@@ -294,7 +332,9 @@ async function run() {
           };
         }
 
-        console.log(`    -> Curve: Saved ${curvePointsCount} intervals (Latest: ${latestCurvePoint?.timeStr || 'N/A'}, PV: ${latestCurvePoint?.solarKw ?? 0} kW, Bat: ${latestCurvePoint?.batKw ?? 0} kW ${latestCurvePoint?.batState ?? 'Idle'}, SOC: ${latestCurvePoint?.soc ?? 0}%)`);
+        // Fast batch upload
+        await uploadCurveBatch(curveRows);
+        console.log(`    -> Curve: Batch saved ${curveRows.length} intervals (Latest: ${latestCurvePoint?.timeStr || 'N/A'}, PV: ${latestCurvePoint?.solarKw ?? 0} kW, Bat: ${latestCurvePoint?.batKw ?? 0} kW ${latestCurvePoint?.batState ?? 'Idle'}, SOC: ${latestCurvePoint?.soc ?? 0}%)`);
 
         // 3. Update solis_telemetry_latest with matching real-time numbers
         const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
