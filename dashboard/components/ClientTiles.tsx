@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sun, Battery, Globe, Zap, CheckCircle2, Building2 } from "lucide-react";
+import { Sun, Battery, Globe, Zap, CheckCircle2, Building2, ArrowDownRight } from "lucide-react";
 import { PlantInfo } from "@/lib/types";
 
 interface ClientTilesProps {
@@ -29,28 +29,20 @@ export default function ClientTiles({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {plants.map((plant) => {
           const isSelected = plant.id === selectedPlantId;
           const pvKw = Number(plant.liveSolarKw ?? 0);
           const soc = Number(plant.liveBatterySoc ?? 0);
-          const batKw = Number(plant.liveBatteryPowerKw ?? 0);
+          const rawBatKw = Number(plant.liveBatteryPowerKw ?? 0);
+          const batState =
+            plant.liveBatteryState ||
+            (rawBatKw > 0.05 ? "Charging" : rawBatKw < -0.05 ? "Discharging" : "Idle");
+
+          const isCharging = batState === "Charging" || rawBatKw > 0.05;
+          const isDischarging = batState === "Discharging" || rawBatKw < -0.05;
           const isGenerating = pvKw > 0.5;
-
-          // Battery flow status
-          const isCharging = batKw > 0.05;
-          const isDischarging = batKw < -0.05;
-          const batStatusText = isCharging
-            ? `Charging +${batKw.toFixed(1)} kW`
-            : isDischarging
-            ? `Discharging -${Math.abs(batKw).toFixed(1)} kW`
-            : "Battery Idle (0.0 kW)";
-
-          const batBadgeClass = isCharging
-            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-            : isDischarging
-            ? "bg-amber-50 text-amber-800 border-amber-200"
-            : "bg-slate-50 text-slate-600 border-slate-200";
+          const batKwDisplay = Math.abs(rawBatKw);
 
           return (
             <button
@@ -71,7 +63,7 @@ export default function ClientTiles({
               )}
 
               {/* Plant Header */}
-              <div className="pr-12">
+              <div className="pr-10">
                 <h3 className="font-bold text-sm text-slate-900 leading-tight truncate">
                   {plant.name}
                 </h3>
@@ -81,7 +73,7 @@ export default function ClientTiles({
               </div>
 
               {/* Real-time Telemetry Metrics */}
-              <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+              <div className="mt-3.5 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
                 {/* Solar PV Power */}
                 <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
                   <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
@@ -96,40 +88,108 @@ export default function ClientTiles({
                   </div>
                 </div>
 
-                {/* Battery SOC */}
-                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                  <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
-                    <Battery className="w-3 h-3 text-emerald-500" />
-                    <span>Battery SOC</span>
-                  </div>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="font-mono font-bold text-slate-900 text-base">
-                      {soc}
+                {/* Battery SOC & Flow */}
+                <div
+                  className={`p-2 rounded-lg border ${
+                    isCharging
+                      ? "bg-emerald-50/70 border-emerald-200"
+                      : isDischarging
+                      ? "bg-amber-50/70 border-amber-200"
+                      : "bg-slate-50 border-slate-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                    <div className="flex items-center gap-1">
+                      <Battery
+                        className={`w-3 h-3 ${
+                          isCharging
+                            ? "text-emerald-600"
+                            : isDischarging
+                            ? "text-amber-600"
+                            : "text-slate-400"
+                        }`}
+                      />
+                      <span>Battery SOC</span>
+                    </div>
+                    <span
+                      className={`text-[9px] font-extrabold uppercase tracking-wider px-1 rounded ${
+                        isCharging
+                          ? "bg-emerald-100 text-emerald-800"
+                          : isDischarging
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-slate-200 text-slate-600"
+                      }`}
+                    >
+                      {isCharging ? "Chg" : isDischarging ? "Dis" : "Idle"}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-medium">%</span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="font-mono font-bold text-slate-900 text-base">
+                        {soc}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">%</span>
+                    </div>
+                    <span
+                      className={`font-mono text-[11px] font-bold ${
+                        isCharging
+                          ? "text-emerald-700"
+                          : isDischarging
+                          ? "text-amber-700"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      {isCharging
+                        ? `+${batKwDisplay.toFixed(1)} kW`
+                        : isDischarging
+                        ? `-${batKwDisplay.toFixed(1)} kW`
+                        : "0.0 kW"}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Charging / Discharging Battery Badge */}
+              {/* Dedicated High-Contrast Battery Charging / Discharging Flow Pill */}
               <div
-                className={`mt-2 px-2.5 py-1.5 rounded-lg border flex items-center justify-between text-xs font-semibold ${batBadgeClass}`}
+                className={`mt-2.5 px-2.5 py-1.5 rounded-lg border flex items-center justify-between text-xs font-semibold ${
+                  isCharging
+                    ? "bg-emerald-50 text-emerald-900 border-emerald-300"
+                    : isDischarging
+                    ? "bg-amber-50 text-amber-950 border-amber-300"
+                    : "bg-slate-50 text-slate-600 border-slate-200"
+                }`}
               >
                 <div className="flex items-center gap-1.5 truncate">
                   {isCharging ? (
-                    <Zap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <Zap className="w-3.5 h-3.5 text-emerald-600 animate-pulse shrink-0" />
+                  ) : isDischarging ? (
+                    <ArrowDownRight className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   ) : (
-                    <Battery className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <Battery className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   )}
-                  <span className="truncate">{batStatusText}</span>
+                  <span className="truncate font-bold">
+                    {isCharging
+                      ? `Charging +${batKwDisplay.toFixed(1)} kW`
+                      : isDischarging
+                      ? `Discharging -${batKwDisplay.toFixed(1)} kW`
+                      : "Battery Idle (0.0 kW)"}
+                  </span>
                 </div>
-                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80 shrink-0 ml-1">
+                <span
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ml-1 shadow-2xs ${
+                    isCharging
+                      ? "bg-emerald-600 text-white"
+                      : isDischarging
+                      ? "bg-amber-600 text-white"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
                   {isCharging ? "Charging" : isDischarging ? "Discharging" : "Idle"}
                 </span>
               </div>
 
-              {/* Footer: Status badge & Capacity */}
-              <div className="mt-3 flex items-center justify-between text-[11px] pt-1 border-t border-slate-50">
+              {/* Footer: Status badge & Grid Power */}
+              <div className="mt-3 flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100">
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-2 h-2 rounded-full ${

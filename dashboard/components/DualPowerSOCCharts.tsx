@@ -54,28 +54,30 @@ export default function DualPowerSOCCharts({
   // Date Navigation handlers
   const handlePrevDate = () => {
     if (range === "day") {
-      const d = new Date(currentDate);
-      d.setDate(d.getDate() - 1);
-      setCurrentDate(d.toISOString().slice(0, 10));
+      const [y, m, d] = currentDate.split("-").map(Number);
+      const dateObj = new Date(Date.UTC(y, m - 1, d));
+      dateObj.setUTCDate(dateObj.getUTCDate() - 1);
+      setCurrentDate(dateObj.toISOString().slice(0, 10));
     } else {
       const [y, m] = currentMonth.split("-").map(Number);
-      const d = new Date(y, m - 2, 1);
-      const newY = d.getFullYear();
-      const newM = String(d.getMonth() + 1).padStart(2, "0");
+      const dateObj = new Date(Date.UTC(y, m - 2, 1));
+      const newY = dateObj.getUTCFullYear();
+      const newM = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
       setCurrentMonth(`${newY}-${newM}`);
     }
   };
 
   const handleNextDate = () => {
     if (range === "day") {
-      const d = new Date(currentDate);
-      d.setDate(d.getDate() + 1);
-      setCurrentDate(d.toISOString().slice(0, 10));
+      const [y, m, d] = currentDate.split("-").map(Number);
+      const dateObj = new Date(Date.UTC(y, m - 1, d));
+      dateObj.setUTCDate(dateObj.getUTCDate() + 1);
+      setCurrentDate(dateObj.toISOString().slice(0, 10));
     } else {
       const [y, m] = currentMonth.split("-").map(Number);
-      const d = new Date(y, m, 1);
-      const newY = d.getFullYear();
-      const newM = String(d.getMonth() + 1).padStart(2, "0");
+      const dateObj = new Date(Date.UTC(y, m, 1));
+      const newY = dateObj.getUTCFullYear();
+      const newM = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
       setCurrentMonth(`${newY}-${newM}`);
     }
   };

@@ -10,6 +10,7 @@ export interface PlantInfo {
   liveSolarKw?: number;
   liveBatterySoc?: number;
   liveBatteryPowerKw?: number;
+  liveBatteryState?: string;
   liveGridKw?: number;
   liveLoadKw?: number;
   inverterState?: string | number;

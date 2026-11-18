@@ -39,7 +39,7 @@ if (process.env.NODE_ENV !== "production") {
   global._solisDbPool = pool;
 }
 
-// 7 Authorized SolisCloud Plants Registry (Discovered dynamically)
+// 5 Authorized SolisCloud Plants Registry
 export const AUTHORIZED_PLANTS: PlantInfo[] = [
   {
     id: "1298491919450797504",
@@ -72,13 +72,13 @@ export const AUTHORIZED_PLANTS: PlantInfo[] = [
     hasDataInDb: true,
   },
   {
-    id: "1298491919450851319",
-    name: "P2G 20kw",
+    id: "1298491919450740581",
+    name: "P2G 50KW",
     location: "Karachi, Pakistan",
-    capacityKwp: 18.0,
+    capacityKwp: 32.0,
     inverterCount: 1,
     batteryInstalled: true,
-    dataloggerSn: "7A12532605C0A5DB",
+    dataloggerSn: "7A12551308F022F8",
     hasDataInDb: true,
   },
   {
@@ -91,26 +91,6 @@ export const AUTHORIZED_PLANTS: PlantInfo[] = [
     dataloggerSn: "7A1256240B001722",
     hasDataInDb: true,
   },
-  {
-    id: "1298491919450740581",
-    name: "P2G 50KW",
-    location: "Karachi, Pakistan",
-    capacityKwp: 32.0,
-    inverterCount: 1,
-    batteryInstalled: true,
-    dataloggerSn: "7A12551308F022F8",
-    hasDataInDb: true,
-  },
-  {
-    id: "1298491919450734544",
-    name: "P2G 15KW",
-    location: "Karachi, Pakistan",
-    capacityKwp: 20.0,
-    inverterCount: 1,
-    batteryInstalled: true,
-    dataloggerSn: "7A12541606D04928",
-    hasDataInDb: true,
-  },
 ];
 
 export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
@@ -118,7 +98,7 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
     // Check which plants actually have telemetry records in Supabase and pull live status
     const res = await pool.query(`
       SELECT station_id, station_name, location, installed_capacity_kw,
-             solar_power_kw, battery_soc, battery_power_kw, grid_power_kw, load_power_kw,
+             solar_power_kw, battery_soc, battery_power_kw, battery_direction, grid_power_kw, load_power_kw,
              summary, updated_at
       FROM solis_telemetry_latest
     `);
@@ -131,6 +111,20 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
         const updatedTime = new Date(match.updated_at).getTime();
         const isStale = Date.now() - updatedTime > 30 * 60 * 1000;
         const invState = match.summary?.inverter?.state ?? (match.solar_power_kw > 0 ? "1" : "2");
+        
+        const rawBatKw = Number(match.battery_power_kw) || 0;
+        const dir = String(match.battery_direction || "").toLowerCase();
+        let batState = "Idle";
+        if (dir.includes("charg") && !dir.includes("discharg")) {
+          batState = "Charging";
+        } else if (dir.includes("discharg")) {
+          batState = "Discharging";
+        } else if (rawBatKw > 0.05) {
+          batState = "Charging";
+        } else if (rawBatKw < -0.05) {
+          batState = "Discharging";
+        }
+
         return {
           ...p,
           name: match.station_name || p.name,
@@ -139,7 +133,8 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
           hasDataInDb: true,
           liveSolarKw: Number(match.solar_power_kw) || 0,
           liveBatterySoc: Number(match.battery_soc) || 0,
-          liveBatteryPowerKw: Number(match.battery_power_kw) || 0,
+          liveBatteryPowerKw: Math.abs(rawBatKw),
+          liveBatteryState: batState,
           liveGridKw: Number(match.grid_power_kw) || 0,
           liveLoadKw: Number(match.load_power_kw) || 0,
           inverterState: invState,
@@ -399,17 +394,7 @@ export async function getAggregatedChartData(
     }
 
     const res = await pool.query(query, params);
-    let rows = res.rows;
-
-    if (rows.length === 0) {
-      // Fallback to latest rows regardless of station
-      const fallbackRes = await pool.query(
-        `SELECT energy_date::text as date_str, solar_pv_kwh, house_load_kwh, battery_charge_kwh, battery_discharge_kwh, grid_purchased_kwh, grid_sold_kwh
-         FROM solis_daily_energy
-         ORDER BY energy_date DESC LIMIT 7`
-      );
-      rows = fallbackRes.rows.reverse();
-    }
+    const rows = res.rows;
 
     const timeLabels: string[] = [];
     const pvData: number[] = [];

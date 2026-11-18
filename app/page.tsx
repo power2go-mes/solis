@@ -30,8 +30,8 @@ function SinglePageDashboard() {
       const data = await res.json();
       if (data.success && Array.isArray(data.plants)) {
         setPlants(data.plants);
-        // Default to first plant if current selected not in list
-        if (!selectedStationId && data.plants.length > 0) {
+        const plantExists = data.plants.some((p: PlantInfo) => p.id === selectedStationId);
+        if ((!selectedStationId || !plantExists) && data.plants.length > 0) {
           setSelectedStationId(data.plants[0].id);
         }
       }
