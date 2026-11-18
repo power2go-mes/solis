@@ -105,24 +105,54 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
     const dbStations = new Map<string, any>();
     res.rows.forEach((r) => dbStations.set(r.station_id, r));
 
+    // Also get the latest curve reading for today so the tile always matches the latest point on the graph
+    const curveRes = await pool.query(`
+      SELECT DISTINCT ON (station_id)
+        station_id,
+        time_str,
+        solar_power_kw,
+        battery_power_kw,
+        battery_state,
+        battery_soc,
+        grid_power_kw,
+        load_power_kw
+      FROM solis_battery_power_curve
+      WHERE curve_date = CURRENT_DATE OR curve_date = '2026-11-18'
+      ORDER BY station_id, timestamp_epoch DESC
+    `);
+    const curveMap = new Map<string, any>();
+    curveRes.rows.forEach((r) => curveMap.set(r.station_id, r));
+
     return AUTHORIZED_PLANTS.map((p) => {
       const match = dbStations.get(p.id);
+      const curveMatch = curveMap.get(p.id);
+
       if (match) {
         const updatedTime = new Date(match.updated_at).getTime();
         const isStale = Date.now() - updatedTime > 30 * 60 * 1000;
         const invState = match.summary?.inverter?.state ?? (match.solar_power_kw > 0 ? "1" : "2");
         
-        const rawBatKw = Number(match.battery_power_kw) || 0;
-        const dir = String(match.battery_direction || "").toLowerCase();
+        // Prefer latest curve point if it has real-time power readings, else telemetry latest
+        const solarKw = curveMatch ? Number(curveMatch.solar_power_kw) : Number(match.solar_power_kw) || 0;
+        const rawBatKw = curveMatch ? Number(curveMatch.battery_power_kw) : Number(match.battery_power_kw) || 0;
+        const soc = curveMatch && Number(curveMatch.battery_soc) > 0 ? Number(curveMatch.battery_soc) : Number(match.battery_soc) || 0;
+        const gridKw = curveMatch ? Number(curveMatch.grid_power_kw) : Number(match.grid_power_kw) || 0;
+        const loadKw = curveMatch ? Number(curveMatch.load_power_kw) : Number(match.load_power_kw) || 0;
+
         let batState = "Idle";
-        if (dir.includes("charg") && !dir.includes("discharg")) {
-          batState = "Charging";
-        } else if (dir.includes("discharg")) {
-          batState = "Discharging";
-        } else if (rawBatKw > 0.05) {
-          batState = "Charging";
-        } else if (rawBatKw < -0.05) {
-          batState = "Discharging";
+        if (curveMatch && curveMatch.battery_state) {
+          batState = curveMatch.battery_state;
+        } else {
+          const dir = String(match.battery_direction || "").toLowerCase();
+          if (dir.includes("charg") && !dir.includes("discharg")) {
+            batState = "Charging";
+          } else if (dir.includes("discharg")) {
+            batState = "Discharging";
+          } else if (rawBatKw > 0.05) {
+            batState = "Discharging";
+          } else if (rawBatKw < -0.05) {
+            batState = "Charging";
+          }
         }
 
         return {
@@ -131,12 +161,12 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
           location: match.location || p.location,
           capacityKwp: Number(match.installed_capacity_kw) || p.capacityKwp,
           hasDataInDb: true,
-          liveSolarKw: Number(match.solar_power_kw) || 0,
-          liveBatterySoc: Number(match.battery_soc) || 0,
+          liveSolarKw: solarKw,
+          liveBatterySoc: soc,
           liveBatteryPowerKw: Math.abs(rawBatKw),
           liveBatteryState: batState,
-          liveGridKw: Number(match.grid_power_kw) || 0,
-          liveLoadKw: Number(match.load_power_kw) || 0,
+          liveGridKw: gridKw,
+          liveLoadKw: loadKw,
           inverterState: invState,
           isStale,
         };
@@ -236,7 +266,7 @@ export async function getPlantPowerCurve(
               solar_power_kw, grid_power_kw, load_power_kw
        FROM solis_battery_power_curve
        WHERE station_id = $1 AND curve_date = $2
-       ORDER BY timestamp_epoch ASC`,
+       ORDER BY time_str ASC`,
       [stationId, targetDate]
     );
 
