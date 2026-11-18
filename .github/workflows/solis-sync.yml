@@ -25,7 +25,7 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install pg
+        run: npm install pg --no-audit --no-fund --no-package-lock
 
       - name: Execute Live Sync
         env:
