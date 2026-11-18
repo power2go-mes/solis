@@ -65,10 +65,19 @@ This dashboard implements strict 3-tier decoupling:
 - npm >= 9.0.0
 
 ### 2. Configure Database Connection
-Create `.env.local` inside the `dashboard/` folder (already provided):
+Create `.env.local` inside the `dashboard/` folder:
 ```bash
-DATABASE_URL=postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.[project-ref]:[YOUR_PASSWORD]@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
 ```
+
+### 3. Deploying to Vercel
+1. Import this repository into Vercel.
+2. In the project configuration:
+   - **Framework Preset:** Next.js
+   - **Root Directory:** `dashboard`
+3. Add Environment Variable:
+   - `DATABASE_URL` = Your Supabase PostgreSQL Connection Pooler URL (IPv4 / port 5432 or 6543)
+4. Deploy!
 
 ### 3. Start Development Server
 ```bash

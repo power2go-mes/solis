@@ -9,9 +9,11 @@ import {
   InverterTelemetry,
 } from "./types";
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString && process.env.NODE_ENV === "production") {
+  console.warn("WARNING: DATABASE_URL environment variable is not defined.");
+}
 
 // Global database pool for Next.js server runtime
 declare global {
