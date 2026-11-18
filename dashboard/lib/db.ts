@@ -9,9 +9,14 @@ import {
   InverterTelemetry,
 } from "./types";
 
-const connectionString = process.env.DATABASE_URL;
+let connectionString = process.env.DATABASE_URL || "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:6543/postgres";
 
-if (!connectionString && process.env.NODE_ENV === "production") {
+// If using Supabase session pooler on 5432, switch to transaction pooler on 6543 to prevent connection exhaustion
+if (connectionString.includes("pooler.supabase.com:5432")) {
+  connectionString = connectionString.replace("pooler.supabase.com:5432", "pooler.supabase.com:6543");
+}
+
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === "production") {
   console.warn("WARNING: DATABASE_URL environment variable is not defined.");
 }
 
@@ -25,7 +30,7 @@ const pool =
   new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 10,
+    max: 5,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 8000,
   });
@@ -256,32 +261,28 @@ export async function getPlantPowerCurve(
       }));
     }
 
-    // If this specific station doesn't have curve records for this date,
-    // borrow from available curve table scaled to this station's capacity
-    const donorRes = await pool.query(
-      `SELECT curve_date::text, time_str, timestamp_epoch, battery_power_kw, battery_state, battery_soc, solar_power_kw, grid_power_kw, load_power_kw
-       FROM solis_battery_power_curve
-       ORDER BY id ASC LIMIT 288`
-    );
-
-    if (donorRes.rows.length > 0) {
-      const plantMeta = AUTHORIZED_PLANTS.find((p) => p.id === stationId);
-      const capRatio = plantMeta ? plantMeta.capacityKwp / 80.0 : 1.0;
-
-      return donorRes.rows.map((r, i) => ({
-        id: i + 1,
-        station_id: stationId,
-        curve_date: targetDate!,
-        timestamp_epoch: Number(r.timestamp_epoch),
-        time_str: r.time_str,
-        battery_power_kw: Number((Number(r.battery_power_kw) * capRatio).toFixed(2)),
-        battery_state: r.battery_state || "Idle",
-        battery_soc: Number(r.battery_soc) || 80,
-        solar_power_kw: Number((Number(r.solar_power_kw) * capRatio).toFixed(2)),
-        grid_power_kw: Number((Number(r.grid_power_kw) * capRatio).toFixed(2)),
-        load_power_kw: Number((Number(r.load_power_kw) * capRatio).toFixed(2)),
-      }));
+    // If this specific station doesn't have curve records for this date, return empty 24h baseline intervals
+    const baselinePoints: PowerCurvePoint[] = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 15) {
+        const hh = String(h).padStart(2, "0");
+        const mm = String(m).padStart(2, "0");
+        baselinePoints.push({
+          id: baselinePoints.length + 1,
+          station_id: stationId,
+          curve_date: targetDate!,
+          timestamp_epoch: Math.floor(new Date(`${targetDate}T${hh}:${mm}:00Z`).getTime() / 1000),
+          time_str: `${hh}:${mm}:00`,
+          battery_power_kw: 0,
+          battery_state: "Idle",
+          battery_soc: 0,
+          solar_power_kw: 0,
+          grid_power_kw: 0,
+          load_power_kw: 0,
+        });
+      }
     }
+    return baselinePoints;
 
     return [];
   } catch (err) {

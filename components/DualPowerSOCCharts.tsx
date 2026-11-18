@@ -399,8 +399,8 @@ export default function DualPowerSOCCharts({
       ],
     };
 
-    powerChart.setOption(powerOption);
-    socChart.setOption(socOption);
+    powerChart.setOption(powerOption, true);
+    socChart.setOption(socOption, true);
 
     const handleResize = () => {
       powerChart.resize();

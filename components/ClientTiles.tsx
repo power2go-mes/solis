@@ -34,14 +34,23 @@ export default function ClientTiles({
           const isSelected = plant.id === selectedPlantId;
           const pvKw = Number(plant.liveSolarKw ?? 0);
           const soc = Number(plant.liveBatterySoc ?? 0);
+          const batKw = Number(plant.liveBatteryPowerKw ?? 0);
           const isGenerating = pvKw > 0.5;
 
-          const socColor =
-            soc > 50
-              ? "text-emerald-600 bg-emerald-50 border-emerald-200"
-              : soc > 20
-              ? "text-amber-600 bg-amber-50 border-amber-200"
-              : "text-rose-600 bg-rose-50 border-rose-200";
+          // Battery flow status
+          const isCharging = batKw > 0.05;
+          const isDischarging = batKw < -0.05;
+          const batStatusText = isCharging
+            ? `Charging +${batKw.toFixed(1)} kW`
+            : isDischarging
+            ? `Discharging -${Math.abs(batKw).toFixed(1)} kW`
+            : "Battery Idle (0.0 kW)";
+
+          const batBadgeClass = isCharging
+            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+            : isDischarging
+            ? "bg-amber-50 text-amber-800 border-amber-200"
+            : "bg-slate-50 text-slate-600 border-slate-200";
 
           return (
             <button
@@ -102,8 +111,25 @@ export default function ClientTiles({
                 </div>
               </div>
 
+              {/* Charging / Discharging Battery Badge */}
+              <div
+                className={`mt-2 px-2.5 py-1.5 rounded-lg border flex items-center justify-between text-xs font-semibold ${batBadgeClass}`}
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  {isCharging ? (
+                    <Zap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  ) : (
+                    <Battery className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  )}
+                  <span className="truncate">{batStatusText}</span>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80 shrink-0 ml-1">
+                  {isCharging ? "Charging" : isDischarging ? "Discharging" : "Idle"}
+                </span>
+              </div>
+
               {/* Footer: Status badge & Capacity */}
-              <div className="mt-3 flex items-center justify-between text-[11px] pt-1">
+              <div className="mt-3 flex items-center justify-between text-[11px] pt-1 border-t border-slate-50">
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-2 h-2 rounded-full ${
