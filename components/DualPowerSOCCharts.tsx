@@ -14,10 +14,9 @@ export default function DualPowerSOCCharts({
   stationId,
   plantName,
 }: DualPowerSOCChartsProps) {
-  const [range, setRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
+  const [range, setRange] = useState<"day" | "month">("day");
   const [currentDate, setCurrentDate] = useState<string>("2026-11-18");
-  const [customStart, setCustomStart] = useState<string>("2026-11-01");
-  const [customEnd, setCustomEnd] = useState<string>("2026-11-18");
+  const [currentMonth, setCurrentMonth] = useState<string>("2026-11");
   const [chartData, setChartData] = useState<ChartSeriesData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -26,15 +25,15 @@ export default function DualPowerSOCCharts({
   const powerChartInstance = useRef<echarts.ECharts | null>(null);
   const socChartInstance = useRef<echarts.ECharts | null>(null);
 
-  // Fetch chart data
+  // Fetch chart data from Supabase-backed API
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       let url = `/api/telemetry/curve?stationId=${stationId}&range=${range}`;
       if (range === "day") {
         url += `&date=${currentDate}`;
-      } else if (range === "custom") {
-        url += `&startDate=${customStart}&endDate=${customEnd}`;
+      } else if (range === "month") {
+        url += `&date=${currentMonth}`;
       }
       const res = await fetch(url);
       const data = await res.json();
@@ -46,33 +45,47 @@ export default function DualPowerSOCCharts({
     } finally {
       setLoading(false);
     }
-  }, [stationId, range, currentDate, customStart, customEnd]);
+  }, [stationId, range, currentDate, currentMonth]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Date Navigation
+  // Date Navigation handlers
   const handlePrevDate = () => {
-    const d = new Date(currentDate);
-    if (range === "day") d.setDate(d.getDate() - 1);
-    else if (range === "week") d.setDate(d.getDate() - 7);
-    else if (range === "month") d.setMonth(d.getMonth() - 1);
-    else if (range === "year") d.setFullYear(d.getFullYear() - 1);
-    setCurrentDate(d.toISOString().slice(0, 10));
+    if (range === "day") {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 1);
+      setCurrentDate(d.toISOString().slice(0, 10));
+    } else {
+      const [y, m] = currentMonth.split("-").map(Number);
+      const d = new Date(y, m - 2, 1);
+      const newY = d.getFullYear();
+      const newM = String(d.getMonth() + 1).padStart(2, "0");
+      setCurrentMonth(`${newY}-${newM}`);
+    }
   };
 
   const handleNextDate = () => {
-    const d = new Date(currentDate);
-    if (range === "day") d.setDate(d.getDate() + 1);
-    else if (range === "week") d.setDate(d.getDate() + 7);
-    else if (range === "month") d.setMonth(d.getMonth() + 1);
-    else if (range === "year") d.setFullYear(d.getFullYear() + 1);
-    setCurrentDate(d.toISOString().slice(0, 10));
+    if (range === "day") {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 1);
+      setCurrentDate(d.toISOString().slice(0, 10));
+    } else {
+      const [y, m] = currentMonth.split("-").map(Number);
+      const d = new Date(y, m, 1);
+      const newY = d.getFullYear();
+      const newM = String(d.getMonth() + 1).padStart(2, "0");
+      setCurrentMonth(`${newY}-${newM}`);
+    }
   };
 
-  const handleToday = () => {
-    setCurrentDate("2026-11-18");
+  const handleResetToCurrent = () => {
+    if (range === "day") {
+      setCurrentDate("2026-11-18");
+    } else {
+      setCurrentMonth("2026-11");
+    }
   };
 
   // Render ECharts
@@ -106,13 +119,13 @@ export default function DualPowerSOCCharts({
       currentNowIndex = -1,
     } = chartData;
 
-    // 1. Top Power Curve Option
+    // 1. Top Power Curve Option (Matches screenshot)
     const powerOption: echarts.EChartsOption = {
       animationDuration: 600,
       grid: {
         left: 45,
         right: 45,
-        top: 30,
+        top: 25,
         bottom: 25,
         containLabel: true,
       },
@@ -127,7 +140,8 @@ export default function DualPowerSOCCharts({
         borderWidth: 1,
         padding: [10, 14],
         textStyle: { color: "#1e293b", fontSize: 12 },
-        extraCssText: "box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 10px;",
+        extraCssText:
+          "box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 8px;",
         formatter: (params: any) => {
           if (!Array.isArray(params) || params.length === 0) return "";
           const time = params[0].axisValue;
@@ -141,6 +155,8 @@ export default function DualPowerSOCCharts({
             const val = Number(item.value ?? 0);
             if (label === "Grid") {
               label = val >= 0 ? "Grid(Exporting)" : "Grid(Importing)";
+            } else if (label === "Battery") {
+              label = "Battery";
             }
 
             html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:28px;padding:3px 0;font-size:12px;">
@@ -169,7 +185,12 @@ export default function DualPowerSOCCharts({
       yAxis: {
         type: "value",
         name: unit,
-        nameTextStyle: { color: "#94a3b8", fontSize: 11, align: "right", padding: [0, 8, 4, 0] },
+        nameTextStyle: {
+          color: "#94a3b8",
+          fontSize: 11,
+          align: "right",
+          padding: [0, 8, 4, 0],
+        },
         splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
         axisLabel: { color: "#94a3b8", fontSize: 11 },
       },
@@ -180,12 +201,12 @@ export default function DualPowerSOCCharts({
           smooth: true,
           showSymbol: false,
           data: pvData,
-          itemStyle: { color: "#eab308" },
-          lineStyle: { width: 2, color: "#eab308" },
+          itemStyle: { color: "#facc15" },
+          lineStyle: { width: 2, color: "#facc15" },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(234, 179, 8, 0.22)" },
-              { offset: 1, color: "rgba(234, 179, 8, 0.02)" },
+              { offset: 0, color: "rgba(250, 204, 21, 0.25)" },
+              { offset: 1, color: "rgba(250, 204, 21, 0.02)" },
             ]),
           },
         },
@@ -199,8 +220,8 @@ export default function DualPowerSOCCharts({
           lineStyle: { width: 2, color: "#0284c7" },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(2, 132, 199, 0.16)" },
-              { offset: 1, color: "rgba(2, 132, 199, 0.01)" },
+              { offset: 0, color: "rgba(2, 132, 199, 0.20)" },
+              { offset: 1, color: "rgba(2, 132, 199, 0.02)" },
             ]),
           },
         },
@@ -212,6 +233,12 @@ export default function DualPowerSOCCharts({
           data: batteryData,
           itemStyle: { color: "#10b981" },
           lineStyle: { width: 2, color: "#10b981" },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "rgba(16, 185, 129, 0.16)" },
+              { offset: 1, color: "rgba(16, 185, 129, 0.01)" },
+            ]),
+          },
         },
         {
           name: "Total Load",
@@ -225,7 +252,7 @@ export default function DualPowerSOCCharts({
       ],
     };
 
-    // 2. Bottom SOC & Tariff Option
+    // 2. Bottom SOC & Tariff Option (Matches screenshot)
     const markLineOpt =
       currentNowIndex >= 0 && rangeType === "day"
         ? {
@@ -271,20 +298,26 @@ export default function DualPowerSOCCharts({
         borderWidth: 1,
         padding: [10, 14],
         textStyle: { color: "#1e293b", fontSize: 12 },
-        extraCssText: "box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 10px;",
+        extraCssText:
+          "box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border-radius: 8px;",
         formatter: (params: any) => {
           if (!Array.isArray(params) || params.length === 0) return "";
           const time = params[0].axisValue;
-          let html = `<div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:12px;">${time} (UTC+05:00)</div>`;
+          let html = `<div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:12px;display:flex;align-items:center;gap:6px;">
+            <span>${time}</span>
+            <span style="font-size:10px;color:#64748b;font-weight:normal;">(UTC+05:00)</span>
+          </div>`;
 
           params.forEach((item: any) => {
-            const unitStr = item.seriesName === "SOC" ? "%" : "PKR/kWh";
-            html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:3px 0;font-size:12px;">
+            const val = Number(item.value ?? 0);
+            const unitSuffix = item.seriesName === "SOC" ? "%" : "PKR/kWh";
+
+            html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:28px;padding:3px 0;font-size:12px;">
               <span style="display:flex;align-items:center;gap:8px;">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${item.color};"></span>
                 <span style="color:#475569;">${item.seriesName}</span>
               </span>
-              <span style="font-weight:700;font-family:monospace;color:#0f172a;">${Number(item.value ?? 0).toFixed(1)} ${unitStr}</span>
+              <span style="font-weight:700;font-family:monospace;color:#0f172a;">${val.toFixed(1)} ${unitSuffix}</span>
             </div>`;
           });
           return html;
@@ -309,7 +342,12 @@ export default function DualPowerSOCCharts({
           min: 0,
           max: 100,
           interval: 20,
-          nameTextStyle: { color: "#94a3b8", fontSize: 11, align: "right", padding: [0, 8, 4, 0] },
+          nameTextStyle: {
+            color: "#94a3b8",
+            fontSize: 11,
+            align: "right",
+            padding: [0, 8, 4, 0],
+          },
           splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
           axisLabel: { color: "#94a3b8", fontSize: 11 },
         },
@@ -319,7 +357,12 @@ export default function DualPowerSOCCharts({
           min: 0,
           max: 5,
           interval: 1,
-          nameTextStyle: { color: "#94a3b8", fontSize: 11, align: "left", padding: [0, 0, 4, 8] },
+          nameTextStyle: {
+            color: "#94a3b8",
+            fontSize: 11,
+            align: "left",
+            padding: [0, 0, 4, 8],
+          },
           splitLine: { show: false },
           axisLabel: { color: "#94a3b8", fontSize: 11 },
         },
@@ -372,74 +415,91 @@ export default function DualPowerSOCCharts({
 
   return (
     <div className="space-y-4">
-      {/* Time Range Selector Bar */}
+      {/* Time Range Selector Bar (Strictly Daily & Month filters) */}
       <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        {/* Day, Week, Month, Year, Custom Tabs */}
+        {/* Daily & Month Tabs */}
         <div className="flex items-center bg-slate-100 p-1 rounded-lg">
-          {(["day", "week", "month", "year", "custom"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-all ${
-                range === r
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
+          <button
+            onClick={() => setRange("day")}
+            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+              range === "day"
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Daily
+          </button>
+          <button
+            onClick={() => setRange("month")}
+            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+              range === "month"
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Month
+          </button>
         </div>
 
         {/* Date Navigator Controls */}
         <div className="flex items-center gap-2">
-          {range !== "custom" ? (
+          {range === "day" ? (
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs">
               <button
                 onClick={handlePrevDate}
                 className="p-1 hover:bg-slate-200 rounded text-slate-600 transition-colors"
-                title="Previous period"
+                title="Previous Day"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="font-mono font-medium text-slate-800 px-2 min-w-[90px] text-center">
-                {currentDate}
-              </span>
+              <input
+                type="date"
+                value={currentDate}
+                onChange={(e) => setCurrentDate(e.target.value)}
+                className="bg-transparent border-0 text-xs font-mono font-medium text-slate-800 focus:outline-hidden px-1"
+              />
               <button
                 onClick={handleNextDate}
                 className="p-1 hover:bg-slate-200 rounded text-slate-600 transition-colors"
-                title="Next period"
+                title="Next Day"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
               <button
-                onClick={handleToday}
-                className="ml-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-100 text-sky-800 hover:bg-sky-200 transition-colors"
+                onClick={handleResetToCurrent}
+                className="ml-1 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-sky-100 text-sky-800 hover:bg-sky-200 transition-colors"
               >
                 Today
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-xs">
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <input
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                  className="bg-transparent border-0 text-xs font-mono text-slate-800 focus:outline-hidden"
-                />
-              </div>
-              <span className="text-slate-400 text-xs font-medium">to</span>
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <input
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                  className="bg-transparent border-0 text-xs font-mono text-slate-800 focus:outline-hidden"
-                />
-              </div>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs">
+              <button
+                onClick={handlePrevDate}
+                className="p-1 hover:bg-slate-200 rounded text-slate-600 transition-colors"
+                title="Previous Month"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <input
+                type="month"
+                value={currentMonth}
+                onChange={(e) => setCurrentMonth(e.target.value)}
+                className="bg-transparent border-0 text-xs font-mono font-medium text-slate-800 focus:outline-hidden px-1"
+              />
+              <button
+                onClick={handleNextDate}
+                className="p-1 hover:bg-slate-200 rounded text-slate-600 transition-colors"
+                title="Next Month"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleResetToCurrent}
+                className="ml-1 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-sky-100 text-sky-800 hover:bg-sky-200 transition-colors"
+              >
+                This Month
+              </button>
             </div>
           )}
 
@@ -450,14 +510,15 @@ export default function DualPowerSOCCharts({
             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors ml-1"
             title="Refresh Charts"
           >
-            <RotateCw className={`w-4 h-4 ${loading ? "animate-spin text-sky-600" : ""}`} />
+            <RotateCw
+              className={`w-4 h-4 ${loading ? "animate-spin text-sky-600" : ""}`}
+            />
           </button>
         </div>
       </div>
 
-      {/* Chart 1: Power Graph (Exact match to screenshot) */}
+      {/* Chart 1: Power Graph (Exact match to SolisCloud screenshot) */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs relative">
-        {/* Custom Header matching screenshot */}
         <div className="flex items-center justify-between mb-2 px-2">
           {/* Legend Items */}
           <div className="flex items-center gap-6 text-xs font-medium text-slate-700">
@@ -490,12 +551,15 @@ export default function DualPowerSOCCharts({
         </div>
 
         {/* Top Chart Canvas */}
-        <div ref={powerChartRef} className="w-full h-[260px]" />
+        <div
+          ref={powerChartRef}
+          className="w-full h-[270px]"
+          style={{ width: "100%", height: "270px" }}
+        />
       </div>
 
-      {/* Chart 2: SOC & Tariff Graph (Exact match to screenshot) */}
+      {/* Chart 2: SOC & Tariff Graph (Exact match to SolisCloud screenshot) */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs relative">
-        {/* Custom Header matching screenshot */}
         <div className="flex items-center justify-between mb-2 px-2">
           {/* Legend Items */}
           <div className="flex items-center gap-6 text-xs font-medium text-slate-700">
@@ -524,7 +588,11 @@ export default function DualPowerSOCCharts({
         </div>
 
         {/* Bottom Chart Canvas */}
-        <div ref={socChartRef} className="w-full h-[260px]" />
+        <div
+          ref={socChartRef}
+          className="w-full h-[270px]"
+          style={{ width: "100%", height: "270px" }}
+        />
       </div>
     </div>
   );

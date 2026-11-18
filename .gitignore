@@ -40,8 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# data & locks
-package-lock.json
+# local data dumps
+latest_6hours_all_clients.json
 solis_telemetry_latest.json
 *.xlsx
 *.csv

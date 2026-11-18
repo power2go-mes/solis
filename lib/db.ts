@@ -366,10 +366,16 @@ export async function getAggregatedChartData(
     `;
     const params: any[] = [stationId];
 
-    if (range === "week") {
+    if (range === "month") {
+      if (dateStr && dateStr.length >= 7) {
+        const monthPrefix = dateStr.slice(0, 7);
+        params.push(`${monthPrefix}%`);
+        query += ` AND energy_date::text LIKE $${params.length} ORDER BY energy_date ASC`;
+      } else {
+        query += ` AND energy_date >= (CURRENT_DATE - INTERVAL '29 days') ORDER BY energy_date ASC`;
+      }
+    } else if (range === "week") {
       query += ` AND energy_date >= (CURRENT_DATE - INTERVAL '6 days') ORDER BY energy_date ASC`;
-    } else if (range === "month") {
-      query += ` AND energy_date >= (CURRENT_DATE - INTERVAL '29 days') ORDER BY energy_date ASC`;
     } else if (range === "year") {
       query = `
         SELECT TO_CHAR(energy_date, 'YYYY-MM') as date_str,
