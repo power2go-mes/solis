@@ -1,8 +1,8 @@
 /**
- * SolisCloud Live Data Collector — Current Time (16:30+ PKT)
+ * SolisCloud Live Data Collector — Automated Sync Engine
  * Targets: 5 Active Client Plants
  * Collects live detailMix, latest 5-min curves, and today's energy totals,
- * then saves directly to Supabase solis_telemetry_latest, solis_battery_power_curve,
+ * then writes directly to Supabase solis_telemetry_latest, solis_battery_power_curve,
  * and solis_daily_energy.
  */
 
@@ -42,7 +42,7 @@ if (dbUrl && dbUrl.includes("pooler.supabase.com:5432")) {
 }
 
 if (!solisUser || !solisPass || !dbUrl) {
-  console.error("Missing required credentials or DATABASE_URL");
+  console.error("Missing required credentials (SOLIS_USERNAME, SOLIS_PASSWORD, or DATABASE_URL)");
   process.exit(1);
 }
 
@@ -146,259 +146,278 @@ function numOrNull(val) {
   return isNaN(n) ? null : n;
 }
 
+function getPktDateStr() {
+  const pktDate = new Date(Date.now() + 5 * 3600 * 1000);
+  return pktDate.toISOString().slice(0, 10);
+}
+
+function getPktMonthStr() {
+  const pktDate = new Date(Date.now() + 5 * 3600 * 1000);
+  return pktDate.toISOString().slice(0, 7);
+}
+
 async function run() {
+  const todayDateStr = getPktDateStr();
+  const todayMonthStr = getPktMonthStr();
+
   console.log("=================================================================");
-  console.log("   SOLISCLOUD — LIVE TELEMETRY & CURVE UPDATE TILL CURRENT TIME");
-  console.log(`   Execution Time (PKT): ${new Date().toISOString()}`);
+  console.log("   SOLISCLOUD — LIVE TELEMETRY & CURVE UPDATE");
+  console.log(`   PKT Timestamp: ${new Date(Date.now() + 5 * 3600 * 1000).toISOString().replace("Z", "+05:00")}`);
+  console.log(`   Sync Date: ${todayDateStr} (Month: ${todayMonthStr})`);
   console.log("   Target Plants: 5 Active Client Plants");
   console.log("=================================================================\n");
 
-  // Step 1: Login
-  console.log("[1/3] Authenticating to SolisCloud...");
-  const passMd5 = crypto.createHash("md5").update(solisPass, "utf8").digest("hex");
-  const loginRes = await postRequest("/api/user/login2", {
-    userInfo: solisUser,
-    passWord: passMd5,
-    yingZhenType: 1,
-    localTime: Date.now(),
-    localTimeZone: 5,
-    language: "2",
-  });
+  try {
+    // Step 1: Login
+    console.log("[1/3] Authenticating to SolisCloud...");
+    const passMd5 = crypto.createHash("md5").update(solisPass, "utf8").digest("hex");
+    const loginRes = await postRequest("/api/user/login2", {
+      userInfo: solisUser,
+      passWord: passMd5,
+      yingZhenType: 1,
+      localTime: Date.now(),
+      localTimeZone: 5,
+      language: "2",
+    });
 
-  if (!loginRes.json?.success) {
-    console.error("Login failed:", loginRes.json?.msg);
-    process.exit(1);
-  }
-  console.log("[OK] Authentication successful! Session established.\n");
+    if (!loginRes.json?.success) {
+      console.error("Login failed:", loginRes.json?.msg);
+      process.exit(1);
+    }
+    console.log("[OK] Authentication successful! Session established.\n");
 
-  const todayDateStr = "2026-11-18";
+    for (let i = 0; i < PLANTS.length; i++) {
+      const p = PLANTS[i];
+      console.log(`>>> [${i + 1}/5] Updating Plant: ${p.name} (${p.id})...`);
 
-  for (let i = 0; i < PLANTS.length; i++) {
-    const p = PLANTS[i];
-    console.log(`>>> [${i + 1}/5] Updating Plant: ${p.name} (${p.id})...`);
+      try {
+        // 1. Fetch live snapshot from /api/station/detailMix
+        const mixRes = await postRequest("/api/station/detailMix", {
+          id: p.id,
+          localTime: Date.now(),
+          localTimeZone: 5,
+          language: "2",
+        });
+        const mix = mixRes.json?.data || {};
 
-    try {
-      // 1. Fetch live snapshot from /api/station/detailMix
-      const mixRes = await postRequest("/api/station/detailMix", {
-        id: p.id,
-        localTime: Date.now(),
-        localTimeZone: 5,
-        language: "2",
-      });
-      const mix = mixRes.json?.data || {};
+        // 2. Fetch full day curve for today up to current minute
+        const curveRes = await postRequest("/api/chart/station/day/v2", {
+          id: p.id,
+          time: todayDateStr,
+          timeZone: 5,
+        });
+        const dayData = curveRes.json?.data || {};
 
-      // 2. Fetch full day curve for today up to current minute
-      const curveRes = await postRequest("/api/chart/station/day/v2", {
-        id: p.id,
-        time: todayDateStr,
-        timeZone: 5,
-      });
-      const dayData = curveRes.json?.data || {};
+        const timeArray = dayData.time || [];
+        const timeStrArray = dayData.timeStr || [];
+        const solarPowerArray = dayData.pvAndAcCoupledPowerList || dayData.powerList || [];
+        const batteryPowerArray = dayData.batteryPower || [];
+        const gridPowerArray = dayData.psum || dayData.gridPowerList || [];
+        const loadPowerArray = dayData.familyLoadPowerList || dayData.bypassLoadPowerList || [];
+        const socArray = dayData.batteryCapacitySocList || [];
 
-      const timeArray = dayData.time || [];
-      const timeStrArray = dayData.timeStr || [];
-      const solarPowerArray = dayData.pvAndAcCoupledPowerList || dayData.powerList || [];
-      const batteryPowerArray = dayData.batteryPower || [];
-      const gridPowerArray = dayData.psum || dayData.gridPowerList || [];
-      const loadPowerArray = dayData.familyLoadPowerList || dayData.bypassLoadPowerList || [];
-      const socArray = dayData.batteryCapacitySocList || [];
+        let curvePointsCount = 0;
+        let latestCurvePoint = null;
 
-      let curvePointsCount = 0;
-      let latestCurvePoint = null;
-
-      const curveUpsertSql = `
-        INSERT INTO solis_battery_power_curve (
-          station_id, curve_date, timestamp_epoch, time_str,
-          battery_power_w, battery_power_kw, battery_state, battery_soc,
-          solar_power_w, solar_power_kw, grid_power_w, grid_power_kw,
-          load_power_w, load_power_kw
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-        ) ON CONFLICT (station_id, curve_date, time_str) DO UPDATE SET
-          battery_power_w = EXCLUDED.battery_power_w,
-          battery_power_kw = EXCLUDED.battery_power_kw,
-          battery_state = EXCLUDED.battery_state,
-          battery_soc = EXCLUDED.battery_soc,
-          solar_power_w = EXCLUDED.solar_power_w,
-          solar_power_kw = EXCLUDED.solar_power_kw,
-          grid_power_w = EXCLUDED.grid_power_w,
-          grid_power_kw = EXCLUDED.grid_power_kw,
-          load_power_w = EXCLUDED.load_power_w,
-          load_power_kw = EXCLUDED.load_power_kw;
-      `;
-
-      for (let idx = 0; idx < timeArray.length; idx++) {
-        let epoch = Number(timeArray[idx]);
-        if (epoch > 1000000000000) epoch = Math.floor(epoch / 1000);
-        let tStr = timeStrArray[idx];
-        if (!tStr && epoch) {
-          tStr = new Date((epoch + 5 * 3600) * 1000).toISOString().slice(11, 19);
-        }
-        if (!tStr) continue;
-        if (tStr.length === 5) tStr += ":00";
-
-        const sW = Number(solarPowerArray[idx] || 0);
-        const bW = Number(batteryPowerArray[idx] || 0);
-        const gW = Number(gridPowerArray[idx] || 0);
-        const lW = Number(loadPowerArray[idx] || 0);
-        const sc = Number(socArray[idx] || 0);
-
-        const sKw = Number((sW / 1000).toFixed(2));
-        const bKw = Number((bW / 1000).toFixed(2));
-        const gKw = Number((gW / 1000).toFixed(2));
-        const lKw = Number((lW / 1000).toFixed(2));
-
-        let bState = "Idle";
-        if (bKw > 0.05) bState = "Discharging";
-        else if (bKw < -0.05) bState = "Charging";
-
-        await pool.query(curveUpsertSql, [
-          p.id,
-          todayDateStr,
-          epoch,
-          tStr,
-          bW,
-          bKw,
-          bState,
-          sc,
-          sW,
-          sKw,
-          gW,
-          gKw,
-          lW,
-          lKw,
-        ]);
-        curvePointsCount++;
-
-        latestCurvePoint = {
-          timeStr: tStr,
-          solarKw: sKw,
-          batKw: bKw,
-          batState: bState,
-          soc: sc,
-          gridKw: gKw,
-          loadKw: lKw,
-        };
-      }
-
-      console.log(`    -> Curve: Saved ${curvePointsCount} 5-min intervals (Latest: ${latestCurvePoint?.timeStr || 'N/A'}, PV: ${latestCurvePoint?.solarKw} kW, Bat: ${latestCurvePoint?.batKw} kW ${latestCurvePoint?.batState}, SOC: ${latestCurvePoint?.soc}%)`);
-
-      // 3. Update solis_telemetry_latest with matching real-time numbers
-      const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
-      const liveSoc = latestCurvePoint ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
-      const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
-      const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
-      const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
-      const liveLoadKw = latestCurvePoint ? latestCurvePoint.loadKw : Number(mix.familyLoadPower || 0);
-
-      const telemetryLatestUpsertSql = `
-        INSERT INTO solis_telemetry_latest (
-          station_id, station_name, location, installed_capacity_kw,
-          solar_power_kw, battery_soc, battery_power_kw, battery_direction,
-          grid_power_kw, load_power_kw, summary, raw_data, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
-        ) ON CONFLICT (station_id) DO UPDATE SET
-          station_name = EXCLUDED.station_name,
-          location = EXCLUDED.location,
-          installed_capacity_kw = EXCLUDED.installed_capacity_kw,
-          solar_power_kw = EXCLUDED.solar_power_kw,
-          battery_soc = EXCLUDED.battery_soc,
-          battery_power_kw = EXCLUDED.battery_power_kw,
-          battery_direction = EXCLUDED.battery_direction,
-          grid_power_kw = EXCLUDED.grid_power_kw,
-          load_power_kw = EXCLUDED.load_power_kw,
-          summary = EXCLUDED.summary,
-          raw_data = EXCLUDED.raw_data,
-          updated_at = NOW();
-      `;
-
-      const summaryObj = {
-        solar: { activePowerKw: liveSolarKw },
-        battery: { socPercent: liveSoc, powerKw: liveBatKw, direction: liveBatState },
-        grid: { activePowerKw: liveGridKw },
-        load: { totalPowerKw: liveLoadKw },
-        inverter: { state: liveSolarKw > 0.5 ? 1 : 2 },
-      };
-
-      await pool.query(telemetryLatestUpsertSql, [
-        p.id,
-        p.name,
-        p.location,
-        p.capacityKwp,
-        liveSolarKw,
-        liveSoc,
-        liveBatKw,
-        liveBatState,
-        liveGridKw,
-        liveLoadKw,
-        summaryObj,
-        JSON.stringify(mix),
-      ]);
-
-      console.log(`    -> Telemetry Latest: Synced to PV: ${liveSolarKw} kW | Battery: ${liveSoc}% (${liveBatState} ${liveBatKw} kW) | Grid: ${liveGridKw} kW`);
-
-      // 4. Update today's energy in solis_daily_energy from /api/chart/station/month
-      const monthRes = await postRequest("/api/chart/station/month", {
-        id: p.id,
-        time: "2026-11",
-        month: "2026-11",
-        timeZone: 5,
-        money: "PKR",
-      });
-      const monthlyDays = monthRes.json?.data || [];
-      const todayRecord = monthlyDays.find(d => (d.dateStr || d.date) === todayDateStr);
-      if (todayRecord) {
-        const dailyUpsertSql = `
-          INSERT INTO solis_daily_energy (
-            station_id, energy_date, solar_pv_kwh, house_load_kwh,
-            battery_charge_kwh, battery_discharge_kwh,
-            grid_purchased_kwh, grid_sold_kwh, backup_load_kwh,
-            self_consumption_kwh, peak_sun_hours, currency, raw, updated_at
+        const curveUpsertSql = `
+          INSERT INTO solis_battery_power_curve (
+            station_id, curve_date, timestamp_epoch, time_str,
+            battery_power_w, battery_power_kw, battery_state, battery_soc,
+            solar_power_w, solar_power_kw, grid_power_w, grid_power_kw,
+            load_power_w, load_power_kw
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
-          ) ON CONFLICT (station_id, energy_date) DO UPDATE SET
-            solar_pv_kwh = EXCLUDED.solar_pv_kwh,
-            house_load_kwh = EXCLUDED.house_load_kwh,
-            battery_charge_kwh = EXCLUDED.battery_charge_kwh,
-            battery_discharge_kwh = EXCLUDED.battery_discharge_kwh,
-            grid_purchased_kwh = EXCLUDED.grid_purchased_kwh,
-            grid_sold_kwh = EXCLUDED.grid_sold_kwh,
-            backup_load_kwh = EXCLUDED.backup_load_kwh,
-            self_consumption_kwh = EXCLUDED.self_consumption_kwh,
-            peak_sun_hours = EXCLUDED.peak_sun_hours,
-            currency = EXCLUDED.currency,
-            raw = EXCLUDED.raw,
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+          ) ON CONFLICT (station_id, curve_date, time_str) DO UPDATE SET
+            battery_power_w = EXCLUDED.battery_power_w,
+            battery_power_kw = EXCLUDED.battery_power_kw,
+            battery_state = EXCLUDED.battery_state,
+            battery_soc = EXCLUDED.battery_soc,
+            solar_power_w = EXCLUDED.solar_power_w,
+            solar_power_kw = EXCLUDED.solar_power_kw,
+            grid_power_w = EXCLUDED.grid_power_w,
+            grid_power_kw = EXCLUDED.grid_power_kw,
+            load_power_w = EXCLUDED.load_power_w,
+            load_power_kw = EXCLUDED.load_power_kw;
+        `;
+
+        for (let idx = 0; idx < timeArray.length; idx++) {
+          let epoch = Number(timeArray[idx]);
+          if (epoch > 1000000000000) epoch = Math.floor(epoch / 1000);
+          let tStr = timeStrArray[idx];
+          if (!tStr && epoch) {
+            tStr = new Date((epoch + 5 * 3600) * 1000).toISOString().slice(11, 19);
+          }
+          if (!tStr) continue;
+          if (tStr.length === 5) tStr += ":00";
+
+          const sW = Number(solarPowerArray[idx] || 0);
+          const bW = Number(batteryPowerArray[idx] || 0);
+          const gW = Number(gridPowerArray[idx] || 0);
+          const lW = Number(loadPowerArray[idx] || 0);
+          const sc = Number(socArray[idx] || 0);
+
+          const sKw = Number((sW / 1000).toFixed(2));
+          const bKw = Number((bW / 1000).toFixed(2));
+          const gKw = Number((gW / 1000).toFixed(2));
+          const lKw = Number((lW / 1000).toFixed(2));
+
+          let bState = "Idle";
+          if (bKw > 0.05) bState = "Discharging";
+          else if (bKw < -0.05) bState = "Charging";
+
+          await pool.query(curveUpsertSql, [
+            p.id,
+            todayDateStr,
+            epoch,
+            tStr,
+            bW,
+            bKw,
+            bState,
+            sc,
+            sW,
+            sKw,
+            gW,
+            gKw,
+            lW,
+            lKw,
+          ]);
+          curvePointsCount++;
+
+          latestCurvePoint = {
+            timeStr: tStr,
+            solarKw: sKw,
+            batKw: bKw,
+            batState: bState,
+            soc: sc,
+            gridKw: gKw,
+            loadKw: lKw,
+          };
+        }
+
+        console.log(`    -> Curve: Saved ${curvePointsCount} intervals (Latest: ${latestCurvePoint?.timeStr || 'N/A'}, PV: ${latestCurvePoint?.solarKw ?? 0} kW, Bat: ${latestCurvePoint?.batKw ?? 0} kW ${latestCurvePoint?.batState ?? 'Idle'}, SOC: ${latestCurvePoint?.soc ?? 0}%)`);
+
+        // 3. Update solis_telemetry_latest with matching real-time numbers
+        const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
+        const liveSoc = latestCurvePoint ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
+        const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
+        const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
+        const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
+        const liveLoadKw = latestCurvePoint ? latestCurvePoint.loadKw : Number(mix.familyLoadPower || 0);
+
+        const telemetryLatestUpsertSql = `
+          INSERT INTO solis_telemetry_latest (
+            station_id, station_name, location, installed_capacity_kw,
+            solar_power_kw, battery_soc, battery_power_kw, battery_direction,
+            grid_power_kw, load_power_kw, summary, raw_data, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
+          ) ON CONFLICT (station_id) DO UPDATE SET
+            station_name = EXCLUDED.station_name,
+            location = EXCLUDED.location,
+            installed_capacity_kw = EXCLUDED.installed_capacity_kw,
+            solar_power_kw = EXCLUDED.solar_power_kw,
+            battery_soc = EXCLUDED.battery_soc,
+            battery_power_kw = EXCLUDED.battery_power_kw,
+            battery_direction = EXCLUDED.battery_direction,
+            grid_power_kw = EXCLUDED.grid_power_kw,
+            load_power_kw = EXCLUDED.load_power_kw,
+            summary = EXCLUDED.summary,
+            raw_data = EXCLUDED.raw_data,
             updated_at = NOW();
         `;
-        await pool.query(dailyUpsertSql, [
+
+        const summaryObj = {
+          solar: { activePowerKw: liveSolarKw },
+          battery: { socPercent: liveSoc, powerKw: liveBatKw, direction: liveBatState },
+          grid: { activePowerKw: liveGridKw },
+          load: { totalPowerKw: liveLoadKw },
+          inverter: { state: liveSolarKw > 0.5 ? 1 : 2 },
+        };
+
+        await pool.query(telemetryLatestUpsertSql, [
           p.id,
-          todayDateStr,
-          numOrNull(todayRecord.produceEnergy ?? todayRecord.energy ?? todayRecord.pvAndAcCoupledEnergy),
-          numOrNull(todayRecord.consumeEnergy ?? todayRecord.homeLoadEnergy),
-          numOrNull(todayRecord.batteryChargeEnergy),
-          numOrNull(todayRecord.batteryDischargeEnergy),
-          numOrNull(todayRecord.gridPurchasedEnergy),
-          numOrNull(todayRecord.gridSellEnergy),
-          numOrNull(todayRecord.backUpEnergy),
-          numOrNull(todayRecord.oneSelf),
-          numOrNull(todayRecord.fullHour),
-          String(todayRecord.moneyStr || "PKR"),
-          JSON.stringify(todayRecord),
+          p.name,
+          p.location,
+          p.capacityKwp,
+          liveSolarKw,
+          liveSoc,
+          liveBatKw,
+          liveBatState,
+          liveGridKw,
+          liveLoadKw,
+          summaryObj,
+          JSON.stringify(mix),
         ]);
-        console.log(`    -> Daily Energy Today: ${todayRecord.produceEnergy} kWh generated, ${todayRecord.batteryChargeEnergy || 0} kWh charged today.\n`);
+
+        console.log(`    -> Telemetry Latest: Synced (PV: ${liveSolarKw} kW | SOC: ${liveSoc}% | Bat: ${liveBatState} ${liveBatKw} kW | Grid: ${liveGridKw} kW)`);
+
+        // 4. Update today's energy in solis_daily_energy from /api/chart/station/month
+        const monthRes = await postRequest("/api/chart/station/month", {
+          id: p.id,
+          time: todayMonthStr,
+          month: todayMonthStr,
+          timeZone: 5,
+          money: "PKR",
+        });
+        const monthlyDays = monthRes.json?.data || [];
+        const todayRecord = monthlyDays.find(d => (d.dateStr || d.date) === todayDateStr);
+
+        if (todayRecord) {
+          const dailyUpsertSql = `
+            INSERT INTO solis_daily_energy (
+              station_id, energy_date, solar_pv_kwh, house_load_kwh,
+              battery_charge_kwh, battery_discharge_kwh,
+              grid_purchased_kwh, grid_sold_kwh, backup_load_kwh,
+              self_consumption_kwh, peak_sun_hours, currency, raw, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+            ) ON CONFLICT (station_id, energy_date) DO UPDATE SET
+              solar_pv_kwh = EXCLUDED.solar_pv_kwh,
+              house_load_kwh = EXCLUDED.house_load_kwh,
+              battery_charge_kwh = EXCLUDED.battery_charge_kwh,
+              battery_discharge_kwh = EXCLUDED.battery_discharge_kwh,
+              grid_purchased_kwh = EXCLUDED.grid_purchased_kwh,
+              grid_sold_kwh = EXCLUDED.grid_sold_kwh,
+              backup_load_kwh = EXCLUDED.backup_load_kwh,
+              self_consumption_kwh = EXCLUDED.self_consumption_kwh,
+              peak_sun_hours = EXCLUDED.peak_sun_hours,
+              currency = EXCLUDED.currency,
+              raw = EXCLUDED.raw,
+              updated_at = NOW();
+          `;
+          await pool.query(dailyUpsertSql, [
+            p.id,
+            todayDateStr,
+            numOrNull(todayRecord.produceEnergy ?? todayRecord.energy ?? todayRecord.pvAndAcCoupledEnergy),
+            numOrNull(todayRecord.consumeEnergy ?? todayRecord.homeLoadEnergy),
+            numOrNull(todayRecord.batteryChargeEnergy),
+            numOrNull(todayRecord.batteryDischargeEnergy),
+            numOrNull(todayRecord.gridPurchasedEnergy),
+            numOrNull(todayRecord.gridSellEnergy),
+            numOrNull(todayRecord.backUpEnergy),
+            numOrNull(todayRecord.oneSelf),
+            numOrNull(todayRecord.fullHour),
+            String(todayRecord.moneyStr || "PKR"),
+            JSON.stringify(todayRecord),
+          ]);
+          console.log(`    -> Daily Energy Today: ${todayRecord.produceEnergy ?? 0} kWh generated, ${todayRecord.batteryChargeEnergy || 0} kWh charged today.\n`);
+        }
+
+      } catch (err) {
+        console.error(`Error on plant ${p.name}:`, err.message);
       }
-
-    } catch (err) {
-      console.error(`Error on plant ${p.name}:`, err.message);
     }
+
+    console.log("=================================================================");
+    console.log("   SYNC COMPLETE! Current Live Telemetry & Curve Points Updated.");
+    console.log("=================================================================\n");
+
+  } finally {
+    await pool.end();
   }
-
-  console.log("=================================================================");
-  console.log("   SYNC COMPLETE! Current Live Telemetry & Curve Points Updated.");
-  console.log("=================================================================\n");
-
-  await pool.end();
 }
 
-run().catch(console.error);
+run().catch((err) => {
+  console.error("Fatal error during sync:", err);
+  process.exit(1);
+});
