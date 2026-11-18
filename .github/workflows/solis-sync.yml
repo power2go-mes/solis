@@ -1,0 +1,35 @@
+name: SolisCloud 24/7 Automated Sync
+
+on:
+  schedule:
+    # Runs every 10 minutes automatically 24/7
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual one-click trigger from GitHub Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync SolisCloud to Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install pg
+
+      - name: Execute Live Sync
+        env:
+          SOLIS_USERNAME: ${{ secrets.SOLIS_USERNAME }}
+          SOLIS_PASSWORD: ${{ secrets.SOLIS_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node collect_live_now.js
