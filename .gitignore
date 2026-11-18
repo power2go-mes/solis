@@ -1,0 +1,7 @@
+node_modules/
+scraper.properties
+package-lock.json
+.env*
+*.local
+solis_telemetry_latest.json
+solis_raw_*.json

@@ -1,0 +1,27 @@
+name: SolisCloud Scraper
+version: 2.1.0
+slug: soliscloud_scraper
+description: Local HTTP API for your SolisCloud solar inverter data (solar production, battery, grid import/export). No browser, no official API key needed.
+url: https://github.com/gnacho/soliscloud-scraper
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+init: false
+ports:
+  5561/tcp: 5561
+ports_description:
+  5561/tcp: Scraper HTTP API (Basic Auth)
+options:
+  solis_username: ""
+  solis_password: ""
+  service_username: solis
+  service_password: changeme
+  service_port: 5561
+schema:
+  solis_username: str
+  solis_password: password
+  service_username: str
+  service_password: password
+  service_port: port

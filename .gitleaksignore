@@ -1,0 +1,5 @@
+# Falsos positivos: ejemplos curl con placeholders (localuser:localpass), no credenciales reales
+1593e32a85dd80653e041947ed201c5c02629a5f:README.md:curl-auth-user:356
+1593e32a85dd80653e041947ed201c5c02629a5f:README.es.md:curl-auth-user:351
+137f160531a48ff56ec5c82405164b4c962b22d4:README.md:curl-auth-user:332
+137f160531a48ff56ec5c82405164b4c962b22d4:README.es.md:curl-auth-user:327

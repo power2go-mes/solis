@@ -1,0 +1,18 @@
+# Solis Cloud credentials
+solis.url = https://www.soliscloud.com
+solis.username = your@email.com
+solis.password = your_password
+# Serial number of the inverter whose /api/inverter/detail is fetched
+# (leave unset to use the hardcoded default)
+solis.inverterSn = your_inverter_sn
+
+# Local service config
+service.port = 5561
+service.username = solis
+service.password = change_me
+
+# Refresh config (for refresher.js, not used by scraper.js)
+service.refresh.url = http://127.0.0.1:5561/refresh
+refresh.interval-mins = 6
+refresh.start-hour = 6
+refresh.end-hour = 23

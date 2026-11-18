@@ -1,0 +1,9 @@
+services:
+  soliscloud-scraper:
+    build: .
+    container_name: soliscloud-scraper
+    restart: unless-stopped
+    ports:
+      - "5561:5561"
+    volumes:
+      - ./scraper.properties:/app/scraper.properties:ro

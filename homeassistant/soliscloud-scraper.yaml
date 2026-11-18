@@ -1,0 +1,128 @@
+# =============================================================================
+# SolisCloud Scraper — Home Assistant package
+# https://github.com/gnacho/soliscloud-scraper
+#
+# INSTALL (2 minutes):
+#   1. Make sure your configuration.yaml contains this (add it if missing):
+#
+#        homeassistant:
+#          packages: !include_dir_named packages
+#
+#   2. Copy this file to:  /config/packages/soliscloud-scraper.yaml
+#   3. Edit the 3 values marked with  <-- CHANGE below.
+#   4. Restart Home Assistant (Settings > System > Restart).
+#
+# You will get these entities:
+#   sensor.solis_scraper            raw sensor with ALL data as attributes
+#   sensor.solis_battery_soc        battery charge (%)
+#   sensor.solis_solar_power        solar production now (kW)
+#   sensor.solis_battery_power      battery power (kW, + charging / - discharging)
+#   sensor.solis_grid_power         grid power (kW, + importing / - exporting)
+#   sensor.solis_yield_today        solar energy today (kWh)
+#   sensor.solis_grid_import_today  grid import today (kWh)
+#   sensor.solis_grid_export_today  grid export today (kWh)
+#   sensor.solis_house_consumption  house consumption now (kW)
+#
+# The daily kWh sensors use state_class: total_increasing, so you can add them
+# directly to the Energy Dashboard (Settings > Dashboards > Energy).
+# =============================================================================
+
+rest:
+  - resource: http://homeassistant.local:5561/v2/data # <-- CHANGE: scraper address (HAOS add-on: http://homeassistant.local:5561 works if you kept the default port)
+    authentication: basic
+    username: solis # <-- CHANGE: service_username from the scraper config
+    password: changeme # <-- CHANGE: service_password from the scraper config
+    scan_interval: 300
+    timeout: 30
+    sensor:
+      - name: Solis Scraper
+        unique_id: solis_scraper
+        value_template: "{{ value_json.stationName }}"
+        json_attributes:
+          - batterySoc
+          - currentSolarPower
+          - currentSolarPowerUnit
+          - currentBatteryPower
+          - currentBatteryPowerUnit
+          - batteryDirection
+          - batteryVoltage
+          - currentGridPower
+          - currentGridPowerUnit
+          - gridDirection
+          - currentHouseConsumption
+          - currentHouseConsumptionUnit
+          - todayYield
+          - todayGridImport
+          - todayGridExport
+          - todayHouseConsumption
+          - monthEnergy
+          - totalEnergy
+          - dataTimestamp
+          - lastUpdate
+          - error
+
+template:
+  - sensor:
+      - name: Solis Battery SoC
+        unique_id: solis_battery_soc
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+        state: "{{ state_attr('sensor.solis_scraper', 'batterySoc') | float(0) }}"
+
+      - name: Solis Solar Power
+        unique_id: solis_solar_power
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        state: "{{ state_attr('sensor.solis_scraper', 'currentSolarPower') | float(0) }}"
+
+      - name: Solis Battery Power
+        unique_id: solis_battery_power
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        # batteryDirection: 1 = charging (+), 2 = discharging (-)
+        state: >
+          {% set p = state_attr('sensor.solis_scraper', 'currentBatteryPower') | float(0) %}
+          {% set d = state_attr('sensor.solis_scraper', 'batteryDirection') | int(0) %}
+          {{ p if d == 1 else (-p if d == 2 else 0) }}
+
+      - name: Solis Grid Power
+        unique_id: solis_grid_power
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        # Positive = importing from grid, negative = exporting to grid
+        state: >
+          {% set p = state_attr('sensor.solis_scraper', 'currentGridPower') | float(0) %}
+          {% set d = state_attr('sensor.solis_scraper', 'gridDirection') %}
+          {{ p if d == 'import' else (-p if d == 'export' else 0) }}
+
+      - name: Solis Yield Today
+        unique_id: solis_yield_today
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: "{{ state_attr('sensor.solis_scraper', 'todayYield') | float(0) }}"
+
+      - name: Solis Grid Import Today
+        unique_id: solis_grid_import_today
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: "{{ state_attr('sensor.solis_scraper', 'todayGridImport') | float(0) }}"
+
+      - name: Solis Grid Export Today
+        unique_id: solis_grid_export_today
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: "{{ state_attr('sensor.solis_scraper', 'todayGridExport') | float(0) }}"
+
+      - name: Solis House Consumption
+        unique_id: solis_house_consumption
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        state: "{{ state_attr('sensor.solis_scraper', 'currentHouseConsumption') | float(0) }}"
