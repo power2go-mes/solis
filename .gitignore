@@ -48,5 +48,6 @@ solis_telemetry_latest.json
 *.xlsx
 *.csv
 daemon.log
+scratch/
 
 

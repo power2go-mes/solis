@@ -277,6 +277,15 @@ export default function SolisMobilePlantList({
 
   return (
     <div className="min-h-screen bg-[#f7f9fa] pb-24 text-slate-800 flex flex-col antialiased relative">
+      {/* Power2Go Mobile Brand Header - Centered */}
+      <div className="w-full bg-white py-2.5 flex items-center justify-center border-b border-gray-100">
+        <img
+          src="/power2go-logo.png"
+          alt="Power2Go"
+          className="h-10 w-auto object-contain"
+        />
+      </div>
+
       {/* ======================================================== */}
       {/* 1. TOP BAR: Category Tabs & Search / Add Icons            */}
       {/* ======================================================== */}
@@ -289,7 +298,7 @@ export default function SolisMobilePlantList({
               onClick={() => setActiveTopTab(tab)}
               className={`transition-colors ${
                 activeTopTab === tab
-                  ? "text-xl font-bold text-[#f37021]"
+                  ? "text-xl font-bold text-emerald-600"
                   : "text-slate-500 font-medium hover:text-slate-800"
               }`}
             >
@@ -341,7 +350,7 @@ export default function SolisMobilePlantList({
             onClick={() => setActiveFilterTab("All")}
             className={`rounded-xl p-2.5 flex flex-col items-center justify-center transition-all ${
               activeFilterTab === "All"
-                ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold shadow-md shadow-orange-500/25"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
                 : "bg-white border border-gray-200 text-slate-700"
             }`}
           >
@@ -354,7 +363,7 @@ export default function SolisMobilePlantList({
             onClick={() => setActiveFilterTab("Online")}
             className={`rounded-xl p-2.5 flex flex-col items-center justify-center transition-all ${
               activeFilterTab === "Online"
-                ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold shadow-md shadow-orange-500/25"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
                 : "bg-white border border-gray-200 text-slate-700"
             }`}
           >
@@ -544,10 +553,10 @@ export default function SolisMobilePlantList({
       {/* ======================================================== */}
       <div className="fixed bottom-3 left-4 right-4 z-50 flex justify-center pointer-events-none">
         <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between w-full max-w-sm pointer-events-auto">
-          {/* Plant (Active Orange Gradient Pill) */}
+          {/* Plant (Active Green Gradient Pill) */}
           <button
             onClick={() => setActiveBottomNav("Plant")}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-xs shadow-md shadow-orange-500/25 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
           >
             <Home className="w-3.5 h-3.5 fill-white" />
             <span>Plant</span>

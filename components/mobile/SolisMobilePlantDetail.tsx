@@ -899,10 +899,10 @@ export default function SolisMobilePlantDetail({
       {/* ======================================================== */}
       <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none">
         <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1 text-xs font-semibold pointer-events-auto">
-          {/* Overview Pill Button (Active Gradient) */}
+          {/* Overview Pill Button (Active Green Gradient) */}
           <button
             onClick={() => setActiveBottomNav("Overview")}
-            className="px-5 py-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold shadow-md shadow-orange-500/25 active:scale-95 transition-all"
+            className="px-5 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
           >
             Overview
           </button>

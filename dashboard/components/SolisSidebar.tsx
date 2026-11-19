@@ -78,12 +78,12 @@ export default function SolisSidebar({
               onClick={() => setIsOverviewFlyoutOpen(!isOverviewFlyoutOpen)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                 activeView === "plant_overview" || activeView === "device_overview"
-                  ? "bg-gradient-to-b from-orange-50/90 to-amber-50/40 border border-orange-300 shadow-[0_2px_8px_rgba(249,115,22,0.18)] text-[#f37021]"
+                  ? "bg-gradient-to-b from-emerald-50 to-green-50/40 border border-emerald-300 shadow-[0_2px_8px_rgba(34,197,94,0.22)] text-emerald-600"
                   : "text-gray-400 hover:text-gray-700 hover:bg-gray-50 border border-transparent"
               }`}
               title="Overview"
             >
-              <LayoutGrid className="w-5 h-5 text-[#f37021]" />
+              <LayoutGrid className="w-5 h-5 text-emerald-600" />
             </button>
 
             {/* Floating Popover / Flyout Menu matching media_1795078713051_7676d6f6.png */}
@@ -106,7 +106,7 @@ export default function SolisSidebar({
                   }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium mb-1 ${
                     activeView === "plant_overview"
-                      ? "border border-orange-400 bg-orange-50/70 text-[#f37021] shadow-2xs"
+                      ? "border border-emerald-400 bg-emerald-50/70 text-emerald-600 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
                   }`}
                 >
@@ -121,7 +121,7 @@ export default function SolisSidebar({
                   }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium ${
                     activeView === "device_overview"
-                      ? "border border-orange-400 bg-orange-50/70 text-[#f37021] shadow-2xs"
+                      ? "border border-emerald-400 bg-emerald-50/70 text-emerald-600 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
                   }`}
                 >
@@ -225,7 +225,7 @@ export default function SolisSidebar({
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                     activeView === "plant_overview"
-                      ? "bg-orange-50 text-[#f37021] border border-orange-200 font-semibold"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold"
                       : "text-slate-600 hover:bg-slate-50"
                   }`}
                 >
@@ -238,7 +238,7 @@ export default function SolisSidebar({
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                     activeView === "device_overview"
-                      ? "bg-orange-50 text-[#f37021] border border-orange-200 font-semibold"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold"
                       : "text-slate-600 hover:bg-slate-50"
                   }`}
                 >

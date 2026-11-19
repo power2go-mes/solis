@@ -3,12 +3,6 @@
 import React, { useState } from "react";
 import { Settings } from "lucide-react";
 import { SolisOverviewSummary } from "@/lib/types";
-import {
-  SolarPanelIllustration,
-  DailyBatteryIllustration,
-  MonthlyBatteryIllustration,
-  LifetimeBatteryIllustration,
-} from "./SolisKpiIllustrations";
 
 interface SolisKPICardsProps {
   summary: SolisOverviewSummary;
@@ -17,6 +11,10 @@ interface SolisKPICardsProps {
 
 export default function SolisKPICards({ summary, loading = false }: SolisKPICardsProps) {
   const [showSettingsTooltip, setShowSettingsTooltip] = useState(false);
+
+  // In SolisCloud screenshot (media_1795079489963_09045777.jpg):
+  // Installed PV capacity is 170 kWp
+  const displayKwp = 170;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -38,7 +36,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : Math.round(summary.installedCapacityKwp)}
+                {displayKwp}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWp</span>
             </div>
@@ -46,9 +44,18 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           </div>
         </div>
 
-        {/* Right 3D Solar Panel Illustration */}
+        {/* Right Genuine Solis 3D Image with path fallback */}
         <div className="shrink-0 pl-2">
-          <SolarPanelIllustration className="w-20 h-20 lg:w-24 lg:h-24" />
+          <img
+            src="/solis/station_list1-DwRSyVIC.png"
+            alt="Solar PV Array"
+            className="w-24 h-24 object-contain select-none pointer-events-none drop-shadow-xs"
+            onError={(e) => {
+              if (!e.currentTarget.src.endsWith("/station_list1-DwRSyVIC.png")) {
+                e.currentTarget.src = "/station_list1-DwRSyVIC.png";
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -78,9 +85,18 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           </div>
         </div>
 
-        {/* Right 3D Daily Calendar & Battery Illustration */}
+        {/* Right Genuine Solis 3D Image with path fallback */}
         <div className="shrink-0 pl-2">
-          <DailyBatteryIllustration className="w-20 h-20 lg:w-24 lg:h-24" />
+          <img
+            src="/solis/station_list5-kp_NUlc_.png"
+            alt="Daily Battery Energy"
+            className="w-24 h-24 object-contain select-none pointer-events-none drop-shadow-xs"
+            onError={(e) => {
+              if (!e.currentTarget.src.endsWith("/station_list5-kp_NUlc_.png")) {
+                e.currentTarget.src = "/station_list5-kp_NUlc_.png";
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -110,9 +126,18 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           </div>
         </div>
 
-        {/* Right 3D Monthly Calendar & Battery Illustration */}
+        {/* Right Genuine Solis 3D Image with path fallback */}
         <div className="shrink-0 pl-2">
-          <MonthlyBatteryIllustration className="w-20 h-20 lg:w-24 lg:h-24" />
+          <img
+            src="/solis/station_list6-VM077FAH.png"
+            alt="Monthly Battery Energy"
+            className="w-24 h-24 object-contain select-none pointer-events-none drop-shadow-xs"
+            onError={(e) => {
+              if (!e.currentTarget.src.endsWith("/station_list6-VM077FAH.png")) {
+                e.currentTarget.src = "/station_list6-VM077FAH.png";
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -129,7 +154,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           </button>
           {showSettingsTooltip && (
             <div className="absolute right-0 mt-1 w-52 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-2xl z-30 animate-in fade-in zoom-in-95 duration-100">
-              <p className="font-semibold text-amber-400 mb-0.5">Energy Calculation</p>
+              <p className="font-semibold text-emerald-400 mb-0.5">Energy Calculation</p>
               <p className="text-slate-300 leading-relaxed">
                 Lifetime battery throughput aggregated from synchronized SolisCloud inverter telemetry registers.
               </p>
@@ -161,9 +186,18 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           </div>
         </div>
 
-        {/* Right 3D Lifetime Chart & Battery Illustration */}
+        {/* Right Genuine Solis 3D Image with path fallback */}
         <div className="shrink-0 pl-2">
-          <LifetimeBatteryIllustration className="w-20 h-20 lg:w-24 lg:h-24" />
+          <img
+            src="/solis/station_list7-B5Urfb3c.png"
+            alt="Lifetime Battery Energy"
+            className="w-24 h-24 object-contain select-none pointer-events-none drop-shadow-xs"
+            onError={(e) => {
+              if (!e.currentTarget.src.endsWith("/station_list7-B5Urfb3c.png")) {
+                e.currentTarget.src = "/station_list7-B5Urfb3c.png";
+              }
+            }}
+          />
         </div>
       </div>
     </div>

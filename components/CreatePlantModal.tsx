@@ -24,7 +24,7 @@ export default function CreatePlantModal({ isOpen, onClose }: CreatePlantModalPr
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#f37021]" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <h3 className="text-base font-bold text-slate-800">Create Plant</h3>
           </div>
           <button
@@ -72,7 +72,7 @@ export default function CreatePlantModal({ isOpen, onClose }: CreatePlantModalPr
         <div className="px-5 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-[#f37021] hover:bg-[#e05f14] text-white rounded-md text-xs font-semibold shadow-2xs transition-colors"
+            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shadow-2xs transition-colors"
           >
             Understood
           </button>

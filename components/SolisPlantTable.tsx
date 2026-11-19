@@ -264,11 +264,11 @@ export default function SolisPlantTable({
         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
           {/* Active Title Indicator */}
           <div className="relative pb-3 shrink-0">
-            <span className="text-sm font-semibold text-[#f37021] cursor-pointer">
+            <span className="text-sm font-semibold text-emerald-600 cursor-pointer">
               Plant List
             </span>
-            {/* Orange Underline Accent */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#f37021] rounded-full" />
+            {/* Green Underline Accent */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
           </div>
 
           {/* Status Tabs: Solis exact rounded pill styling */}
@@ -285,7 +285,7 @@ export default function SolisPlantTable({
                   }}
                   className={`px-3.5 py-1.5 rounded-lg transition-all text-xs font-normal ${
                     isSelected
-                      ? "bg-white border border-gray-200/90 text-[#f37021] font-medium shadow-[0_2px_6px_rgba(0,0,0,0.05)]"
+                      ? "bg-white border border-emerald-300 text-emerald-700 font-medium shadow-[0_2px_6px_rgba(0,0,0,0.05)]"
                       : "text-slate-500 hover:text-slate-900 border border-transparent"
                   }`}
                 >

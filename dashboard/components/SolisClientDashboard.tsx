@@ -487,7 +487,17 @@ export default function SolisClientDashboard({
     };
 
     chart.setOption(option, true);
-    chart.resize();
+    const timer = setTimeout(() => {
+      chart.resize();
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      if (powerChartInstance.current && !powerChartInstance.current.isDisposed()) {
+        powerChartInstance.current.dispose();
+        powerChartInstance.current = null;
+      }
+    };
   }, [activeTab, dayCurveData]);
 
   // -------------------------------------------------------------
@@ -641,7 +651,17 @@ export default function SolisClientDashboard({
     };
 
     chart.setOption(option, true);
-    chart.resize();
+    const timer = setTimeout(() => {
+      chart.resize();
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      if (powerChartInstance.current && !powerChartInstance.current.isDisposed()) {
+        powerChartInstance.current.dispose();
+        powerChartInstance.current = null;
+      }
+    };
   }, [activeTab, dayCurveData]);
 
   // -------------------------------------------------------------
@@ -783,8 +803,17 @@ export default function SolisClientDashboard({
       ],
     };
 
-    chart.setOption(option, true);
-    chart.resize();
+    const timer = setTimeout(() => {
+      chart.resize();
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      if (barChartInstance.current && !barChartInstance.current.isDisposed()) {
+        barChartInstance.current.dispose();
+        barChartInstance.current = null;
+      }
+    };
   }, [activeTab, monthData, yearData, lifetimeData]);
 
   // Window & ResizeObserver resize handling
@@ -996,7 +1025,7 @@ export default function SolisClientDashboard({
             onClick={() => setActiveSubnav(item)}
             className={`px-3 py-1 rounded-md font-medium transition-all ${
               activeSubnav === item
-                ? "bg-orange-50 text-[#f37021] border border-orange-200 font-semibold shadow-2xs"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-gray-100/70"
             }`}
           >
@@ -1065,7 +1094,7 @@ export default function SolisClientDashboard({
                       onClick={() => setActiveTab(tab)}
                       className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
                         activeTab === tab
-                          ? "bg-white text-[#f37021] font-semibold shadow-2xs"
+                          ? "bg-white text-emerald-600 font-semibold shadow-2xs border border-emerald-200"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -1239,10 +1268,10 @@ export default function SolisClientDashboard({
               </div>
             )}
 
-            {/* Chart Area */}
-            {activeTab === "Day" ? (
+            {/* Chart Area: Strictly conditional per activeTab */}
+            {activeTab === "Day" && (
               /* DUAL LINE CHARTS FOR DAY */
-              <div className="space-y-4 pt-2">
+              <div key="day-charts-wrapper" className="space-y-4 pt-2">
                 {/* 1. Power Curve */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -1303,9 +1332,11 @@ export default function SolisClientDashboard({
                   <div ref={socChartRef} className="w-full h-[200px]" />
                 </div>
               </div>
-            ) : (
+            )}
+
+            {activeTab !== "Day" && (
               /* GROUPED BAR CHART FOR MONTH / YEAR / LIFETIME */
-              <div className="space-y-3 pt-2">
+              <div key={`bar-chart-${activeTab}`} className="space-y-3 pt-2">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3.5 text-xs font-medium text-slate-600 flex-wrap">
                     <div className="flex items-center gap-1.5">
