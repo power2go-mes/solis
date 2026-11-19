@@ -66,33 +66,8 @@ export default function SolisSidebar({
         ref={sidebarRef}
         className="hidden md:flex flex-col justify-between items-center w-[60px] bg-white border-r border-gray-200/80 py-3.5 z-30 select-none relative"
       >
-        {/* Top: Logo & Nav Items */}
-        <div className="flex flex-col items-center w-full space-y-4">
-          {/* Solis / Power2Go Radiant Sun Flower Logo */}
-          <div className="w-10 h-10 flex items-center justify-center cursor-pointer mb-2 transition-transform hover:scale-105">
-            <svg
-              viewBox="0 0 100 100"
-              className="w-8 h-8 drop-shadow-xs"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Outer decorative sunburst petals in orange & gold */}
-              <circle cx="50" cy="50" r="16" stroke="#f37021" strokeWidth="2.5" />
-              {Array.from({ length: 16 }).map((_, i) => {
-                const angle = (i * 360) / 16;
-                return (
-                  <path
-                    key={i}
-                    d="M50 24 L53 14 L50 11 L47 14 Z"
-                    fill={i % 2 === 0 ? "#f37021" : "#f59e0b"}
-                    transform={`rotate(${angle} 50 50)`}
-                  />
-                );
-              })}
-              <circle cx="50" cy="50" r="8" fill="#f59e0b" opacity="0.25" />
-            </svg>
-          </div>
-
+        {/* Top: Nav Items */}
+        <div className="flex flex-col items-center w-full space-y-4 pt-1">
           {/* Navigation Item 1: Overview (With Solis exact orange active card & flyout) */}
           <div
             className="relative w-full flex justify-center"
