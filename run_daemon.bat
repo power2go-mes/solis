@@ -1,10 +1,10 @@
 @echo off
-title Power2Go SolisCloud Daemon (15m Live Sync + 6h Audit)
+title Power2Go SolisCloud Daemon (10m Live Sync + 6h Audit)
 color 0B
 
 echo =========================================================================
 echo    Power2Go SolisCloud Automated Background Daemon
-echo    - 15-Minute Live Telemetry & 5-Min Curve Sync
+echo    - 10-Minute Live Telemetry & 5-Min Curve Sync
 echo    - 6-Hour Day 1 to Today Missing Data Audit & Backfill
 echo =========================================================================
 echo.

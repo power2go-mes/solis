@@ -1,7 +1,7 @@
 /**
  * Power2Go SolisCloud Automated Background Daemon
  * --------------------------------------------------
- * 1. Executes automated Live Sync every 15 minutes:
+ * 1. Executes automated Live Sync every 10 minutes:
  *    - Pulls real-time detailMix telemetry -> solis_telemetry_latest
  *    - Pulls today's 5-minute curve readings -> solis_battery_power_curve
  *    - Pulls today's energy totals -> solis_daily_energy
@@ -311,7 +311,7 @@ function parseCurveRows(stationId, dateStr, curveData) {
 }
 
 /**
- * 15-Minute Live Telemetry & Daily Curve Sync
+ * 10-Minute Live Telemetry & Daily Curve Sync
  */
 async function runLiveSync() {
   const startTime = Date.now();
@@ -320,7 +320,7 @@ async function runLiveSync() {
   const pktLogTime = getPktTimestampLog();
 
   console.log(`\n-----------------------------------------------------------------`);
-  console.log(`[${pktLogTime}] Starting 15-Minute Live Telemetry Sync...`);
+  console.log(`[${pktLogTime}] Starting 10-Minute Live Telemetry Sync...`);
   console.log(`Target Date: ${todayDateStr} | Month: ${todayMonthStr}`);
 
   await doLogin();
@@ -487,10 +487,10 @@ async function runLiveSync() {
   }
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`[SUCCESS] 15m Sync Completed in ${durationSec}s | Curve Points Upserted: ${totalCurvePoints}`);
+  console.log(`[SUCCESS] 10m Sync Completed in ${durationSec}s | Curve Points Upserted: ${totalCurvePoints}`);
   console.log(`Latest Live Telemetry Reading: ${maxCurveTime} PKT (${todayDateStr})`);
-  const nextSyncTime = new Date(Date.now() + 15 * 60 * 1000 + 5 * 3600 * 1000).toISOString().slice(11, 19);
-  console.log(`Next 15m Sync Scheduled at: ${nextSyncTime} PKT`);
+  const nextSyncTime = new Date(Date.now() + 10 * 60 * 1000 + 5 * 3600 * 1000).toISOString().slice(11, 19);
+  console.log(`Next 10m Sync Scheduled at: ${nextSyncTime} PKT`);
 }
 
 /**
@@ -599,11 +599,11 @@ async function startDaemon() {
   console.log("=================================================================");
   console.log("   POWER2GO SOLISCLOUD LOCAL DAEMON ACTIVATED");
   console.log(`   Host: Local Machine (${process.platform})`);
-  console.log(`   Schedule: 15-Minute Live Sync + 6-Hour Day 1 Backfill Audit`);
+  console.log(`   Schedule: 10-Minute Live Sync + 6-Hour Day 1 Backfill Audit`);
   console.log(`   Started At: ${getPktTimestampLog()}`);
   console.log("=================================================================");
 
-  // 1. Initial 15-minute live sync
+  // 1. Initial 10-minute live sync
   try {
     await runLiveSync();
   } catch (e) {
@@ -617,15 +617,15 @@ async function startDaemon() {
     console.error("Initial data audit error:", e);
   }
 
-  // Schedule recurring 15-minute live sync
-  const FIFTEEN_MINUTES = 15 * 60 * 1000;
+  // Schedule recurring 10-minute live sync
+  const TEN_MINUTES = 10 * 60 * 1000;
   setInterval(async () => {
     try {
       await runLiveSync();
     } catch (e) {
-      console.error("[Daemon 15m Sync Error]:", e.message || e);
+      console.error("[Daemon 10m Sync Error]:", e.message || e);
     }
-  }, FIFTEEN_MINUTES);
+  }, TEN_MINUTES);
 
   // Schedule recurring 6-hour missing data audit
   const SIX_HOURS = 6 * 60 * 60 * 1000;
