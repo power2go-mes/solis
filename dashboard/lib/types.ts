@@ -186,3 +186,32 @@ export interface InverterTelemetry {
   data_timestamp: string;
   recorded_at: string;
 }
+
+export interface EnergyBreakdownSummary {
+  pv: number;
+  inverter: number;
+  acCoupled: number;
+  consumption: number;
+  gridLoadConsumption: number;
+  backupLoad: number;
+  smartLoad: number;
+  import: number;
+  export: number;
+  charge: number;
+  discharge: number;
+}
+
+export interface EnergyBreakdownResult {
+  period: "month" | "year";
+  periodValue: string;
+  labels: string[];
+  tooltipDates: string[];
+  pvData: (number | null)[];
+  importData: (number | null)[];
+  exportData: (number | null)[];
+  chargeData: (number | null)[];
+  dischargeData: (number | null)[];
+  consumptionData: (number | null)[];
+  totals: EnergyBreakdownSummary;
+}
+

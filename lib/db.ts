@@ -7,6 +7,8 @@ import {
   AlarmRecord,
   BmsTelemetry,
   InverterTelemetry,
+  EnergyBreakdownSummary,
+  EnergyBreakdownResult,
 } from "./types";
 
 let connectionString = process.env.DATABASE_URL || "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:6543/postgres";
@@ -30,9 +32,9 @@ const pool =
   new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 5,
+    max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 8000,
+    connectionTimeoutMillis: 15000,
   });
 
 if (process.env.NODE_ENV !== "production") {
@@ -783,3 +785,307 @@ export async function getInverterTelemetries(
     return [];
   }
 }
+
+export async function getMonthlyEnergyBreakdown(
+  stationId: string,
+  monthStr?: string
+): Promise<EnergyBreakdownResult> {
+  const targetMonth = monthStr || new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 7);
+  const [yearNum, monthNum] = targetMonth.split("-").map(Number);
+  const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+  const startDate = `${yearNum}-${String(monthNum).padStart(2, "0")}-01`;
+  const endDate = `${yearNum}-${String(monthNum).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
+  const todayPkt = new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 10);
+
+  try {
+    const res = await pool.query(
+      `SELECT 
+         energy_date::text as date_str,
+         solar_pv_kwh, house_load_kwh, backup_load_kwh,
+         grid_purchased_kwh, grid_sold_kwh,
+         battery_charge_kwh, battery_discharge_kwh
+       FROM solis_daily_energy
+       WHERE station_id = $1 AND energy_date >= $2 AND energy_date <= $3
+       ORDER BY energy_date ASC`,
+      [stationId, startDate, endDate]
+    );
+
+    const map = new Map<string, any>();
+    res.rows.forEach((r) => map.set(r.date_str, r));
+
+    const labels: string[] = [];
+    const tooltipDates: string[] = [];
+    const pvData: (number | null)[] = [];
+    const importData: (number | null)[] = [];
+    const exportData: (number | null)[] = [];
+    const chargeData: (number | null)[] = [];
+    const dischargeData: (number | null)[] = [];
+    const consumptionData: (number | null)[] = [];
+
+    let totalPv = 0;
+    let totalConsumption = 0;
+    let totalBackupLoad = 0;
+    let totalImport = 0;
+    let totalExport = 0;
+    let totalCharge = 0;
+    let totalDischarge = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayStr = String(d).padStart(2, "0");
+      labels.push(dayStr);
+      const fullDate = `${yearNum}-${String(monthNum).padStart(2, "0")}-${dayStr}`;
+      tooltipDates.push(`${dayStr}/${String(monthNum).padStart(2, "0")}/${yearNum}`);
+
+      const row = map.get(fullDate);
+      if (row) {
+        const pv = Number(Number(row.solar_pv_kwh || 0).toFixed(1));
+        const imp = Number(Number(row.grid_purchased_kwh || 0).toFixed(1));
+        const exp = Number(Number(row.grid_sold_kwh || 0).toFixed(1));
+        const chg = Number(Number(row.battery_charge_kwh || 0).toFixed(1));
+        const dis = Number(Number(row.battery_discharge_kwh || 0).toFixed(1));
+        const cons = Number(Number(row.house_load_kwh || 0).toFixed(1));
+
+        pvData.push(pv);
+        importData.push(imp);
+        exportData.push(exp);
+        chargeData.push(chg);
+        dischargeData.push(dis);
+        consumptionData.push(cons);
+
+        totalPv += Number(row.solar_pv_kwh) || 0;
+        totalConsumption += Number(row.house_load_kwh) || 0;
+        totalBackupLoad += Number(row.backup_load_kwh) || 0;
+        totalImport += Number(row.grid_purchased_kwh) || 0;
+        totalExport += Number(row.grid_sold_kwh) || 0;
+        totalCharge += Number(row.battery_charge_kwh) || 0;
+        totalDischarge += Number(row.battery_discharge_kwh) || 0;
+      } else {
+        if (fullDate > todayPkt) {
+          pvData.push(null);
+          importData.push(null);
+          exportData.push(null);
+          chargeData.push(null);
+          dischargeData.push(null);
+          consumptionData.push(null);
+        } else {
+          pvData.push(0);
+          importData.push(0);
+          exportData.push(0);
+          chargeData.push(0);
+          dischargeData.push(0);
+          consumptionData.push(0);
+        }
+      }
+    }
+
+    const gridLoadConsumption = Math.max(0, totalConsumption - totalBackupLoad);
+
+    return {
+      period: "month",
+      periodValue: targetMonth,
+      labels,
+      tooltipDates,
+      pvData,
+      importData,
+      exportData,
+      chargeData,
+      dischargeData,
+      consumptionData,
+      totals: {
+        pv: Number(totalPv.toFixed(1)),
+        inverter: Number(totalPv.toFixed(1)),
+        acCoupled: 0,
+        consumption: Number(totalConsumption.toFixed(1)),
+        gridLoadConsumption: Number(gridLoadConsumption.toFixed(1)),
+        backupLoad: Number(totalBackupLoad.toFixed(1)),
+        smartLoad: 0,
+        import: Number(totalImport.toFixed(1)),
+        export: Number(totalExport.toFixed(1)),
+        charge: Number(totalCharge.toFixed(1)),
+        discharge: Number(totalDischarge.toFixed(1)),
+      },
+    };
+  } catch (err) {
+    console.error("Error in getMonthlyEnergyBreakdown:", err);
+    return {
+      period: "month",
+      periodValue: targetMonth,
+      labels: [],
+      tooltipDates: [],
+      pvData: [],
+      importData: [],
+      exportData: [],
+      chargeData: [],
+      dischargeData: [],
+      consumptionData: [],
+      totals: {
+        pv: 0,
+        inverter: 0,
+        acCoupled: 0,
+        consumption: 0,
+        gridLoadConsumption: 0,
+        backupLoad: 0,
+        smartLoad: 0,
+        import: 0,
+        export: 0,
+        charge: 0,
+        discharge: 0,
+      },
+    };
+  }
+}
+
+export async function getAnnualEnergyBreakdown(
+  stationId: string,
+  yearStr?: string
+): Promise<EnergyBreakdownResult> {
+  const targetYear = yearStr || new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 4);
+  const startDate = `${targetYear}-01-01`;
+  const endDate = `${targetYear}-12-31`;
+  const currentMonthPkt = new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 7);
+  const currentYearPkt = currentMonthPkt.slice(0, 4);
+  const currentMonthNum = Number(currentMonthPkt.slice(5, 7));
+
+  try {
+    const res = await pool.query(
+      `SELECT 
+         TO_CHAR(energy_date, 'MM') as month_num_str,
+         ROUND(SUM(solar_pv_kwh)::numeric, 1) as pv,
+         ROUND(SUM(grid_purchased_kwh)::numeric, 1) as import,
+         ROUND(SUM(grid_sold_kwh)::numeric, 1) as export,
+         ROUND(SUM(battery_charge_kwh)::numeric, 1) as charge,
+         ROUND(SUM(battery_discharge_kwh)::numeric, 1) as discharge,
+         ROUND(SUM(house_load_kwh)::numeric, 1) as consumption,
+         ROUND(SUM(backup_load_kwh)::numeric, 1) as backup_load
+       FROM solis_daily_energy
+       WHERE station_id = $1 AND energy_date >= $2 AND energy_date <= $3
+       GROUP BY TO_CHAR(energy_date, 'MM')
+       ORDER BY month_num_str ASC`,
+      [stationId, startDate, endDate]
+    );
+
+    const map = new Map<string, any>();
+    res.rows.forEach((r) => map.set(r.month_num_str, r));
+
+    const labels: string[] = [];
+    const tooltipDates: string[] = [];
+    const pvData: (number | null)[] = [];
+    const importData: (number | null)[] = [];
+    const exportData: (number | null)[] = [];
+    const chargeData: (number | null)[] = [];
+    const dischargeData: (number | null)[] = [];
+    const consumptionData: (number | null)[] = [];
+
+    let totalPv = 0;
+    let totalConsumption = 0;
+    let totalBackupLoad = 0;
+    let totalImport = 0;
+    let totalExport = 0;
+    let totalCharge = 0;
+    let totalDischarge = 0;
+
+    for (let m = 1; m <= 12; m++) {
+      const monthKey = String(m).padStart(2, "0");
+      labels.push(monthKey);
+      tooltipDates.push(`${monthKey}/${targetYear}`);
+
+      const row = map.get(monthKey);
+      if (row) {
+        const pv = Number(row.pv) || 0;
+        const imp = Number(row.import) || 0;
+        const exp = Number(row.export) || 0;
+        const chg = Number(row.charge) || 0;
+        const dis = Number(row.discharge) || 0;
+        const cons = Number(row.consumption) || 0;
+        const back = Number(row.backup_load) || 0;
+
+        pvData.push(pv);
+        importData.push(imp);
+        exportData.push(exp);
+        chargeData.push(chg);
+        dischargeData.push(dis);
+        consumptionData.push(cons);
+
+        totalPv += pv;
+        totalConsumption += cons;
+        totalBackupLoad += back;
+        totalImport += imp;
+        totalExport += exp;
+        totalCharge += chg;
+        totalDischarge += dis;
+      } else {
+        if (targetYear === currentYearPkt && m > currentMonthNum) {
+          pvData.push(null);
+          importData.push(null);
+          exportData.push(null);
+          chargeData.push(null);
+          dischargeData.push(null);
+          consumptionData.push(null);
+        } else {
+          pvData.push(0);
+          importData.push(0);
+          exportData.push(0);
+          chargeData.push(0);
+          dischargeData.push(0);
+          consumptionData.push(0);
+        }
+      }
+    }
+
+    const gridLoadConsumption = Math.max(0, totalConsumption - totalBackupLoad);
+
+    return {
+      period: "year",
+      periodValue: targetYear,
+      labels,
+      tooltipDates,
+      pvData,
+      importData,
+      exportData,
+      chargeData,
+      dischargeData,
+      consumptionData,
+      totals: {
+        pv: Number(totalPv.toFixed(1)),
+        inverter: Number(totalPv.toFixed(1)),
+        acCoupled: 0,
+        consumption: Number(totalConsumption.toFixed(1)),
+        gridLoadConsumption: Number(gridLoadConsumption.toFixed(1)),
+        backupLoad: Number(totalBackupLoad.toFixed(1)),
+        smartLoad: 0,
+        import: Number(totalImport.toFixed(1)),
+        export: Number(totalExport.toFixed(1)),
+        charge: Number(totalCharge.toFixed(1)),
+        discharge: Number(totalDischarge.toFixed(1)),
+      },
+    };
+  } catch (err) {
+    console.error("Error in getAnnualEnergyBreakdown:", err);
+    return {
+      period: "year",
+      periodValue: targetYear,
+      labels: [],
+      tooltipDates: [],
+      pvData: [],
+      importData: [],
+      exportData: [],
+      chargeData: [],
+      dischargeData: [],
+      consumptionData: [],
+      totals: {
+        pv: 0,
+        inverter: 0,
+        acCoupled: 0,
+        consumption: 0,
+        gridLoadConsumption: 0,
+        backupLoad: 0,
+        smartLoad: 0,
+        import: 0,
+        export: 0,
+        charge: 0,
+        discharge: 0,
+      },
+    };
+  }
+}
+

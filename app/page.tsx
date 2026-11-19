@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import ClientTiles from "@/components/ClientTiles";
 import DualPowerSOCCharts from "@/components/DualPowerSOCCharts";
+import EnergyBreakdownCharts from "@/components/EnergyBreakdownCharts";
 import { PlantInfo, TelemetryLatest } from "@/lib/types";
 
 function SinglePageDashboard() {
@@ -140,7 +141,14 @@ function SinglePageDashboard() {
           </div>
 
           <DualPowerSOCCharts
-            key={selectedStationId}
+            key={`power-${selectedStationId}`}
+            stationId={selectedStationId}
+            plantName={plantName}
+          />
+
+          {/* Section 3 & 4: Monthly & Annual Energy Breakdown Bar Charts */}
+          <EnergyBreakdownCharts
+            key={`energy-${selectedStationId}`}
             stationId={selectedStationId}
             plantName={plantName}
           />
