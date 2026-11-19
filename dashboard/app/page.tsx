@@ -86,6 +86,8 @@ function SinglePageDashboard() {
       <Header
         currentPlantName={plantName}
         telemetry={telemetry}
+        latestDataTime={currentPlant?.latestDataTime}
+        latestDataDate={currentPlant?.latestDataDate}
         onRefresh={() => {
           loadPlants();
           loadTelemetry(true);
@@ -111,9 +113,16 @@ function SinglePageDashboard() {
                 • {currentPlant?.location || "Pakistan"} ({currentPlant?.capacityKwp || 0} kWp)
               </span>
             </h2>
-            <span className="text-xs font-medium text-slate-500">
-              SolisCloud Telemetry & Battery Analytics • Auto-updates every 2m
-            </span>
+            <div className="flex items-center gap-2.5">
+              {currentPlant?.latestDataTime && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono shadow-2xs">
+                  Latest Data: {currentPlant.latestDataTime} ({currentPlant.latestDataDate || "Today"})
+                </span>
+              )}
+              <span className="text-xs font-medium text-slate-500">
+                SolisCloud Telemetry & Battery Analytics • Auto-updates every 2m
+              </span>
+            </div>
           </div>
 
           <DualPowerSOCCharts

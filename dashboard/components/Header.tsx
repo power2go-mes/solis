@@ -7,6 +7,8 @@ import { TelemetryLatest } from "@/lib/types";
 interface HeaderProps {
   currentPlantName: string;
   telemetry: TelemetryLatest | null;
+  latestDataTime?: string;
+  latestDataDate?: string;
   onRefresh?: () => void;
   loading?: boolean;
 }
@@ -14,6 +16,8 @@ interface HeaderProps {
 export default function Header({
   currentPlantName,
   telemetry,
+  latestDataTime,
+  latestDataDate,
   onRefresh,
   loading = false,
 }: HeaderProps) {
@@ -90,6 +94,17 @@ export default function Header({
               <Zap className="w-3.5 h-3.5 text-purple-600" />
               <span>Load: {Number(telemetry.load_power_kw ?? 0).toFixed(1)} kW</span>
             </div>
+          </div>
+        )}
+
+        {/* Latest Data Fetched Time */}
+        {latestDataTime && (
+          <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200 text-xs font-semibold shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Data Time: <span className="font-mono font-bold text-emerald-950">{latestDataTime} PKT</span></span>
+            {latestDataDate && (
+              <span className="text-[10px] text-emerald-700 font-mono hidden sm:inline">({latestDataDate})</span>
+            )}
           </div>
         )}
 

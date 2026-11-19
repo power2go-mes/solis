@@ -188,7 +188,7 @@ export default function ClientTiles({
                 </span>
               </div>
 
-              {/* Footer: Status badge & Grid Power */}
+              {/* Footer: Status badge & Grid Power & Latest Time */}
               <div className="mt-3 flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100">
                 <div className="flex items-center gap-1.5">
                   <span
@@ -201,11 +201,21 @@ export default function ClientTiles({
                   </span>
                 </div>
 
-                {plant.liveGridKw !== undefined && (
-                  <span className="text-slate-500 font-mono text-[10px]">
-                    Grid: {Number(plant.liveGridKw).toFixed(1)} kW
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {plant.latestDataTime && (
+                    <span
+                      className="font-mono text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200"
+                      title={`Latest data reading at ${plant.latestDataTime} (${plant.latestDataDate || "Today"})`}
+                    >
+                      🕒 {plant.latestDataTime}
+                    </span>
+                  )}
+                  {plant.liveGridKw !== undefined && (
+                    <span className="text-slate-500 font-mono text-[10px]">
+                      Grid: {Number(plant.liveGridKw).toFixed(1)} kW
+                    </span>
+                  )}
+                </div>
               </div>
             </button>
           );

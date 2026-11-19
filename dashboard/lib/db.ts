@@ -105,10 +105,11 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
     const dbStations = new Map<string, any>();
     res.rows.forEach((r) => dbStations.set(r.station_id, r));
 
-    // Also get the latest curve reading for today so the tile always matches the latest point on the graph
+    // Also get the latest curve reading so the tile always matches the latest point on the graph
     const curveRes = await pool.query(`
       SELECT DISTINCT ON (station_id)
         station_id,
+        curve_date::text as curve_date_str,
         time_str,
         solar_power_kw,
         battery_power_kw,
@@ -117,7 +118,6 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
         grid_power_kw,
         load_power_kw
       FROM solis_battery_power_curve
-      WHERE curve_date = CURRENT_DATE OR curve_date = '2026-11-18'
       ORDER BY station_id, timestamp_epoch DESC
     `);
     const curveMap = new Map<string, any>();
@@ -127,22 +127,22 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
       const match = dbStations.get(p.id);
       const curveMatch = curveMap.get(p.id);
 
-      if (match) {
-        const updatedTime = new Date(match.updated_at).getTime();
-        const isStale = Date.now() - updatedTime > 30 * 60 * 1000;
-        const invState = match.summary?.inverter?.state ?? (match.solar_power_kw > 0 ? "1" : "2");
+      if (match || curveMatch) {
+        const updatedTime = match ? new Date(match.updated_at).getTime() : 0;
+        const isStale = updatedTime > 0 ? Date.now() - updatedTime > 30 * 60 * 1000 : false;
+        const invState = match?.summary?.inverter?.state ?? (Number(curveMatch?.solar_power_kw ?? match?.solar_power_kw ?? 0) > 0 ? "1" : "2");
         
         // Prefer latest curve point if it has real-time power readings, else telemetry latest
-        const solarKw = curveMatch ? Number(curveMatch.solar_power_kw) : Number(match.solar_power_kw) || 0;
-        const rawBatKw = curveMatch ? Number(curveMatch.battery_power_kw) : Number(match.battery_power_kw) || 0;
-        const soc = curveMatch && Number(curveMatch.battery_soc) > 0 ? Number(curveMatch.battery_soc) : Number(match.battery_soc) || 0;
-        const gridKw = curveMatch ? Number(curveMatch.grid_power_kw) : Number(match.grid_power_kw) || 0;
-        const loadKw = curveMatch ? Number(curveMatch.load_power_kw) : Number(match.load_power_kw) || 0;
+        const solarKw = curveMatch ? Number(curveMatch.solar_power_kw) : Number(match?.solar_power_kw) || 0;
+        const rawBatKw = curveMatch ? Number(curveMatch.battery_power_kw) : Number(match?.battery_power_kw) || 0;
+        const soc = curveMatch && Number(curveMatch.battery_soc) > 0 ? Number(curveMatch.battery_soc) : Number(match?.battery_soc) || 0;
+        const gridKw = curveMatch ? Number(curveMatch.grid_power_kw) : Number(match?.grid_power_kw) || 0;
+        const loadKw = curveMatch ? Number(curveMatch.load_power_kw) : Number(match?.load_power_kw) || 0;
 
         let batState = "Idle";
         if (curveMatch && curveMatch.battery_state) {
           batState = curveMatch.battery_state;
-        } else {
+        } else if (match) {
           const dir = String(match.battery_direction || "").toLowerCase();
           if (dir.includes("charg") && !dir.includes("discharg")) {
             batState = "Charging";
@@ -155,11 +155,22 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
           }
         }
 
+        let latestTime: string | undefined;
+        let latestDate: string | undefined;
+        if (curveMatch && curveMatch.time_str) {
+          latestTime = curveMatch.time_str.slice(0, 5);
+          latestDate = curveMatch.curve_date_str;
+        } else if (match?.updated_at) {
+          const d = new Date(match.updated_at);
+          latestTime = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Karachi" });
+          latestDate = d.toLocaleDateString("en-CA", { timeZone: "Asia/Karachi" });
+        }
+
         return {
           ...p,
-          name: match.station_name || p.name,
-          location: match.location || p.location,
-          capacityKwp: Number(match.installed_capacity_kw) || p.capacityKwp,
+          name: match?.station_name || p.name,
+          location: match?.location || p.location,
+          capacityKwp: Number(match?.installed_capacity_kw) || p.capacityKwp,
           hasDataInDb: true,
           liveSolarKw: solarKw,
           liveBatterySoc: soc,
@@ -169,6 +180,8 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
           liveLoadKw: loadKw,
           inverterState: invState,
           isStale,
+          latestDataTime: latestTime,
+          latestDataDate: latestDate,
         };
       }
       return p;

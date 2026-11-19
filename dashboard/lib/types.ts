@@ -15,6 +15,8 @@ export interface PlantInfo {
   liveLoadKw?: number;
   inverterState?: string | number;
   isStale?: boolean;
+  latestDataTime?: string;
+  latestDataDate?: string;
 }
 
 export interface TelemetryLatest {

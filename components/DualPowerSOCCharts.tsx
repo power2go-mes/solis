@@ -10,13 +10,24 @@ interface DualPowerSOCChartsProps {
   plantName: string;
 }
 
+function getPktToday(): string {
+  // PKT is UTC+5
+  const d = new Date(Date.now() + 5 * 3600 * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+function getPktCurrentMonth(): string {
+  const d = new Date(Date.now() + 5 * 3600 * 1000);
+  return d.toISOString().slice(0, 7);
+}
+
 export default function DualPowerSOCCharts({
   stationId,
   plantName,
 }: DualPowerSOCChartsProps) {
   const [range, setRange] = useState<"day" | "month">("day");
-  const [currentDate, setCurrentDate] = useState<string>("2026-11-18");
-  const [currentMonth, setCurrentMonth] = useState<string>("2026-11");
+  const [currentDate, setCurrentDate] = useState<string>(getPktToday);
+  const [currentMonth, setCurrentMonth] = useState<string>(getPktCurrentMonth);
   const [chartData, setChartData] = useState<ChartSeriesData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -93,9 +104,9 @@ export default function DualPowerSOCCharts({
 
   const handleResetToCurrent = () => {
     if (range === "day") {
-      setCurrentDate("2026-11-18");
+      setCurrentDate(getPktToday());
     } else {
-      setCurrentMonth("2026-11");
+      setCurrentMonth(getPktCurrentMonth());
     }
   };
 
