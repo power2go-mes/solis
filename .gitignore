@@ -47,4 +47,6 @@ latest_6hours_all_clients.json
 solis_telemetry_latest.json
 *.xlsx
 *.csv
+daemon.log
+
 
