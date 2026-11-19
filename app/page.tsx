@@ -106,20 +106,34 @@ function SinglePageDashboard() {
 
         {/* Section 2: Selected Client Dual Power & SOC Charts */}
         <div className="pt-2">
-          <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 px-1">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <span>{plantName}</span>
               <span className="text-xs font-normal text-slate-500">
                 • {currentPlant?.location || "Pakistan"} ({currentPlant?.capacityKwp || 0} kWp)
               </span>
             </h2>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               {currentPlant?.latestDataTime && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono shadow-2xs">
-                  Latest Data: {currentPlant.latestDataTime} ({currentPlant.latestDataDate || "Today"})
+                <span
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-md font-mono shadow-2xs flex items-center gap-1.5 ${
+                    currentPlant.isOnlineToday === false
+                      ? "bg-slate-100 text-slate-700 border border-slate-200"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      currentPlant.isOnlineToday === false ? "bg-slate-400" : "bg-emerald-500 animate-pulse"
+                    }`}
+                  />
+                  <span>
+                    Data Time: <strong>{currentPlant.latestDataTime} PKT</strong>{" "}
+                    {currentPlant.isOnlineToday === false ? `(Offline since ${currentPlant.latestDataDate || "yesterday"})` : ""}
+                  </span>
                 </span>
               )}
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 hidden md:inline">
                 SolisCloud Telemetry & Battery Analytics • Auto-updates every 2m
               </span>
             </div>

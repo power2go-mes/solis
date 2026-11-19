@@ -17,6 +17,7 @@ export interface PlantInfo {
   isStale?: boolean;
   latestDataTime?: string;
   latestDataDate?: string;
+  isOnlineToday?: boolean;
 }
 
 export interface TelemetryLatest {

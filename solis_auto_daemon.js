@@ -379,12 +379,13 @@ async function runLiveSync() {
       }
 
       // 3. Upsert solis_telemetry_latest with matching real-time numbers
-      const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
-      const liveSoc = latestCurvePoint && latestCurvePoint.soc > 0 ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
-      const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
-      const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
-      const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
-      const liveLoadKw = latestCurvePoint ? latestCurvePoint.loadKw : Number(mix.familyLoadPower || 0);
+      const isOnline = latestCurvePoint !== null;
+      const liveSolarKw = isOnline ? latestCurvePoint.solarKw : 0;
+      const liveSoc = isOnline && latestCurvePoint.soc > 0 ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
+      const liveBatKw = isOnline ? Math.abs(latestCurvePoint.batKw) : 0;
+      const liveBatState = isOnline ? latestCurvePoint.batState : "Idle";
+      const liveGridKw = isOnline ? latestCurvePoint.gridKw : 0;
+      const liveLoadKw = isOnline ? latestCurvePoint.loadKw : 0;
 
       const telemetryLatestUpsertSql = `
         INSERT INTO solis_telemetry_latest (

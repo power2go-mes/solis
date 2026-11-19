@@ -123,36 +123,44 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
     const curveMap = new Map<string, any>();
     curveRes.rows.forEach((r) => curveMap.set(r.station_id, r));
 
+    // Current date in PKT
+    const todayPkt = new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 10);
+
     return AUTHORIZED_PLANTS.map((p) => {
       const match = dbStations.get(p.id);
       const curveMatch = curveMap.get(p.id);
 
       if (match || curveMatch) {
+        // A plant is only online today if its latest curve record is from today
+        const isOnlineToday = curveMatch?.curve_date_str === todayPkt;
         const updatedTime = match ? new Date(match.updated_at).getTime() : 0;
-        const isStale = updatedTime > 0 ? Date.now() - updatedTime > 30 * 60 * 1000 : false;
-        const invState = match?.summary?.inverter?.state ?? (Number(curveMatch?.solar_power_kw ?? match?.solar_power_kw ?? 0) > 0 ? "1" : "2");
+        const isStale = !isOnlineToday || (updatedTime > 0 ? Date.now() - updatedTime > 45 * 60 * 1000 : false);
         
-        // Prefer latest curve point if it has real-time power readings, else telemetry latest
-        const solarKw = curveMatch ? Number(curveMatch.solar_power_kw) : Number(match?.solar_power_kw) || 0;
-        const rawBatKw = curveMatch ? Number(curveMatch.battery_power_kw) : Number(match?.battery_power_kw) || 0;
-        const soc = curveMatch && Number(curveMatch.battery_soc) > 0 ? Number(curveMatch.battery_soc) : Number(match?.battery_soc) || 0;
-        const gridKw = curveMatch ? Number(curveMatch.grid_power_kw) : Number(match?.grid_power_kw) || 0;
-        const loadKw = curveMatch ? Number(curveMatch.load_power_kw) : Number(match?.load_power_kw) || 0;
-
+        let solarKw = 0;
+        let rawBatKw = 0;
+        let soc = Number(match?.battery_soc) || 0;
+        let gridKw = 0;
+        let loadKw = 0;
         let batState = "Idle";
-        if (curveMatch && curveMatch.battery_state) {
-          batState = curveMatch.battery_state;
-        } else if (match) {
-          const dir = String(match.battery_direction || "").toLowerCase();
-          if (dir.includes("charg") && !dir.includes("discharg")) {
-            batState = "Charging";
-          } else if (dir.includes("discharg")) {
-            batState = "Discharging";
-          } else if (rawBatKw > 0.05) {
-            batState = "Discharging";
-          } else if (rawBatKw < -0.05) {
-            batState = "Charging";
-          }
+        let invState = "2"; // 1 = Generating, 2 = Standby / Offline
+
+        if (isOnlineToday && curveMatch) {
+          solarKw = Number(curveMatch.solar_power_kw) || 0;
+          rawBatKw = Number(curveMatch.battery_power_kw) || 0;
+          soc = Number(curveMatch.battery_soc) > 0 ? Number(curveMatch.battery_soc) : (Number(match?.battery_soc) || 0);
+          gridKw = Number(curveMatch.grid_power_kw) || 0;
+          loadKw = Number(curveMatch.load_power_kw) || 0;
+          batState = curveMatch.battery_state || "Idle";
+          invState = match?.summary?.inverter?.state ?? (solarKw > 0.5 ? "1" : "2");
+        } else if (match && !isOnlineToday) {
+          // Inverter has not communicated today (e.g. OPL Residence offline since yesterday)
+          solarKw = 0;
+          rawBatKw = 0;
+          soc = Number(match?.battery_soc) || (curveMatch ? Number(curveMatch.battery_soc) : 0);
+          gridKw = 0;
+          loadKw = 0;
+          batState = "Idle";
+          invState = "2"; // Offline/Standby
         }
 
         let latestTime: string | undefined;
@@ -180,6 +188,7 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
           liveLoadKw: loadKw,
           inverterState: invState,
           isStale,
+          isOnlineToday,
           latestDataTime: latestTime,
           latestDataDate: latestDate,
         };
