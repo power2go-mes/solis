@@ -202,7 +202,7 @@ export interface EnergyBreakdownSummary {
 }
 
 export interface EnergyBreakdownResult {
-  period: "month" | "year";
+  period: "month" | "year" | "lifetime";
   periodValue: string;
   labels: string[];
   tooltipDates: string[];
@@ -243,6 +243,9 @@ export interface SolisPlantOverviewItem {
   plantType?: string;
   investmentType?: string;
   latestDataTime?: string;
+  inverterCount?: number;
+  temperature?: string;
+  latestTime?: string;
 }
 
 export interface SolisOverviewSummary {
