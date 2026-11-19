@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as echarts from "echarts";
-import { RotateCw, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { RotateCw, ChevronLeft, ChevronRight, Calendar, Radio } from "lucide-react";
 import { ChartSeriesData } from "@/lib/db";
 
 interface DualPowerSOCChartsProps {
@@ -571,6 +571,27 @@ export default function DualPowerSOCCharts({
             <RotateCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
+
+        {/* Empty / Offline Banner */}
+        {!loading && (!chartData || chartData.timeLabels.length === 0) && (
+          <div className="absolute inset-x-4 top-14 bottom-4 bg-white/90 backdrop-blur-2xs flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 z-10 p-6 text-center animate-in fade-in duration-300">
+            <Radio className="w-8 h-8 text-slate-400 mb-2 animate-pulse" />
+            <h4 className="font-bold text-sm text-slate-800">No Telemetry Recorded on {currentDate}</h4>
+            <p className="text-xs text-slate-500 max-w-md mt-1">
+              The datalogger for {plantName} was offline or has not transmitted curves to SolisCloud for this date.
+            </p>
+            <button
+              onClick={() => {
+                const [y, m, d] = currentDate.split("-").map(Number);
+                const prev = new Date(Date.UTC(y, m - 1, d - 1));
+                setCurrentDate(prev.toISOString().slice(0, 10));
+              }}
+              className="mt-3 px-3 py-1.5 rounded-lg bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-2xs"
+            >
+              ← View Previous Day with Data
+            </button>
+          </div>
+        )}
 
         {/* Top Chart Canvas */}
         <div
