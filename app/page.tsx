@@ -13,6 +13,10 @@ import SolisPlantTable from "@/components/SolisPlantTable";
 import CreatePlantModal from "@/components/CreatePlantModal";
 import SolisClientDashboard from "@/components/SolisClientDashboard";
 
+// SolisCloud Mobile Replicated Components (100% Mobile Parity)
+import SolisMobilePlantList from "@/components/mobile/SolisMobilePlantList";
+import SolisMobilePlantDetail from "@/components/mobile/SolisMobilePlantDetail";
+
 // Client Detailed 4-Graph Components
 import ClientTiles from "@/components/ClientTiles";
 import DualPowerSOCCharts from "@/components/DualPowerSOCCharts";
@@ -174,7 +178,10 @@ function SolisCloudDashboard() {
         </svg>
       </div>
 
-      <div className="flex-1 flex overflow-hidden z-10">
+      {/* ============================================================== */}
+      {/* 1. DESKTOP / TABLET VIEW (md: breakpoint >= 768px)             */}
+      {/* ============================================================== */}
+      <div className="hidden md:flex flex-1 overflow-hidden z-10">
         {/* Left Sidebar (Exact SolisCloud Navigation with Power2Go branding) */}
         <SolisSidebar
           activeView={activeView}
@@ -235,6 +242,27 @@ function SolisCloudDashboard() {
             )}
           </main>
         </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 2. DEDICATED NATIVE MOBILE VIEW (< md breakpoint < 768px)      */}
+      {/*    100% Strict Visual & Functional Parity with Mobile Images   */}
+      {/* ============================================================== */}
+      <div className="block md:hidden z-10 w-full min-h-screen">
+        {activeView === "plant_overview" ? (
+          <SolisMobilePlantList
+            plants={overviewPlants}
+            onSelectPlant={(plantId) => handleSelectPlant(plantId)}
+            onCreatePlant={() => setIsCreatePlantOpen(true)}
+          />
+        ) : (
+          <SolisMobilePlantDetail
+            selectedPlantId={selectedPlantId}
+            plantsList={plantsList}
+            onSelectPlant={(plantId) => handleSelectPlant(plantId)}
+            onBack={() => setActiveView("plant_overview")}
+          />
+        )}
       </div>
 
       {/* Create Plant Information Modal */}

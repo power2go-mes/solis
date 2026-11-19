@@ -24,3 +24,8 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hide Next.js dev overlay badges in development */
+nextjs-portal, [data-nextjs-toast], #__next-build-watcher {
+  display: none !important;
+}
