@@ -215,3 +215,58 @@ export interface EnergyBreakdownResult {
   totals: EnergyBreakdownSummary;
 }
 
+export interface SolisPlantOverviewItem {
+  id: string;
+  name: string;
+  address: string;
+  status: "Online" | "Offline" | "Alarm";
+  weather: string;
+  weatherCondition?: string;
+  owner: string;
+  ownerContact: string;
+  inverterOnline: number;
+  inverterTotal: number;
+  installer: string;
+  installerContact: string;
+  dailyYieldKwh: number;
+  dailyChargeKwh: number;
+  dailyDischargeKwh: number;
+  totalYieldKwh: number;
+  totalYieldStr: string;
+  totalChargeKwh: number;
+  totalChargeStr: string;
+  capacityKwp: number;
+  powerKw: number;
+  batterySoc?: number;
+  batteryState?: string;
+  favorites?: boolean;
+  plantType?: string;
+  investmentType?: string;
+  latestDataTime?: string;
+}
+
+export interface SolisOverviewSummary {
+  currentPowerKw: number;
+  installedCapacityKwp: number;
+  dailyChargeKwh: number;
+  dailyDischargeKwh: number;
+  monthlyChargeMwh: number;
+  monthlyDischargeMwh: number;
+  totalChargeMwh: number;
+  totalDischargeMwh: number;
+  plantCounts: {
+    total: number;
+    online: number;
+    alarm: number;
+    offline: number;
+  };
+}
+
+export interface SolisOverviewResponse {
+  success: boolean;
+  summary: SolisOverviewSummary;
+  plants: SolisPlantOverviewItem[];
+  error?: string;
+}
+
+

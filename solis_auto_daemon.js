@@ -592,6 +592,21 @@ async function runMissingDataAudit() {
   }
 }
 
+async function runLiveSyncWithRetry(maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await runLiveSync();
+      return;
+    } catch (err) {
+      console.error(`[Daemon 10m Sync Error (Attempt ${attempt}/${maxRetries})]:`, err.message || err);
+      if (attempt < maxRetries) {
+        console.log(`Retrying live sync in 15 seconds...`);
+        await new Promise((r) => setTimeout(r, 15000));
+      }
+    }
+  }
+}
+
 /**
  * Main Daemon Bootstrapper
  */
@@ -605,7 +620,7 @@ async function startDaemon() {
 
   // 1. Initial 10-minute live sync
   try {
-    await runLiveSync();
+    await runLiveSyncWithRetry();
   } catch (e) {
     console.error("Initial live sync error:", e);
   }
@@ -620,11 +635,7 @@ async function startDaemon() {
   // Schedule recurring 10-minute live sync
   const TEN_MINUTES = 10 * 60 * 1000;
   setInterval(async () => {
-    try {
-      await runLiveSync();
-    } catch (e) {
-      console.error("[Daemon 10m Sync Error]:", e.message || e);
-    }
+    await runLiveSyncWithRetry();
   }, TEN_MINUTES);
 
   // Schedule recurring 6-hour missing data audit
