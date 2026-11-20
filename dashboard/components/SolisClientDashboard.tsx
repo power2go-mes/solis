@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import SolisHousePowerFlow from "./SolisHousePowerFlow";
-import { PlantInfo, TelemetryLatest, EnergyBreakdownResult } from "@/lib/types";
+import { PlantInfo, TelemetryLatest, EnergyBreakdownResult, DailyEnergyRecord } from "@/lib/types";
 import { ChartSeriesData } from "@/lib/db";
 
 interface SolisClientDashboardProps {
@@ -191,6 +191,7 @@ export default function SolisClientDashboard({
   // Data states
   const [telemetry, setTelemetry] = useState<TelemetryLatest | null>(null);
   const [dayCurveData, setDayCurveData] = useState<ChartSeriesData | null>(null);
+  const [dayDailyEnergy, setDayDailyEnergy] = useState<DailyEnergyRecord | null>(null);
   const [monthData, setMonthData] = useState<EnergyBreakdownResult | null>(null);
   const [yearData, setYearData] = useState<EnergyBreakdownResult | null>(null);
   const [lifetimeData, setLifetimeData] = useState<EnergyBreakdownResult | null>(null);
@@ -229,7 +230,7 @@ export default function SolisClientDashboard({
   // -------------------------------------------------------------
   // Fallback Day Curve Generator for offline/resilience
   // -------------------------------------------------------------
-  const getFallbackDayCurve = useCallback((): ChartSeriesData => {
+  const getFallbackDayCurve = useCallback((targetDateStr?: string): ChartSeriesData => {
     const times: string[] = [];
     const pv: (number | null)[] = [];
     const grid: (number | null)[] = [];
@@ -240,8 +241,15 @@ export default function SolisClientDashboard({
     const feedInTariff: number[] = [];
 
     const nowPkt = new Date(Date.now() + 5 * 3600 * 1000);
-    const nowMins = nowPkt.getUTCHours() * 60 + nowPkt.getUTCMinutes();
+    const todayPktStr = nowPkt.toISOString().slice(0, 10);
+    const isToday = !targetDateStr || targetDateStr === todayPktStr;
+    const nowMins = isToday ? nowPkt.getUTCHours() * 60 + nowPkt.getUTCMinutes() : 24 * 60;
     let currentNowIndex = -1;
+
+    // Deterministic peak solar based on date and plant capacity
+    const dateSeed = targetDateStr ? targetDateStr.split("-").reduce((a, b) => a + Number(b), 0) : 42;
+    const cap = plantMeta?.capacityKwp || 25.0;
+    const peakSolar = Math.min(cap * 0.82, 14.0 + (dateSeed % 6) * 1.5);
 
     for (let h = 0; h < 24; h++) {
       for (let m = 0; m < 60; m += 10) {
@@ -254,12 +262,14 @@ export default function SolisClientDashboard({
         feedInTariff.push(2.2);
 
         if (mins <= nowMins) {
-          currentNowIndex = times.length - 1;
+          if (isToday) {
+            currentNowIndex = times.length - 1;
+          }
           let solar = 0;
           if (mins >= 390 && mins <= 1020) {
             const progress = (mins - 390) / (1020 - 390);
             const bell = Math.sin(progress * Math.PI);
-            solar = Number((Math.pow(bell, 1.4) * 17.5 + (Math.sin(mins / 7) * 0.8)).toFixed(2));
+            solar = Number((Math.pow(bell, 1.4) * peakSolar).toFixed(2));
             if (solar < 0) solar = 0;
           }
           const baseLoad = 2.2 + Math.abs(Math.sin(mins / 15) * 1.5) + (mins >= 480 && mins <= 1080 ? 1.8 : 0);
@@ -307,9 +317,9 @@ export default function SolisClientDashboard({
       socUnit: "%",
       tariffUnit: "PKR/kWh",
       rangeType: "day",
-      currentNowIndex: currentNowIndex >= 0 ? currentNowIndex : times.length - 1,
+      currentNowIndex: isToday ? (currentNowIndex >= 0 ? currentNowIndex : times.length - 1) : -1,
     };
-  }, []);
+  }, [plantMeta?.capacityKwp]);
 
   // -------------------------------------------------------------
   // Fallback Breakdown Dataset Generator for offline/resilience
@@ -456,26 +466,40 @@ export default function SolisClientDashboard({
     }
   }, [selectedPlantId]);
 
-  // Load Day Curve Data
+  // Load Day Curve Data and Day Energy Totals
   const loadDayCurve = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/telemetry/curve?stationId=${selectedPlantId}&range=day&date=${currentDate}`,
-        { cache: "no-store" }
-      );
-      if (!res.ok) {
-        setDayCurveData(getFallbackDayCurve());
-        return;
+      const [curveRes, dailyRes] = await Promise.all([
+        fetch(
+          `/api/telemetry/curve?stationId=${selectedPlantId}&range=day&date=${currentDate}`,
+          { cache: "no-store" }
+        ),
+        fetch(
+          `/api/energy/daily?stationId=${selectedPlantId}&startDate=${currentDate}&endDate=${currentDate}`,
+          { cache: "no-store" }
+        ),
+      ]);
+
+      if (dailyRes.ok) {
+        const dData = await dailyRes.json();
+        if (dData.success && dData.records && dData.records.length > 0) {
+          setDayDailyEnergy(dData.records[0]);
+        } else {
+          setDayDailyEnergy(null);
+        }
       }
-      const data = await res.json();
-      if (data.success && data.chartData && data.chartData.timeLabels && data.chartData.timeLabels.length > 0) {
-        setDayCurveData(data.chartData);
-      } else {
-        setDayCurveData(getFallbackDayCurve());
+
+      if (curveRes.ok) {
+        const cData = await curveRes.json();
+        if (cData.success && cData.chartData && cData.chartData.timeLabels && cData.chartData.timeLabels.length > 0) {
+          setDayCurveData(cData.chartData);
+          return;
+        }
       }
+      setDayCurveData(getFallbackDayCurve(currentDate));
     } catch (err) {
       console.error("Error loading day curves:", err);
-      setDayCurveData(getFallbackDayCurve());
+      setDayCurveData(getFallbackDayCurve(currentDate));
     }
   }, [selectedPlantId, currentDate, getFallbackDayCurve]);
 
@@ -624,7 +648,7 @@ export default function SolisClientDashboard({
     const curve =
       dayCurveData && dayCurveData.timeLabels && dayCurveData.timeLabels.length > 0
         ? dayCurveData
-        : getFallbackDayCurve();
+        : getFallbackDayCurve(currentDate);
 
     const timestamps = curve.timeLabels || (curve as any).timestamps || [];
     const solarKw = curve.pvData || (curve as any).solarKw || [];
@@ -758,14 +782,15 @@ export default function SolisClientDashboard({
     const curve =
       dayCurveData && dayCurveData.timeLabels && dayCurveData.timeLabels.length > 0
         ? dayCurveData
-        : getFallbackDayCurve();
+        : getFallbackDayCurve(currentDate);
 
     const timestamps = curve.timeLabels || (curve as any).timestamps || [];
     const batterySoc = curve.socData || (curve as any).batterySoc || [];
 
-    // Find the latest active timestamp index for the "Now" vertical marker
-    let nowIndex = curve.currentNowIndex !== undefined ? curve.currentNowIndex : -1;
-    if (nowIndex < 0) {
+    // The "Now" vertical marker should ONLY appear when viewing today's live curve
+    const isViewingToday = currentDate === getPktDateStr();
+    let nowIndex = isViewingToday && curve.currentNowIndex !== undefined ? curve.currentNowIndex : -1;
+    if (isViewingToday && nowIndex < 0) {
       for (let i = batterySoc.length - 1; i >= 0; i--) {
         if (batterySoc[i] !== null && batterySoc[i] !== undefined) {
           nowIndex = i;
@@ -773,7 +798,7 @@ export default function SolisClientDashboard({
         }
       }
     }
-    const nowTimeStr = nowIndex >= 0 ? timestamps[nowIndex] : "14:00";
+    const nowTimeStr = nowIndex >= 0 ? timestamps[nowIndex] : "";
 
     const purchaseTariff = curve.purchaseTariffData || timestamps.map(() => 38.0);
     const feedInTariff = curve.feedInTariffData || timestamps.map(() => 20.0);
@@ -1124,14 +1149,70 @@ export default function SolisClientDashboard({
         }
       );
     }
-    // Day view totals
+    // Day view totals: Live database values from solis_daily_energy or curve integration
+    if (dayDailyEnergy) {
+      const pvVal = Number(dayDailyEnergy.solar_pv_kwh || 0);
+      const consVal = Number(dayDailyEnergy.house_load_kwh || 0);
+      const gridLoadVal = Number(dayDailyEnergy.grid_purchased_kwh || 0);
+      const backupVal = Number(
+        dayDailyEnergy.backup_load_kwh || (consVal > gridLoadVal ? consVal - gridLoadVal : 0)
+      );
+      return {
+        pv: Number(pvVal.toFixed(1)),
+        inverter: Number(pvVal.toFixed(1)),
+        acCoupled: 0,
+        consumption: Number(consVal.toFixed(1)),
+        gridLoadConsumption: Number(gridLoadVal.toFixed(1)),
+        backupLoad: Number(backupVal.toFixed(1)),
+        charge: Number(Number(dayDailyEnergy.battery_charge_kwh || 0).toFixed(1)),
+        discharge: Number(Number(dayDailyEnergy.battery_discharge_kwh || 0).toFixed(1)),
+        export: Number(Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(1)),
+      };
+    }
+
+    // If no direct daily energy row, integrate from 5-min curve points
+    if (dayCurveData && dayCurveData.pvData && dayCurveData.pvData.length > 0) {
+      const pvSum = dayCurveData.pvData.reduce(
+        (acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60),
+        0
+      );
+      const loadSum = (dayCurveData.loadData || []).reduce(
+        (acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60),
+        0
+      );
+      const gridSum = (dayCurveData.gridData || []).reduce(
+        (acc: number, v: number | null) => {
+          const val = Number(v) || 0;
+          return val > 0 ? acc + val * (5 / 60) : acc;
+        },
+        0
+      );
+      const pvRound = Number(pvSum.toFixed(1));
+      const loadRound = Number(loadSum.toFixed(1));
+      const gridRound = Number(gridSum.toFixed(1));
+      return {
+        pv: pvRound,
+        inverter: pvRound,
+        acCoupled: 0,
+        consumption: loadRound,
+        gridLoadConsumption: gridRound,
+        backupLoad: Number(Math.max(0, loadRound - gridRound).toFixed(1)),
+        charge: 0,
+        discharge: 0,
+        export: 0,
+      };
+    }
+
     return {
-      pv: 89.7,
-      inverter: 89.7,
+      pv: 0,
+      inverter: 0,
       acCoupled: 0,
-      consumption: 27.3,
-      gridLoadConsumption: 6.7,
-      backupLoad: 20.6,
+      consumption: 0,
+      gridLoadConsumption: 0,
+      backupLoad: 0,
+      charge: 0,
+      discharge: 0,
+      export: 0,
     };
   };
 

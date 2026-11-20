@@ -369,6 +369,8 @@ export async function getAggregatedChartData(
     const nowHour = nowPkt.getUTCHours();
     const nowMinute = nowPkt.getUTCMinutes();
     const currentMinutesOfDay = nowHour * 60 + nowMinute;
+    const todayPktStr = nowPkt.toISOString().slice(0, 10);
+    const isToday = !dateStr || dateStr === todayPktStr;
 
     let currentNowIndex = -1;
 
@@ -384,9 +386,11 @@ export async function getAggregatedChartData(
       purchaseTariff.push(defaultTariffPurchase);
       feedInTariff.push(defaultTariffFeedIn);
 
-      const [h, m] = t.split(":").map(Number);
-      if (h * 60 + m <= currentMinutesOfDay) {
-        currentNowIndex = index;
+      if (isToday) {
+        const [h, m] = t.split(":").map(Number);
+        if (h * 60 + m <= currentMinutesOfDay) {
+          currentNowIndex = index;
+        }
       }
     });
 
@@ -403,7 +407,7 @@ export async function getAggregatedChartData(
       socUnit: "%",
       tariffUnit: "PKR/kWh",
       rangeType: "day",
-      currentNowIndex: currentNowIndex >= 0 ? currentNowIndex : times.length - 1,
+      currentNowIndex: isToday ? (currentNowIndex >= 0 ? currentNowIndex : times.length - 1) : -1,
     };
   }
 

@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import SolisMobileCommercialPowerFlow from "./SolisMobileCommercialPowerFlow";
-import { PlantInfo, TelemetryLatest, EnergyBreakdownResult } from "@/lib/types";
+import { PlantInfo, TelemetryLatest, EnergyBreakdownResult, DailyEnergyRecord } from "@/lib/types";
 import { ChartSeriesData } from "@/lib/db";
 
 interface SolisMobilePlantDetailProps {
@@ -177,6 +177,7 @@ export default function SolisMobilePlantDetail({
   // Data states
   const [telemetry, setTelemetry] = useState<TelemetryLatest | null>(null);
   const [dayCurveData, setDayCurveData] = useState<ChartSeriesData | null>(null);
+  const [dayDailyEnergy, setDayDailyEnergy] = useState<DailyEnergyRecord | null>(null);
 
   // Chart ref
   const chartRef = useRef<HTMLDivElement>(null);
@@ -217,16 +218,34 @@ export default function SolisMobilePlantDetail({
     }
   }, [selectedPlantId]);
 
-  // Fetch curve
+  // Fetch curve and daily energy totals
   const loadCurve = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/telemetry/curve?stationId=${selectedPlantId}&range=day&date=${currentDate}`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-      if (data.success && data.chartData) {
-        setDayCurveData(data.chartData);
+      const [curveRes, dailyRes] = await Promise.all([
+        fetch(
+          `/api/telemetry/curve?stationId=${selectedPlantId}&range=day&date=${currentDate}`,
+          { cache: "no-store" }
+        ),
+        fetch(
+          `/api/energy/daily?stationId=${selectedPlantId}&startDate=${currentDate}&endDate=${currentDate}`,
+          { cache: "no-store" }
+        ),
+      ]);
+
+      if (dailyRes.ok) {
+        const dData = await dailyRes.json();
+        if (dData.success && dData.records && dData.records.length > 0) {
+          setDayDailyEnergy(dData.records[0]);
+        } else {
+          setDayDailyEnergy(null);
+        }
+      }
+
+      if (curveRes.ok) {
+        const data = await curveRes.json();
+        if (data.success && data.chartData) {
+          setDayCurveData(data.chartData);
+        }
       }
     } catch (err) {
       console.error("Error loading mobile curves:", err);
@@ -286,8 +305,9 @@ export default function SolisMobilePlantDetail({
     const loadData = dayCurveData.loadData || (dayCurveData as any).loadKw || [];
     const socData = dayCurveData.socData || (dayCurveData as any).batterySoc || [];
 
-    const nowIndex = dayCurveData.currentNowIndex !== undefined ? dayCurveData.currentNowIndex : -1;
-    const nowTimeStr = nowIndex >= 0 ? timestamps[nowIndex] : "15:00";
+    const isViewingToday = currentDate === getPktDateStr();
+    const nowIndex = isViewingToday && dayCurveData.currentNowIndex !== undefined ? dayCurveData.currentNowIndex : -1;
+    const nowTimeStr = nowIndex >= 0 ? timestamps[nowIndex] : "";
 
     const seriesList: any[] = [];
 
@@ -577,92 +597,126 @@ export default function SolisMobilePlantDetail({
             </div>
           </div>
 
-          {/* 6 Metric KPI Cards Grid (2 cols x 3 rows) */}
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Card 1: Yield */}
-            <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-medium">Yield</span>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {meta.defaultYieldKwh}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
-                </div>
-              </div>
-              <div className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-amber-500">
-                <Sun className="w-3.5 h-3.5 fill-amber-400" />
-              </div>
-            </div>
+          {/* Dynamic Daily Energy Metrics */}
+          {(() => {
+            const pvPoints = dayCurveData?.pvData || [];
+            const loadPoints = dayCurveData?.loadData || [];
+            const dayYieldKwh = dayDailyEnergy
+              ? Number(dayDailyEnergy.solar_pv_kwh || 0).toFixed(1)
+              : pvPoints.length > 0
+              ? pvPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(1)
+              : String(meta.defaultYieldKwh);
 
-            {/* Card 2: Consumption */}
-            <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-medium">Consumption</span>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {meta.defaultConsumptionKwh}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
-                </div>
-              </div>
-              <div className="w-6 h-6 rounded-md bg-purple-50 flex items-center justify-center text-purple-500">
-                <Home className="w-3.5 h-3.5" />
-              </div>
-            </div>
+            const dayConsumptionKwh = dayDailyEnergy
+              ? Number(dayDailyEnergy.house_load_kwh || 0).toFixed(1)
+              : loadPoints.length > 0
+              ? loadPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(1)
+              : String(meta.defaultConsumptionKwh);
 
-            {/* Card 3: Discharge */}
-            <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-medium">Discharge</span>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {meta.defaultDischargeKwh}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
-                </div>
-              </div>
-              <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-500">
-                <Zap className="w-3.5 h-3.5" />
-              </div>
-            </div>
+            const dayDischargeKwh = dayDailyEnergy
+              ? Number(dayDailyEnergy.battery_discharge_kwh || 0).toFixed(1)
+              : String(meta.defaultDischargeKwh);
 
-            {/* Card 4: Charge */}
-            <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-medium">Charge</span>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {meta.defaultChargeKwh}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
-                </div>
-              </div>
-              <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <BatteryCharging className="w-3.5 h-3.5" />
-              </div>
-            </div>
+            const dayChargeKwh = dayDailyEnergy
+              ? Number(dayDailyEnergy.battery_charge_kwh || 0).toFixed(1)
+              : String(meta.defaultChargeKwh);
 
-            {/* Card 5: Import */}
-            <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-medium">Import</span>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {meta.defaultImportKwh}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
-                </div>
-              </div>
-              <div className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-sky-500">
-                <ArrowDownLeft className="w-3.5 h-3.5" />
-              </div>
-            </div>
+            const dayImportKwh = dayDailyEnergy
+              ? Number(dayDailyEnergy.grid_purchased_kwh || 0).toFixed(1)
+              : String(meta.defaultImportKwh);
 
-            {/* Card 6: Export */}
-            <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-medium">Export</span>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {meta.defaultExportKwh}
-                  <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+            const dayExportKwh = dayDailyEnergy
+              ? Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(1)
+              : String(meta.defaultExportKwh);
+
+            return (
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Card 1: Yield */}
+                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium">Yield</span>
+                    <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
+                      {dayYieldKwh}
+                      <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-amber-500">
+                    <Sun className="w-3.5 h-3.5 fill-amber-400" />
+                  </div>
+                </div>
+
+                {/* Card 2: Consumption */}
+                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium">Consumption</span>
+                    <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
+                      {dayConsumptionKwh}
+                      <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 rounded-md bg-purple-50 flex items-center justify-center text-purple-500">
+                    <Home className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Card 3: Discharge */}
+                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium">Discharge</span>
+                    <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
+                      {dayDischargeKwh}
+                      <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-500">
+                    <Zap className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Card 4: Charge */}
+                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium">Charge</span>
+                    <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
+                      {dayChargeKwh}
+                      <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <BatteryCharging className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Card 5: Import */}
+                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium">Import</span>
+                    <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
+                      {dayImportKwh}
+                      <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-sky-500">
+                    <ArrowDownLeft className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Card 6: Export */}
+                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-2.5 flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium">Export</span>
+                    <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
+                      {dayExportKwh}
+                      <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center text-blue-500">
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>
-              <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center text-blue-500">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         {/* ======================================================== */}
@@ -864,10 +918,14 @@ export default function SolisMobilePlantDetail({
 
                 {/* Scale End Labels */}
                 <text x="18" y="118" fill="#64748b" fontSize="9" fontWeight="600" textAnchor="middle">
-                  {meta.toConsumptionPercent}%
+                  {dayDailyEnergy
+                    ? Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100)
+                    : meta.toConsumptionPercent}%
                 </text>
                 <text x="182" y="118" fill="#64748b" fontSize="9" fontWeight="600" textAnchor="middle">
-                  {meta.toGridPercent}%
+                  {dayDailyEnergy
+                    ? Math.max(0, 100 - Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100))
+                    : meta.toGridPercent}%
                 </text>
               </svg>
             </div>
@@ -878,7 +936,9 @@ export default function SolisMobilePlantDetail({
               <div>
                 <span className="text-[10px] text-slate-400 font-medium">To Consumption</span>
                 <div className="text-xs font-bold text-[#8b5cf6] font-mono mt-0.5">
-                  {meta.toConsumptionKwh}kWh·{meta.toConsumptionPercent}%
+                  {dayDailyEnergy
+                    ? `${Number(dayDailyEnergy.self_consumption_kwh || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))).toFixed(1)}kWh·${Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100)}%`
+                    : `${meta.toConsumptionKwh}kWh·${meta.toConsumptionPercent}%`}
                 </div>
               </div>
 
@@ -886,7 +946,9 @@ export default function SolisMobilePlantDetail({
               <div>
                 <span className="text-[10px] text-slate-400 font-medium">To Grid</span>
                 <div className="text-xs font-bold text-[#0284c7] font-mono mt-0.5">
-                  {meta.toGridKwh}kWh·{meta.toGridPercent}%
+                  {dayDailyEnergy
+                    ? `${Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(1)}kWh·${Math.max(0, 100 - Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100))}%`
+                    : `${meta.toGridKwh}kWh·${meta.toGridPercent}%`}
                 </div>
               </div>
             </div>
