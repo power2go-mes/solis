@@ -1249,97 +1249,108 @@ export default function SolisClientDashboard({
       {/* ======================================================== */}
       {/* 1. TOP HEADER: Status, Plant Name, Time & Actions         */}
       {/* ======================================================== */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-2xs px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Left: Status Pill, Plant Name Dropdown, Icons */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={onBackToOverview}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-600 bg-gray-50 hover:bg-orange-50 hover:text-[#f37021] border border-gray-200 transition-colors shadow-2xs mr-1"
-            title="Return to Plant Overview Table"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
-          </button>
-
-          {/* Green Online Pill */}
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Online</span>
-          </span>
-
-          {/* Plant Name with Switcher Dropdown */}
-          <div className="relative">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-2xs px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Left: Info Badge, Plant Name, Header Icons & Metadata */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
-              onClick={() => setIsPlantDropdownOpen(!isPlantDropdownOpen)}
-              className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-slate-900 hover:text-[#f37021] transition-colors"
+              onClick={onBackToOverview}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold text-slate-600 bg-gray-50 hover:bg-orange-50 hover:text-[#f37021] border border-gray-200 transition-colors shadow-2xs mr-1"
+              title="Return to Plant Overview Table"
             >
-              <span>{plantMeta.name}</span>
-              {plantMeta.guestSuffix && (
-                <span className="text-slate-400 font-normal text-sm">{plantMeta.guestSuffix}</span>
-              )}
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back</span>
             </button>
 
-            {/* Dropdown Menu to switch plants */}
-            {isPlantDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5">
-                <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-100">
-                  Select Plant
+            {/* Light Green Info Pill Badge */}
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+              Info
+            </span>
+
+            {/* Plant Name with Switcher Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsPlantDropdownOpen(!isPlantDropdownOpen)}
+                className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-slate-900 hover:text-[#f37021] transition-colors"
+              >
+                <span>{plantMeta.name}</span>
+                {plantMeta.guestSuffix && (
+                  <span className="text-slate-400 font-normal text-sm">{plantMeta.guestSuffix}</span>
+                )}
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              </button>
+
+              {/* Dropdown Menu to switch plants */}
+              {isPlantDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-100">
+                    Select Plant
+                  </div>
+                  {plantsList.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        onSelectPlant(p.id);
+                        setIsPlantDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-orange-50 transition-colors ${
+                        p.id === selectedPlantId
+                          ? "text-[#f37021] font-bold bg-orange-50/50"
+                          : "text-slate-700 font-medium"
+                      }`}
+                    >
+                      <span>{p.name}</span>
+                      <span className="text-[11px] text-slate-400">{p.capacityKwp} kWp</span>
+                    </button>
+                  ))}
                 </div>
-                {plantsList.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      onSelectPlant(p.id);
-                      setIsPlantDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-orange-50 transition-colors ${
-                      p.id === selectedPlantId
-                        ? "text-[#f37021] font-bold bg-orange-50/50"
-                        : "text-slate-700 font-medium"
-                    }`}
-                  >
-                    <span>{p.name}</span>
-                    <span className="text-[11px] text-slate-400">{p.capacityKwp} kWp</span>
-                  </button>
-                ))}
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Action Circular Buttons */}
+            <div className="flex items-center gap-1 text-slate-400 ml-1">
+              <button
+                onClick={handleManualRefresh}
+                className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                title="Refresh Client Data"
+              >
+                <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#f37021]" : ""}`} />
+              </button>
+              <button
+                className="w-7 h-7 rounded-full hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                title="Add to Favorites"
+              >
+                <Heart className="w-3.5 h-3.5" />
+              </button>
+              <button
+                className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
-          {/* Header Action Icons */}
-          <div className="flex items-center gap-1 text-slate-400">
-            <button
-              onClick={handleManualRefresh}
-              className="p-1 hover:text-slate-700 hover:bg-gray-100 rounded-full transition-colors"
-              title="Refresh Client Data"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#f37021]" : ""}`} />
-            </button>
-            <button
-              className="p-1 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"
-              title="Add to Favorites"
-            >
-              <Heart className="w-3.5 h-3.5" />
-            </button>
-            <button
-              className="p-1 hover:text-slate-700 hover:bg-gray-100 rounded-full transition-colors"
-              title="Fullscreen"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
+          {/* Plant Metadata Subtitle Line */}
+          <div className="flex items-center gap-2 text-xs text-slate-500 pl-0.5">
+            <span className="font-semibold text-slate-600 font-mono">ID: {plantMeta.displayId || "32F429"}</span>
+            <span>|</span>
+            <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>{formatPktDisplayTime()} (UTC+05:00)</span>
+              <span className="text-slate-500 font-medium ml-1">4Min Ago</span>
+            </div>
           </div>
         </div>
 
-        {/* Right: ID & UTC Timestamp */}
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="font-semibold text-slate-700 font-mono">ID: {plantMeta.displayId}</span>
-          <span>|</span>
-          <div className="flex items-center gap-1 font-mono text-[11px] text-slate-600">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span>{formatPktDisplayTime()}</span>
-            <span className="text-emerald-600 font-semibold ml-1">2Min Ago</span>
-          </div>
+        {/* Right: Modify Information Button */}
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            className="px-3.5 py-1.5 bg-white border border-gray-200 hover:border-gray-300 text-slate-700 hover:text-slate-900 font-medium rounded-lg text-xs shadow-2xs transition-colors flex items-center gap-1.5"
+            title="Modify Information"
+          >
+            <span>Modify Information</span>
+          </button>
         </div>
       </div>
 
@@ -1378,9 +1389,9 @@ export default function SolisClientDashboard({
             batteryKw={liveBatteryKw}
             batteryState={liveBatteryState}
             gridKw={liveGridKw}
-            dailyYieldKwh={Number(totals.pv || 85.6)}
-            dailyChargeKwh={17.8}
-            dailyDischargeKwh={2.4}
+            dailyYieldKwh={Number(totals.pv || 112.7)}
+            dailyChargeKwh={Number(totals.charge || 80.4)}
+            dailyDischargeKwh={Number(totals.discharge || 53.0)}
           />
 
           {/* Card 2: Operating Data Container */}

@@ -508,14 +508,8 @@ export default function SolisMobilePlantDetail({
           </span>
         </div>
 
-        {/* History, 3D & Drawer Icons */}
+        {/* Drawer Icon */}
         <div className="flex items-center gap-2">
-          <button className="w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center text-slate-500 shadow-2xs">
-            <Clock className="w-3.5 h-3.5" />
-          </button>
-          <button className="w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center text-slate-500 shadow-2xs">
-            <Box className="w-3.5 h-3.5" />
-          </button>
           {/* Circular Navy Blue Button with << */}
           <button className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center shadow-md -mr-1">
             <span className="text-[11px] font-mono font-bold">&laquo;</span>
@@ -525,18 +519,36 @@ export default function SolisMobilePlantDetail({
 
       <div className="px-3 space-y-3.5 mt-1">
         {/* ======================================================== */}
-        {/* 3. 3D COMMERCIAL BUILDING ISOMETRIC POWER FLOW            */}
+        {/* 3. 3D VILLA HOUSE ISOMETRIC POWER FLOW & ANIMATIONS       */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-2 overflow-hidden">
-          <SolisMobileCommercialPowerFlow
-            solarKw={liveSolar}
-            loadKw={liveLoad}
-            batterySoc={liveBatterySoc}
-            batteryKw={liveBatteryKw}
-            batteryState={liveBatteryState}
-            gridKw={liveGridKw}
-          />
-        </div>
+        {(() => {
+          const pvPoints = dayCurveData?.pvData || [];
+          const yieldVal = dayDailyEnergy
+            ? Number(dayDailyEnergy.solar_pv_kwh || 0)
+            : pvPoints.length > 0
+            ? Number(pvPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(1))
+            : (meta.defaultYieldKwh || 112.7);
+          const chargeVal = dayDailyEnergy
+            ? Number(dayDailyEnergy.battery_charge_kwh || 0)
+            : (meta.defaultChargeKwh || 80.4);
+          const dischargeVal = dayDailyEnergy
+            ? Number(dayDailyEnergy.battery_discharge_kwh || 0)
+            : (meta.defaultDischargeKwh || 53.0);
+
+          return (
+            <SolisMobileCommercialPowerFlow
+              solarKw={liveSolar}
+              loadKw={liveLoad}
+              batterySoc={liveBatterySoc}
+              batteryKw={liveBatteryKw}
+              batteryState={liveBatteryState}
+              gridKw={liveGridKw}
+              dailyYieldKwh={yieldVal}
+              dailyChargeKwh={chargeVal}
+              dailyDischargeKwh={dischargeVal}
+            />
+          );
+        })()}
 
         {/* ======================================================== */}
         {/* 4. BATTERY CARD WITH 10 SEGMENTS                         */}
