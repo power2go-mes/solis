@@ -690,8 +690,8 @@ export default function SolisMobilePlantDetail({
                       <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
                     </div>
                   </div>
-                  <div className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-amber-500">
-                    <Sun className="w-3.5 h-3.5 fill-amber-400" />
+                  <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center text-[#f37021]">
+                    <Sun className="w-3.5 h-3.5 fill-orange-400" />
                   </div>
                 </div>
 
@@ -704,7 +704,7 @@ export default function SolisMobilePlantDetail({
                       <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
                     </div>
                   </div>
-                  <div className="w-6 h-6 rounded-md bg-purple-50 flex items-center justify-center text-purple-500">
+                  <div className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-slate-700">
                     <Home className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -718,7 +718,7 @@ export default function SolisMobilePlantDetail({
                       <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
                     </div>
                   </div>
-                  <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-500">
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
                     <Zap className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -746,7 +746,7 @@ export default function SolisMobilePlantDetail({
                       <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
                     </div>
                   </div>
-                  <div className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-sky-500">
+                  <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center text-[#f37021]">
                     <ArrowDownLeft className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -760,7 +760,7 @@ export default function SolisMobilePlantDetail({
                       <span className="text-[10px] font-normal text-slate-500 ml-0.5">kWh</span>
                     </div>
                   </div>
-                  <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center text-blue-500">
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </div>
                 </div>

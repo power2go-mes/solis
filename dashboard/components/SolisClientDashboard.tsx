@@ -1343,7 +1343,7 @@ export default function SolisClientDashboard({
                 <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#f37021]" : ""}`} />
               </button>
               <button
-                className="w-7 h-7 rounded-full hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full hover:text-[#f37021] hover:bg-orange-50 flex items-center justify-center transition-colors"
                 title="Add to Favorites"
               >
                 <Heart className="w-3.5 h-3.5" />
@@ -1840,8 +1840,8 @@ export default function SolisClientDashboard({
                 {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
                   <div key={idx} className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-500 font-medium mb-1">{day}</span>
-                    <div className="w-6 h-6 flex items-center justify-center text-amber-500">
-                      <Sun className="w-5 h-5 fill-amber-400 text-amber-500" />
+                    <div className="w-6 h-6 flex items-center justify-center text-[#f37021]">
+                      <Sun className="w-5 h-5 fill-orange-400 text-[#f37021]" />
                     </div>
                   </div>
                 ))}

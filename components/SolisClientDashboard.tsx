@@ -204,6 +204,9 @@ export default function SolisClientDashboard({
   const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [visiblePowerSeries, setVisiblePowerSeries] = useState({ PV: true, Grid: true, Battery: true, "Total Load": true });
+  const [visibleSocSeries, setVisibleSocSeries] = useState({ SOC: true, "Purchase Tariff": true, "Feed-in Tariff": true });
+  const [visibleEnergySeries, setVisibleEnergySeries] = useState({ PV: true, Import: true, Export: true, Charge: true, Discharge: true, Consumption: true });
 
   // Chart DOM refs
   const powerChartRef = useRef<HTMLDivElement>(null);
@@ -733,50 +736,22 @@ export default function SolisClientDashboard({
         axisLabel: { color: "#94a3b8", fontSize: 10 },
       },
       series: [
-        {
-          name: "PV",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: solarKw,
+        ...(visiblePowerSeries.PV ? [{
+          name: "PV", type: "line", smooth: true, showSymbol: false, data: solarKw,
           lineStyle: { color: "#eab308", width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(234, 179, 8, 0.25)" },
-              { offset: 1, color: "rgba(234, 179, 8, 0.0)" },
-            ]),
-          },
-        },
-        {
-          name: "Grid",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: gridKw,
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "rgba(234, 179, 8, 0.25)" }, { offset: 1, color: "rgba(234, 179, 8, 0.0)" },
+          ]) },
+        }] : []),
+        ...(visiblePowerSeries.Grid ? [{
+          name: "Grid", type: "line", smooth: true, showSymbol: false, data: gridKw,
           lineStyle: { color: "#3b82f6", width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(59, 130, 246, 0.2)" },
-              { offset: 1, color: "rgba(59, 130, 246, 0.0)" },
-            ]),
-          },
-        },
-        {
-          name: "Battery",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: batKw,
-          lineStyle: { color: "#22c55e", width: 2 },
-        },
-        {
-          name: "Total Load",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: loadKw,
-          lineStyle: { color: "#a855f7", width: 2 },
-        },
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "rgba(59, 130, 246, 0.2)" }, { offset: 1, color: "rgba(59, 130, 246, 0.0)" },
+          ]) },
+        }] : []),
+        ...(visiblePowerSeries.Battery ? [{ name: "Battery", type: "line", smooth: true, showSymbol: false, data: batKw, lineStyle: { color: "#22c55e", width: 2 } }] : []),
+        ...(visiblePowerSeries["Total Load"] ? [{ name: "Total Load", type: "line", smooth: true, showSymbol: false, data: loadKw, lineStyle: { color: "#a855f7", width: 2 } }] : []),
       ],
     };
 
@@ -792,7 +767,7 @@ export default function SolisClientDashboard({
         powerChartInstance.current = null;
       }
     };
-  }, [activeTab, dayCurveData]);
+  }, [activeTab, dayCurveData, visiblePowerSeries]);
 
   // -------------------------------------------------------------
   // ECharts 2: Battery SOC & Tariff Curve with "Now" line
@@ -897,51 +872,18 @@ export default function SolisClientDashboard({
         },
       ],
       series: [
-        {
-          name: "SOC",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: batterySoc,
+        ...(visibleSocSeries.SOC ? [{
+          name: "SOC", type: "line", smooth: true, showSymbol: false, data: batterySoc,
           lineStyle: { color: "#22c55e", width: 2 },
-          markLine:
-            nowIndex >= 0
-              ? {
-                symbol: "none",
-                silent: true,
-                lineStyle: {
-                  type: "dashed",
-                  color: "#f97316",
-                  width: 1.5,
-                },
-                label: {
-                  show: true,
-                  position: "insideEndTop",
-                  formatter: "Now",
-                  color: "#f97316",
-                  fontWeight: 600,
-                  fontSize: 11,
-                },
-                data: [{ xAxis: nowTimeStr }],
-              }
-              : undefined,
-        },
-        {
-          name: "Purchase Tariff",
-          type: "line",
-          yAxisIndex: 1,
-          showSymbol: false,
-          data: purchaseTariff,
-          lineStyle: { color: "#38bdf8", width: 1.5 },
-        },
-        {
-          name: "Feed-in Tariff",
-          type: "line",
-          yAxisIndex: 1,
-          showSymbol: false,
-          data: feedInTariff,
-          lineStyle: { color: "#2563eb", width: 1.5 },
-        },
+          markLine: nowIndex >= 0 ? {
+            symbol: "none", silent: true,
+            lineStyle: { type: "dashed", color: "#f97316", width: 1.5 },
+            label: { show: true, position: "insideEndTop", formatter: "Now", color: "#f97316", fontWeight: 600, fontSize: 11 },
+            data: [{ xAxis: nowTimeStr }],
+          } : undefined,
+        }] : []),
+        ...(visibleSocSeries["Purchase Tariff"] ? [{ name: "Purchase Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: purchaseTariff, lineStyle: { color: "#38bdf8", width: 1.5 } }] : []),
+        ...(visibleSocSeries["Feed-in Tariff"] ? [{ name: "Feed-in Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: feedInTariff, lineStyle: { color: "#2563eb", width: 1.5 } }] : []),
       ],
     };
 
@@ -957,7 +899,7 @@ export default function SolisClientDashboard({
         powerChartInstance.current = null;
       }
     };
-  }, [activeTab, dayCurveData]);
+  }, [activeTab, dayCurveData, visibleSocSeries]);
 
   // -------------------------------------------------------------
   // ECharts 3: Grouped Bar Chart for Month, Year, Lifetime
@@ -979,6 +921,15 @@ export default function SolisClientDashboard({
     if (!currentDataset || !currentDataset.labels || currentDataset.labels.length === 0) {
       currentDataset = getFallbackBreakdown(activeTab as any, currentMonth, currentYear);
     }
+
+    const energySeries = [
+      { name: "PV", data: currentDataset.pvData, color: "#facc15" },
+      { name: "Import", data: currentDataset.importData, color: "#38bdf8" },
+      { name: "Export", data: currentDataset.exportData, color: "#2563eb" },
+      { name: "Charge", data: currentDataset.chargeData, color: "#10b981" },
+      { name: "Discharge", data: currentDataset.dischargeData, color: "#34d399" },
+      { name: "Consumption", data: currentDataset.consumptionData, color: "#8b5cf6" },
+    ] as const;
 
     const option: echarts.EChartsOption = {
       animation: true,
@@ -1050,51 +1001,16 @@ export default function SolisClientDashboard({
         axisTick: { show: false },
         axisLabel: { color: "#94a3b8", fontSize: 10 },
       },
-      series: [
-        {
-          name: "PV",
-          type: "bar",
-          data: currentDataset.pvData,
-          itemStyle: { color: "#facc15", borderRadius: [2, 2, 0, 0] },
+      series: energySeries
+        .filter((series) => visibleEnergySeries[series.name as keyof typeof visibleEnergySeries])
+        .map((series) => ({
+          name: series.name,
+          type: "bar" as const,
+          data: series.data,
+          itemStyle: { color: series.color, borderRadius: [2, 2, 0, 0] },
           barMaxWidth: activeTab === "Year" ? 10 : 6,
           barGap: "20%",
-        },
-        {
-          name: "Import",
-          type: "bar",
-          data: currentDataset.importData,
-          itemStyle: { color: "#38bdf8", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Export",
-          type: "bar",
-          data: currentDataset.exportData,
-          itemStyle: { color: "#2563eb", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Charge",
-          type: "bar",
-          data: currentDataset.chargeData,
-          itemStyle: { color: "#10b981", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Discharge",
-          type: "bar",
-          data: currentDataset.dischargeData,
-          itemStyle: { color: "#34d399", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Consumption",
-          type: "bar",
-          data: currentDataset.consumptionData,
-          itemStyle: { color: "#8b5cf6", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-      ],
+        })),
     };
 
     chart.setOption(option, true);
@@ -1113,7 +1029,7 @@ export default function SolisClientDashboard({
         barChartInstance.current = null;
       }
     };
-  }, [activeTab, monthData, yearData, lifetimeData, currentMonth, currentYear]);
+  }, [activeTab, monthData, yearData, lifetimeData, currentMonth, currentYear, visibleEnergySeries]);
 
   // Window & ResizeObserver resize handling
   useEffect(() => {
@@ -1343,7 +1259,7 @@ export default function SolisClientDashboard({
                 <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#f37021]" : ""}`} />
               </button>
               <button
-                className="w-7 h-7 rounded-full hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full hover:text-[#f37021] hover:bg-orange-50 flex items-center justify-center transition-colors"
                 title="Add to Favorites"
               >
                 <Heart className="w-3.5 h-3.5" />
@@ -1840,8 +1756,8 @@ export default function SolisClientDashboard({
                 {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
                   <div key={idx} className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-500 font-medium mb-1">{day}</span>
-                    <div className="w-6 h-6 flex items-center justify-center text-amber-500">
-                      <Sun className="w-5 h-5 fill-amber-400 text-amber-500" />
+                    <div className="w-6 h-6 flex items-center justify-center text-[#f37021]">
+                      <Sun className="w-5 h-5 fill-orange-400 text-[#f37021]" />
                     </div>
                   </div>
                 ))}
