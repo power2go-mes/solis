@@ -4,10 +4,10 @@ import { Pool } from "pg";
 
 let connectionString =
   process.env.DATABASE_URL ||
-  "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:6543/postgres";
+  "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
 
-if (connectionString.includes("pooler.supabase.com:5432")) {
-  connectionString = connectionString.replace("pooler.supabase.com:5432", "pooler.supabase.com:6543");
+if (connectionString.includes("pooler.supabase.com:6543")) {
+  connectionString = connectionString.replace("pooler.supabase.com:6543", "pooler.supabase.com:5432");
 }
 
 const pool = new Pool({

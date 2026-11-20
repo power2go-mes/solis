@@ -45,8 +45,8 @@ const localEnv = {
 const solisUser = process.env.SOLIS_USERNAME || localEnv.SOLIS_USERNAME;
 const solisPass = process.env.SOLIS_PASSWORD || localEnv.SOLIS_PASSWORD;
 let dbUrl = process.env.DATABASE_URL || localEnv.DATABASE_URL || localEnv.SUPABASE_DB_URL;
-if (dbUrl && dbUrl.includes("pooler.supabase.com:5432")) {
-  dbUrl = dbUrl.replace("pooler.supabase.com:5432", "pooler.supabase.com:6543");
+if (dbUrl && dbUrl.includes("pooler.supabase.com:6543")) {
+  dbUrl = dbUrl.replace("pooler.supabase.com:6543", "pooler.supabase.com:5432");
 }
 
 if (!solisUser || !solisPass || !dbUrl) {
@@ -93,6 +93,7 @@ function postRequest(apiPath, body) {
       "X-Cloud-Platform": "GLY",
       "Version": "5.3.001",
       "Platform": "Web",
+      "Connection": "close",
       "Content-Length": Buffer.byteLength(bodyStr),
     };
 
@@ -107,7 +108,8 @@ function postRequest(apiPath, body) {
       path: apiPath,
       method: "POST",
       headers: headers,
-      timeout: 20000,
+      timeout: 35000,
+      agent: false,
     };
 
     const req = https.request(options, (res) => {
@@ -484,6 +486,8 @@ async function runLiveSync() {
     } catch (err) {
       console.error(`[Error] Updating ${p.name}:`, err.message || err);
     }
+    // Polite 1.2s pacing between plants to prevent SolisCloud WAF connection resets
+    await new Promise((r) => setTimeout(r, 1200));
   }
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -625,12 +629,14 @@ async function startDaemon() {
     console.error("Initial live sync error:", e);
   }
 
-  // 2. Initial Day 1 audit
-  try {
-    await runMissingDataAudit();
-  } catch (e) {
-    console.error("Initial data audit error:", e);
-  }
+  // 2. Initial Day 1 audit (delayed 2 minutes after initial live sync to avoid rate limits)
+  setTimeout(async () => {
+    try {
+      await runMissingDataAudit();
+    } catch (e) {
+      console.error("Initial data audit error:", e);
+    }
+  }, 120_000);
 
   // Schedule recurring 10-minute live sync
   const TEN_MINUTES = 10 * 60 * 1000;
