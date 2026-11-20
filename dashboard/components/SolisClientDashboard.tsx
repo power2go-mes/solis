@@ -25,6 +25,11 @@ import {
 } from "lucide-react";
 
 import SolisHousePowerFlow from "./SolisHousePowerFlow";
+import SolisPlantInfoTab from "./SolisPlantInfoTab";
+import SolisDevicesTab from "./SolisDevicesTab";
+import SolisAlarmsTab from "./SolisAlarmsTab";
+import SolisAlertsTab from "./SolisAlertsTab";
+import SolisLayoutTab from "./SolisLayoutTab";
 import { PlantInfo, TelemetryLatest, EnergyBreakdownResult, DailyEnergyRecord } from "@/lib/types";
 import { ChartSeriesData } from "@/lib/db";
 
@@ -195,6 +200,8 @@ export default function SolisClientDashboard({
   const [monthData, setMonthData] = useState<EnergyBreakdownResult | null>(null);
   const [yearData, setYearData] = useState<EnergyBreakdownResult | null>(null);
   const [lifetimeData, setLifetimeData] = useState<EnergyBreakdownResult | null>(null);
+  const [plantDetailsData, setPlantDetailsData] = useState<any>(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -572,6 +579,25 @@ export default function SolisClientDashboard({
     }
   }, [selectedPlantId, currentMonth, currentYear, getFallbackBreakdown]);
 
+  const loadPlantDetails = useCallback(async () => {
+    setIsDetailsLoading(true);
+    try {
+      const res = await fetch(`/api/plant/details?stationId=${selectedPlantId}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setPlantDetailsData(data);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading plant details:", err);
+    } finally {
+      setIsDetailsLoading(false);
+    }
+  }, [selectedPlantId]);
+
   // Combined fetch
   const fetchAllData = useCallback(async () => {
     setLoading(true);
@@ -581,9 +607,10 @@ export default function SolisClientDashboard({
       loadMonthData(),
       loadYearData(),
       loadLifetimeData(),
+      loadPlantDetails(),
     ]);
     setLoading(false);
-  }, [loadTelemetry, loadDayCurve, loadMonthData, loadYearData, loadLifetimeData]);
+  }, [loadTelemetry, loadDayCurve, loadMonthData, loadYearData, loadLifetimeData, loadPlantDetails]);
 
   useEffect(() => {
     fetchAllData();
@@ -880,23 +907,23 @@ export default function SolisClientDashboard({
           markLine:
             nowIndex >= 0
               ? {
-                  symbol: "none",
-                  silent: true,
-                  lineStyle: {
-                    type: "dashed",
-                    color: "#f97316",
-                    width: 1.5,
-                  },
-                  label: {
-                    show: true,
-                    position: "insideEndTop",
-                    formatter: "Now",
-                    color: "#f97316",
-                    fontWeight: 600,
-                    fontSize: 11,
-                  },
-                  data: [{ xAxis: nowTimeStr }],
-                }
+                symbol: "none",
+                silent: true,
+                lineStyle: {
+                  type: "dashed",
+                  color: "#f97316",
+                  width: 1.5,
+                },
+                label: {
+                  show: true,
+                  position: "insideEndTop",
+                  formatter: "Now",
+                  color: "#f97316",
+                  fontWeight: 600,
+                  fontSize: 11,
+                },
+                data: [{ xAxis: nowTimeStr }],
+              }
               : undefined,
         },
         {
@@ -1242,7 +1269,7 @@ export default function SolisClientDashboard({
   const liveBatteryState = telemetry?.battery_direction || "Idle";
   const liveGridKw = Number(telemetry?.grid_power_kw || 9.8);
 
-  const subnavItems = ["Overview", "Layout", "Info", "Device", "Alarm", "Alert", "Tariff"];
+  const subnavItems = ["Overview", "Layout", "Info", "Device", "Alarm", "Alert"];
 
   return (
     <div className="flex flex-col space-y-4">
@@ -1293,11 +1320,10 @@ export default function SolisClientDashboard({
                         onSelectPlant(p.id);
                         setIsPlantDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-orange-50 transition-colors ${
-                        p.id === selectedPlantId
+                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-orange-50 transition-colors ${p.id === selectedPlantId
                           ? "text-[#f37021] font-bold bg-orange-50/50"
                           : "text-slate-700 font-medium"
-                      }`}
+                        }`}
                     >
                       <span>{p.name}</span>
                       <span className="text-[11px] text-slate-400">{p.capacityKwp} kWp</span>
@@ -1337,7 +1363,7 @@ export default function SolisClientDashboard({
             <span>|</span>
             <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>{formatPktDisplayTime()} (UTC+05:00)</span>
+              <span>{formatPktDisplayTime()}</span>
               <span className="text-slate-500 font-medium ml-1">4Min Ago</span>
             </div>
           </div>
@@ -1362,11 +1388,10 @@ export default function SolisClientDashboard({
           <button
             key={item}
             onClick={() => setActiveSubnav(item)}
-            className={`px-3 py-1 rounded-md font-medium transition-all ${
-              activeSubnav === item
+            className={`px-3 py-1 rounded-md font-medium transition-all ${activeSubnav === item
                 ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-gray-100/70"
-            }`}
+              }`}
           >
             {item}
           </button>
@@ -1374,555 +1399,580 @@ export default function SolisClientDashboard({
       </div>
 
       {/* ======================================================== */}
-      {/* 3. MAIN DASHBOARD BODY (2 COLUMNS: LEFT 8 / RIGHT 4)      */}
+      {/* 3. MAIN DASHBOARD BODY (BY ACTIVE SUBNAV)                 */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* ====================================================== */}
-        {/* LEFT COLUMN: 3D Villa House & Operating Data (8 cols)  */}
-        {/* ====================================================== */}
-        <div className="lg:col-span-8 space-y-4">
-          {/* Card 1: 3D Villa House Power Flow Diagram */}
-          <SolisHousePowerFlow
-            solarKw={liveSolar}
-            loadKw={liveLoad}
-            batterySoc={liveBatterySoc}
-            batteryKw={liveBatteryKw}
-            batteryState={liveBatteryState}
-            gridKw={liveGridKw}
-            dailyYieldKwh={Number(totals.pv || 112.7)}
-            dailyChargeKwh={Number(totals.charge || 80.4)}
-            dailyDischargeKwh={Number(totals.discharge || 53.0)}
-          />
+      {activeSubnav === "Overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* ====================================================== */}
+          {/* LEFT COLUMN: 3D Villa House & Operating Data (8 cols)  */}
+          {/* ====================================================== */}
+          <div className="lg:col-span-8 space-y-4">
+            {/* Card 1: 3D Villa House Power Flow Diagram */}
+            <SolisHousePowerFlow
+              solarKw={liveSolar}
+              loadKw={liveLoad}
+              batterySoc={liveBatterySoc}
+              batteryKw={liveBatteryKw}
+              batteryState={liveBatteryState}
+              gridKw={liveGridKw}
+              dailyYieldKwh={Number(totals.pv || 112.7)}
+              dailyChargeKwh={Number(totals.charge || 80.4)}
+              dailyDischargeKwh={Number(totals.discharge || 53.0)}
+            />
 
-          {/* Card 2: Operating Data Container */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4 sm:p-5">
-            {/* Header: Title, Date Picker, Granularity Tabs, Icons */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <h3 className="text-sm sm:text-base font-bold text-slate-900">Operating Data</h3>
+            {/* Card 2: Operating Data Container */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4 sm:p-5">
+              {/* Header: Title, Date Picker, Granularity Tabs, Icons */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">Operating Data</h3>
 
-                {/* Date Navigator */}
-                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md p-0.5 text-xs">
-                  <button
-                    onClick={handlePrevDate}
-                    className="p-1 hover:bg-white text-slate-600 hover:text-slate-900 rounded transition-colors"
-                    title="Previous"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="px-2 py-0.5 font-semibold text-slate-700 font-mono text-[11px]">
-                    {getDateDisplayString()}
-                  </span>
-                  <button
-                    onClick={handleNextDate}
-                    className="p-1 hover:bg-white text-slate-600 hover:text-slate-900 rounded transition-colors"
-                    title="Next"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Granularity Tabs & Toolbar */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center bg-gray-100/80 p-0.5 rounded-lg border border-gray-200/60 text-xs">
-                  {(["Day", "Month", "Year", "Lifetime"] as const).map((tab) => (
+                  {/* Date Navigator */}
+                  <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md p-0.5 text-xs">
                     <button
-                      key={tab}
-                      data-tab={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                        activeTab === tab
-                          ? "bg-white text-emerald-600 font-semibold shadow-2xs border border-emerald-200"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
+                      onClick={handlePrevDate}
+                      className="p-1 hover:bg-white text-slate-600 hover:text-slate-900 rounded transition-colors"
+                      title="Previous"
                     >
-                      {tab}
+                      <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-1 text-slate-400 pl-1">
-                  <button
-                    className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors"
-                    title="Filter options"
-                  >
-                    <Filter className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors"
-                    title="Export Data"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Metric KPI Cards */}
-            {activeTab === "Day" ? (
-              /* 6 Cards for Day View (2 rows of 3) */
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
-                    {totals.pv} <span className="text-xs font-semibold text-slate-500">kWh</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">PV</div>
-                </div>
-
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
-                    {totals.inverter} <span className="text-xs font-semibold text-slate-500">kWh</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">Inverter</div>
-                </div>
-
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
-                    {totals.acCoupled}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">AC Coupled</div>
-                </div>
-
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
-                    {totals.consumption}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    Daily Consumption
+                    <span className="px-2 py-0.5 font-semibold text-slate-700 font-mono text-[11px]">
+                      {getDateDisplayString()}
+                    </span>
+                    <button
+                      onClick={handleNextDate}
+                      className="p-1 hover:bg-white text-slate-600 hover:text-slate-900 rounded transition-colors"
+                      title="Next"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
-                    {totals.gridLoadConsumption}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+                {/* Granularity Tabs & Toolbar */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center bg-gray-100/80 p-0.5 rounded-lg border border-gray-200/60 text-xs">
+                    {(["Day", "Month", "Year", "Lifetime"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        data-tab={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${activeTab === tab
+                            ? "bg-white text-emerald-600 font-semibold shadow-2xs border border-emerald-200"
+                            : "text-slate-600 hover:text-slate-900"
+                          }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    Daily Grid Load
-                  </div>
-                </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
-                    {totals.backupLoad}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    Daily Backup Load
+                  <div className="flex items-center gap-1 text-slate-400 pl-1">
+                    <button
+                      className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors"
+                      title="Filter options"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors"
+                      title="Export Data"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
-            ) : (
-              /* 8 Cards for Month, Year, Lifetime (2 rows of 4) */
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.pv} <span className="text-xs font-semibold text-slate-500">kWh</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">PV</div>
-                </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.inverter}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+              {/* Metric KPI Cards */}
+              {activeTab === "Day" ? (
+                /* 6 Cards for Day View (2 rows of 3) */
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
+                      {totals.pv} <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">PV</div>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">Inverter</div>
-                </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.acCoupled}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
+                      {totals.inverter} <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">Inverter</div>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">AC Coupled</div>
-                </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.consumption}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
+                      {totals.acCoupled}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">AC Coupled</div>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    {activeTab === "Year"
-                      ? "Annual Consumption"
-                      : activeTab === "Month"
-                      ? "Monthly Consumption"
-                      : "Total Consumption"}
-                  </div>
-                </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.gridLoadConsumption}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
+                      {totals.consumption}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      Daily Consumption
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    {activeTab === "Year"
-                      ? "Annual Grid Load Consumption"
-                      : activeTab === "Month"
-                      ? "Monthly Grid Load Consumption"
-                      : "Grid Load Consumption"}
-                  </div>
-                </div>
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.backupLoad}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
+                      {totals.gridLoadConsumption}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      Daily Grid Load
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    {activeTab === "Year"
-                      ? "Annual Backup Load"
-                      : activeTab === "Month"
-                      ? "Monthly Backup Load"
-                      : "Backup Load"}
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-lg sm:text-xl font-bold text-slate-900 font-mono">
+                      {totals.backupLoad}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      Daily Backup Load
+                    </div>
                   </div>
                 </div>
-
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.smartLoad || 0}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+              ) : (
+                /* 8 Cards for Month, Year, Lifetime (2 rows of 4) */
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.pv} <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">PV</div>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">Smart Load</div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.inverter}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">Inverter</div>
+                  </div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.acCoupled}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">AC Coupled</div>
+                  </div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.consumption}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      {activeTab === "Year"
+                        ? "Annual Consumption"
+                        : activeTab === "Month"
+                          ? "Monthly Consumption"
+                          : "Total Consumption"}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.gridLoadConsumption}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      {activeTab === "Year"
+                        ? "Annual Grid Load Consumption"
+                        : activeTab === "Month"
+                          ? "Monthly Grid Load Consumption"
+                          : "Grid Load Consumption"}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.backupLoad}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      {activeTab === "Year"
+                        ? "Annual Backup Load"
+                        : activeTab === "Month"
+                          ? "Monthly Backup Load"
+                          : "Backup Load"}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.smartLoad || 0}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">Smart Load</div>
+                  </div>
+
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
+                    <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+                      {totals.import}{" "}
+                      <span className="text-xs font-semibold text-slate-500">kWh</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">
+                      {activeTab === "Year"
+                        ? "Annual Import"
+                        : activeTab === "Month"
+                          ? "Monthly Import"
+                          : "Total Import"}
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div className="bg-[#f8fafc] border border-slate-100 rounded-xl p-3">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
-                    {totals.import}{" "}
-                    <span className="text-xs font-semibold text-slate-500">kWh</span>
+              {/* Chart Area: Strictly conditional per activeTab */}
+              {activeTab === "Day" && (
+                /* DUAL LINE CHARTS FOR DAY */
+                <div key="day-charts-wrapper" className="space-y-4 pt-2">
+                  {/* 1. Power Curve */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]" />
+                          <span>PV</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
+                          <span>Grid</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
+                          <span>Battery</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#a855f7]" />
+                          <span>Total Load</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={loadDayCurve}
+                        className="text-slate-400 hover:text-slate-600 p-1"
+                        title="Refresh curve"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div ref={powerChartRef} className="w-full h-[220px]" />
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium mt-1">
-                    {activeTab === "Year"
-                      ? "Annual Import"
-                      : activeTab === "Month"
-                      ? "Monthly Import"
-                      : "Total Import"}
+
+                  {/* 2. Battery SOC & Tariff Curve */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
+                          <span>SOC</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
+                          <span>Purchase Tariff</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
+                          <span>Feed-in Tariff</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={loadDayCurve}
+                        className="text-slate-400 hover:text-slate-600 p-1"
+                        title="Refresh curve"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div ref={socChartRef} className="w-full h-[200px]" />
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Chart Area: Strictly conditional per activeTab */}
-            {activeTab === "Day" && (
-              /* DUAL LINE CHARTS FOR DAY */
-              <div key="day-charts-wrapper" className="space-y-4 pt-2">
-                {/* 1. Power Curve */}
-                <div>
+              {activeTab !== "Day" && (
+                /* GROUPED BAR CHART FOR MONTH / YEAR / LIFETIME */
+                <div key="bar-chart-container" className="space-y-3 pt-2">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
+                    <div className="flex items-center gap-3.5 text-xs font-medium text-slate-600 flex-wrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#facc15]" />
                         <span>PV</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
-                        <span>Grid</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                        <span>Battery</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#a855f7]" />
-                        <span>Total Load</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={loadDayCurve}
-                      className="text-slate-400 hover:text-slate-600 p-1"
-                      title="Refresh curve"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div ref={powerChartRef} className="w-full h-[220px]" />
-                </div>
-
-                {/* 2. Battery SOC & Tariff Curve */}
-                <div className="pt-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                        <span>SOC</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
-                        <span>Purchase Tariff</span>
+                        <span>Import</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                        <span>Feed-in Tariff</span>
+                        <span>Export</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
+                        <span>Charge</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
+                        <span>Discharge</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
+                        <span>Consumption</span>
                       </div>
                     </div>
                     <button
-                      onClick={loadDayCurve}
+                      onClick={() => {
+                        if (activeTab === "Month") loadMonthData();
+                        else if (activeTab === "Year") loadYearData();
+                        else loadLifetimeData();
+                      }}
                       className="text-slate-400 hover:text-slate-600 p-1"
-                      title="Refresh curve"
+                      title="Refresh bar chart"
                     >
                       <RotateCw className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div ref={socChartRef} className="w-full h-[200px]" />
+                  <div ref={barChartRef} className="w-full h-[320px]" />
                 </div>
-              </div>
-            )}
-
-            {activeTab !== "Day" && (
-              /* GROUPED BAR CHART FOR MONTH / YEAR / LIFETIME */
-              <div key="bar-chart-container" className="space-y-3 pt-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3.5 text-xs font-medium text-slate-600 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#facc15]" />
-                      <span>PV</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
-                      <span>Import</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                      <span>Export</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
-                      <span>Charge</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
-                      <span>Discharge</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
-                      <span>Consumption</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (activeTab === "Month") loadMonthData();
-                      else if (activeTab === "Year") loadYearData();
-                      else loadLifetimeData();
-                    }}
-                    className="text-slate-400 hover:text-slate-600 p-1"
-                    title="Refresh bar chart"
-                  >
-                    <RotateCw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div ref={barChartRef} className="w-full h-[320px]" />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ====================================================== */}
-        {/* RIGHT COLUMN: Battery, Plant Info, Weather, Benefits   */}
-        {/* ====================================================== */}
-        <div className="lg:col-span-4 space-y-4">
-          {/* Card 1: Battery Segment Bar */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-800">Battery</span>
-              <span className="text-base font-bold text-slate-900 font-mono">
-                {liveBatterySoc}%
-              </span>
-            </div>
-            {/* 10 Segmented Green Bars */}
-            <div className="grid grid-cols-10 gap-1.5">
-              {Array.from({ length: 10 }).map((_, idx) => {
-                const filled = (idx + 1) * 10 <= liveBatterySoc;
-                return (
-                  <div
-                    key={idx}
-                    className={`h-3 rounded-xs transition-all ${
-                      filled ? "bg-emerald-500 shadow-2xs" : "bg-gray-100"
-                    }`}
-                  />
-                );
-              })}
+              )}
             </div>
           </div>
 
-          {/* Card 2: Plant Information */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                <span>Plant Information</span>
-                <span className="text-slate-400">&gt;</span>
-              </span>
-            </div>
-
-            {/* Photo with GPS Chip Overlay */}
-            <div className="relative rounded-xl overflow-hidden h-36 bg-slate-100 border border-slate-200/60 mb-3.5">
-              <Image
-                src="/solis/STATION_default_normal.png"
-                alt="Plant Solar Rooftop"
-                fill
-                className="object-cover"
-                unoptimized
-              />
-              <div className="absolute top-2.5 left-2.5 bg-black/50 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded-md flex items-center gap-1">
-                <span>◬</span>
-                <span>{plantMeta.gps}</span>
-              </div>
-            </div>
-
-            {/* Key-Value List */}
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-slate-400">Plant Name</span>
-                <span className="font-semibold text-slate-800">{plantMeta.name}</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-slate-400">Owner</span>
-                <span className="font-medium text-slate-700">{plantMeta.owner}</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-slate-400">Status</span>
-                <span className="font-semibold text-emerald-600 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Online
+          {/* ====================================================== */}
+          {/* RIGHT COLUMN: Battery, Plant Info, Weather, Benefits   */}
+          {/* ====================================================== */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Card 1: Battery Segment Bar */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-slate-800">Battery</span>
+                <span className="text-base font-bold text-slate-900 font-mono">
+                  {liveBatterySoc}%
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-slate-400">PV Capacity</span>
-                <span className="font-semibold text-slate-800 font-mono">
-                  {plantMeta.capacityKwp}kWp
+              {/* 10 Segmented Green Bars */}
+              <div className="grid grid-cols-10 gap-1.5">
+                {Array.from({ length: 10 }).map((_, idx) => {
+                  const filled = (idx + 1) * 10 <= liveBatterySoc;
+                  return (
+                    <div
+                      key={idx}
+                      className={`h-3 rounded-xs transition-all ${filled ? "bg-emerald-500 shadow-2xs" : "bg-gray-100"
+                        }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Card 2: Plant Information */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                  <span>Plant Information</span>
+                  <span className="text-slate-400">&gt;</span>
                 </span>
               </div>
-              <div className="flex flex-col py-1">
-                <span className="text-slate-400 text-[11px] mb-0.5">Plant Address</span>
-                <span className="text-slate-700 leading-tight text-[11px]">
-                  {plantMeta.address}
-                </span>
+
+              {/* Photo with GPS Chip Overlay */}
+              <div className="relative rounded-xl overflow-hidden h-36 bg-slate-100 border border-slate-200/60 mb-3.5">
+                <Image
+                  src="/solis/STATION_default_normal.png"
+                  alt="Plant Solar Rooftop"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                <div className="absolute top-2.5 left-2.5 bg-black/50 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <span>◬</span>
+                  <span>{plantMeta.gps}</span>
+                </div>
+              </div>
+
+              {/* Key-Value List */}
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="text-slate-400">Plant Name</span>
+                  <span className="font-semibold text-slate-800">{plantMeta.name}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="text-slate-400">Owner</span>
+                  <span className="font-medium text-slate-700">{plantMeta.owner}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="text-slate-400">Status</span>
+                  <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Online
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="text-slate-400">PV Capacity</span>
+                  <span className="font-semibold text-slate-800 font-mono">
+                    {plantMeta.capacityKwp}kWp
+                  </span>
+                </div>
+                <div className="flex flex-col py-1">
+                  <span className="text-slate-400 text-[11px] mb-0.5">Plant Address</span>
+                  <span className="text-slate-700 leading-tight text-[11px]">
+                    {plantMeta.address}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Card 3: Weather */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-800">Weather</span>
-            </div>
+            {/* Card 3: Weather */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-slate-800">Weather</span>
+              </div>
 
-            {/* 4-Day Forecast Row */}
-            <div className="grid grid-cols-4 gap-2 text-center pb-3 border-b border-gray-100">
-              {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
-                <div key={idx} className="flex flex-col items-center">
-                  <span className="text-[10px] text-slate-500 font-medium mb-1">{day}</span>
-                  <div className="w-6 h-6 flex items-center justify-center text-amber-500">
-                    <Sun className="w-5 h-5 fill-amber-400 text-amber-500" />
+              {/* 4-Day Forecast Row */}
+              <div className="grid grid-cols-4 gap-2 text-center pb-3 border-b border-gray-100">
+                {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
+                  <div key={idx} className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-500 font-medium mb-1">{day}</span>
+                    <div className="w-6 h-6 flex items-center justify-center text-amber-500">
+                      <Sun className="w-5 h-5 fill-amber-400 text-amber-500" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* 2x2 Weather Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 pt-3 text-xs">
-              <div>
-                <span className="text-[10px] text-slate-400">Temperature</span>
-                <div className="font-semibold text-slate-800 text-sm mt-0.5">
-                  {plantMeta.temp}
-                </div>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400">Sunrise/Sunset</span>
-                <div className="font-semibold text-slate-800 text-sm mt-0.5">
-                  {plantMeta.sunriseSunset}
-                </div>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400">Wind</span>
-                <div className="font-semibold text-slate-800 text-sm mt-0.5">
-                  {plantMeta.wind}
-                </div>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400">Humidity</span>
-                <div className="font-semibold text-slate-800 text-sm mt-0.5">
-                  {plantMeta.humidity}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: Environmental Benefits */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-800">Environmental Benefits</span>
-            </div>
-
-            <div className="space-y-3">
-              {/* Trees */}
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+              {/* 2x2 Weather Stats Grid */}
+              <div className="grid grid-cols-2 gap-3 pt-3 text-xs">
                 <div>
-                  <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
-                    {plantMeta.trees.toFixed(2)}
-                  </div>
-                  <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                    Equivalent Trees
+                  <span className="text-[10px] text-slate-400">Temperature</span>
+                  <div className="font-semibold text-slate-800 text-sm mt-0.5">
+                    {plantMeta.temp}
                   </div>
                 </div>
-                <div className="relative w-12 h-12">
-                  <Image
-                    src="/solis/tree-Bt0ZdeGH.png"
-                    alt="Trees"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
+                <div>
+                  <span className="text-[10px] text-slate-400">Sunrise/Sunset</span>
+                  <div className="font-semibold text-slate-800 text-sm mt-0.5">
+                    {plantMeta.sunriseSunset}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400">Wind</span>
+                  <div className="font-semibold text-slate-800 text-sm mt-0.5">
+                    {plantMeta.wind}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400">Humidity</span>
+                  <div className="font-semibold text-slate-800 text-sm mt-0.5">
+                    {plantMeta.humidity}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* CO2 Reduced */}
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
-                <div>
-                  <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
-                    {plantMeta.co2Tons.toFixed(2)} <span className="text-xs font-normal">t</span>
-                  </div>
-                  <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                    CO₂ Reduced
-                  </div>
-                </div>
-                <div className="relative w-12 h-12">
-                  <Image
-                    src="/solis/cloud-DwomYkkV.png"
-                    alt="CO2"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
-                </div>
+            {/* Card 4: Environmental Benefits */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-slate-800">Environmental Benefits</span>
               </div>
 
-              {/* Coal Saved */}
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
-                <div>
-                  <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
-                    {plantMeta.coalTons.toFixed(2)} <span className="text-xs font-normal">t</span>
+              <div className="space-y-3">
+                {/* Trees */}
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+                  <div>
+                    <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.trees.toFixed(2)}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                      Equivalent Trees
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-500 font-normal mt-0.5">Coal Saved</div>
+                  <div className="relative w-12 h-12">
+                    <Image
+                      src="/solis/tree-Bt0ZdeGH.png"
+                      alt="Trees"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
                 </div>
-                <div className="relative w-12 h-12">
-                  <Image
-                    src="/solis/carbon-CeHwfZ7r.png"
-                    alt="Coal"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
+
+                {/* CO2 Reduced */}
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+                  <div>
+                    <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.co2Tons.toFixed(2)} <span className="text-xs font-normal">t</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                      CO₂ Reduced
+                    </div>
+                  </div>
+                  <div className="relative w-12 h-12">
+                    <Image
+                      src="/solis/cloud-DwomYkkV.png"
+                      alt="CO2"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                </div>
+
+                {/* Coal Saved */}
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+                  <div>
+                    <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.coalTons.toFixed(2)} <span className="text-xs font-normal">t</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-normal mt-0.5">Coal Saved</div>
+                  </div>
+                  <div className="relative w-12 h-12">
+                    <Image
+                      src="/solis/carbon-CeHwfZ7r.png"
+                      alt="Coal"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+          {/* Card 2: Layout Tab (Single Line Diagram) */}
+          {activeSubnav === "Layout" && (
+            <SolisLayoutTab plantName={plantMeta.name} capacityKwp={plantMeta.capacityKwp} />
+          )}
+
+          {/* Card 3: Info Tab (Full Station & Owner Specifications) */}
+          {activeSubnav === "Info" && (
+            <SolisPlantInfoTab info={plantDetailsData?.plantInfo} isLoading={isDetailsLoading} />
+          )}
+
+          {/* Card 4: Device Tab (Inverter, Battery, Datalogger, Meter) */}
+          {activeSubnav === "Device" && (
+            <SolisDevicesTab devices={plantDetailsData?.devices} isLoading={isDetailsLoading} />
+          )}
+
+          {/* Card 5: Alarm Tab (SolisCloud Fault & Recovery Audit) */}
+          {activeSubnav === "Alarm" && (
+            <SolisAlarmsTab alarmsData={plantDetailsData?.alarms} isLoading={isDetailsLoading} />
+          )}
+
+      {/* Card 6: Alert Tab (Operational & Diagnostic Notifications) */}
+      {activeSubnav === "Alert" && (
+        <SolisAlertsTab alertsData={plantDetailsData?.alerts} isLoading={isDetailsLoading} />
+      )}
     </div>
   );
 }

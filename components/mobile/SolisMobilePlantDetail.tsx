@@ -25,6 +25,10 @@ import {
 } from "lucide-react";
 
 import SolisMobileCommercialPowerFlow from "./SolisMobileCommercialPowerFlow";
+import SolisMobileEnergyBreakdown from "./SolisMobileEnergyBreakdown";
+import SolisPlantInfoTab from "../SolisPlantInfoTab";
+import SolisDevicesTab from "../SolisDevicesTab";
+import SolisAlarmsTab from "../SolisAlarmsTab";
 import { PlantInfo, TelemetryLatest, EnergyBreakdownResult, DailyEnergyRecord } from "@/lib/types";
 import { ChartSeriesData } from "@/lib/db";
 
@@ -162,7 +166,7 @@ export default function SolisMobilePlantDetail({
   const [activeBottomNav, setActiveBottomNav] = useState<string>("Overview");
 
   // Granularity selector: Day | Month | Year | Lifetime
-  const [granularity, setGranularity] = useState<"Day" | "Month" | "Year" | "Lifetime">("Day");
+  const [granularity, setGranularity] = useState<"Day" | "Month" | "Year">("Day");
   const [currentDate, setCurrentDate] = useState<string>(getPktDateStr);
 
   // Series visibility toggles for Chart Analysis
@@ -178,6 +182,8 @@ export default function SolisMobilePlantDetail({
   const [telemetry, setTelemetry] = useState<TelemetryLatest | null>(null);
   const [dayCurveData, setDayCurveData] = useState<ChartSeriesData | null>(null);
   const [dayDailyEnergy, setDayDailyEnergy] = useState<DailyEnergyRecord | null>(null);
+  const [plantDetailsData, setPlantDetailsData] = useState<any>(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(false);
 
   // Chart ref
   const chartRef = useRef<HTMLDivElement>(null);
@@ -218,14 +224,16 @@ export default function SolisMobilePlantDetail({
     }
   }, [selectedPlantId]);
 
-  // Fetch curve and daily energy totals
+  // Fetch the selected chart range and daily energy totals for the KPI cards.
   const loadCurve = useCallback(async () => {
     try {
       const [curveRes, dailyRes] = await Promise.all([
-        fetch(
-          `/api/telemetry/curve?stationId=${selectedPlantId}&range=day&date=${currentDate}`,
-          { cache: "no-store" }
-        ),
+        granularity === "Day"
+          ? fetch(
+              `/api/telemetry/curve?stationId=${selectedPlantId}&range=day&date=${currentDate}`,
+              { cache: "no-store" }
+            )
+          : Promise.resolve(null),
         fetch(
           `/api/energy/daily?stationId=${selectedPlantId}&startDate=${currentDate}&endDate=${currentDate}`,
           { cache: "no-store" }
@@ -241,21 +249,44 @@ export default function SolisMobilePlantDetail({
         }
       }
 
-      if (curveRes.ok) {
+      if (curveRes?.ok) {
         const data = await curveRes.json();
         if (data.success && data.chartData) {
           setDayCurveData(data.chartData);
         }
+      } else if (granularity !== "Day") {
+        setDayCurveData(null);
       }
     } catch (err) {
       console.error("Error loading mobile curves:", err);
     }
-  }, [selectedPlantId, currentDate]);
+  }, [selectedPlantId, currentDate, granularity]);
+
+  // Fetch plant details (inverters, batteries, alarms, plant info)
+  const loadPlantDetails = useCallback(async () => {
+    setIsDetailsLoading(true);
+    try {
+      const res = await fetch(`/api/plant/details?stationId=${selectedPlantId}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setPlantDetailsData(data);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading mobile plant details:", err);
+    } finally {
+      setIsDetailsLoading(false);
+    }
+  }, [selectedPlantId]);
 
   useEffect(() => {
     loadTelemetry();
     loadCurve();
-  }, [loadTelemetry, loadCurve]);
+    loadPlantDetails();
+  }, [loadTelemetry, loadCurve, loadPlantDetails]);
 
   // Date formatted for display: "19/11/2026"
   const [y, m, d] = currentDate.split("-");
@@ -394,10 +425,11 @@ export default function SolisMobilePlantDetail({
         textStyle: { color: "#1e293b", fontSize: 11 },
       },
       grid: {
-        top: 20,
-        right: 32,
-        bottom: 22,
-        left: 28,
+        top: 26,
+        right: 38,
+        bottom: 30,
+        left: 38,
+        containLabel: true,
       },
       xAxis: {
         type: "category",
@@ -448,13 +480,18 @@ export default function SolisMobilePlantDetail({
 
     chart.setOption(option, true);
     chart.resize();
-  }, [dayCurveData, visibleSeries]);
+  }, [dayCurveData, visibleSeries, granularity, currentDate]);
 
   // Resize handler
   useEffect(() => {
     const handleResize = () => chartInstance.current?.resize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const observer = chartRef.current ? new ResizeObserver(handleResize) : null;
+    if (chartRef.current && observer) observer.observe(chartRef.current);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      observer?.disconnect();
+    };
   }, []);
 
   return (
@@ -517,7 +554,8 @@ export default function SolisMobilePlantDetail({
         </div>
       </div>
 
-      <div className="px-3 space-y-3.5 mt-1">
+      {activeBottomNav === "Overview" && (
+        <div className="px-3 space-y-3.5 mt-1">
         {/* ======================================================== */}
         {/* 3. 3D VILLA HOUSE ISOMETRIC POWER FLOW & ANIMATIONS       */}
         {/* ======================================================== */}
@@ -734,11 +772,24 @@ export default function SolisMobilePlantDetail({
         {/* ======================================================== */}
         {/* 6. CHART ANALYSIS (MULTI-SERIES CURVE WITH SWITCHES)      */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5">
+        <div className={granularity === "Day" ? "bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5" : "space-y-2"}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className="text-xs font-bold text-slate-900">Chart Analysis</span>
             <div className="flex items-center gap-1.5 text-slate-400">
+              <div className="inline-flex rounded-lg bg-slate-100 p-0.5" role="group" aria-label="Chart time range">
+                {(["Day", "Month", "Year"] as const).map((range) => (
+                  <button
+                    key={range}
+                    type="button"
+                    onClick={() => setGranularity(range)}
+                    aria-pressed={granularity === range}
+                    className={`rounded-md px-2 py-1 text-[10px] font-semibold transition-colors ${granularity === range ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                  >
+                    {range === "Day" ? "Daily" : range === "Month" ? "Monthly" : "Yearly"}
+                  </button>
+                ))}
+              </div>
               <button className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50">
                 <Filter className="w-3 h-3" />
               </button>
@@ -748,15 +799,16 @@ export default function SolisMobilePlantDetail({
             </div>
           </div>
 
-          {/* ECharts Canvas with explicit height */}
-          <div
-            ref={chartRef}
-            className="w-full"
-            style={{ width: "100%", height: "240px", minHeight: "240px" }}
-          />
+          <div className={granularity === "Day" ? "" : "hidden"}>
+            {/* ECharts Canvas with explicit height */}
+            <div
+              ref={chartRef}
+              className="w-full"
+              style={{ width: "100%", height: "clamp(240px, 62vw, 320px)", minHeight: "240px" }}
+            />
 
-          {/* Interactive Legend Switches matching exact SolisCloud pills */}
-          <div className="flex items-center justify-between flex-wrap gap-2 pt-2.5 border-t border-gray-100 text-[11px] font-medium text-slate-700">
+            {/* Interactive Legend Switches matching exact SolisCloud pills */}
+            <div className="flex items-center justify-between flex-wrap gap-2 pt-2.5 border-t border-gray-100 text-[11px] font-medium text-slate-700">
             {/* PV Switch */}
             <button
               onClick={() => setVisibleSeries((s) => ({ ...s, pv: !s.pv }))}
@@ -851,7 +903,16 @@ export default function SolisMobilePlantDetail({
               </div>
               <span className="text-[11px] font-medium text-slate-700">Total Load</span>
             </button>
+            </div>
           </div>
+
+          {granularity !== "Day" && (
+            <SolisMobileEnergyBreakdown
+              key={granularity}
+              stationId={selectedPlantId}
+              period={granularity === "Month" ? "month" : "year"}
+            />
+          )}
         </div>
 
         {/* ======================================================== */}
@@ -967,16 +1028,42 @@ export default function SolisMobilePlantDetail({
           </div>
         </div>
       </div>
+    )}
+
+      {/* Device Tab View */}
+      {activeBottomNav === "Device" && (
+        <div className="px-3 pb-24 mt-3">
+          <SolisDevicesTab devices={plantDetailsData?.devices} isLoading={isDetailsLoading} />
+        </div>
+      )}
+
+      {/* Alarm Tab View */}
+      {activeBottomNav === "Alarm" && (
+        <div className="px-3 pb-24 mt-3">
+          <SolisAlarmsTab alarmsData={plantDetailsData?.alarms} isLoading={isDetailsLoading} />
+        </div>
+      )}
+
+      {/* Info / Settings Tab View */}
+      {(activeBottomNav === "Info" || activeBottomNav === "Settings") && (
+        <div className="px-3 pb-24 mt-3">
+          <SolisPlantInfoTab info={plantDetailsData?.plantInfo} isLoading={isDetailsLoading} />
+        </div>
+      )}
 
       {/* ======================================================== */}
-      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm... */}
+      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm, Info */}
       {/* ======================================================== */}
       <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none">
         <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1 text-xs font-semibold pointer-events-auto">
-          {/* Overview Pill Button (Active Green Gradient) */}
+          {/* Overview */}
           <button
             onClick={() => setActiveBottomNav("Overview")}
-            className="px-5 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              activeBottomNav === "Overview"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
             Overview
           </button>
@@ -984,7 +1071,11 @@ export default function SolisMobilePlantDetail({
           {/* Device */}
           <button
             onClick={() => setActiveBottomNav("Device")}
-            className="px-4 py-2 rounded-full text-slate-600 hover:text-slate-900 active:scale-95 transition-all"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              activeBottomNav === "Device"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
             Device
           </button>
@@ -992,17 +1083,25 @@ export default function SolisMobilePlantDetail({
           {/* Alarm */}
           <button
             onClick={() => setActiveBottomNav("Alarm")}
-            className="px-4 py-2 rounded-full text-slate-600 hover:text-slate-900 active:scale-95 transition-all"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              activeBottomNav === "Alarm"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
             Alarm
           </button>
 
-          {/* Settings */}
+          {/* Info */}
           <button
-            onClick={() => setActiveBottomNav("Settings")}
-            className="px-4 py-2 rounded-full text-slate-600 hover:text-slate-900 active:scale-95 transition-all"
+            onClick={() => setActiveBottomNav("Info")}
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              activeBottomNav === "Info" || activeBottomNav === "Settings"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
-            Settings
+            Info
           </button>
         </div>
       </div>
