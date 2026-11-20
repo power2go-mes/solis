@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { RotateCw, Plus } from "lucide-react";
 
 interface SolisPageHeaderProps {
@@ -17,19 +16,6 @@ export default function SolisPageHeader({
 }: SolisPageHeaderProps) {
   return (
     <div className="flex flex-col gap-1.5 py-1 relative">
-      {/* Power2Go Official Brand Logo directly above Plant Overview - 1.5x scaled & centered on mobile */}
-      <div className="flex items-center justify-center md:justify-start w-full pt-0.5 pb-1">
-        <Image
-          src="/power2go-logo.png"
-          alt="Power2Go - Power Your Future With Clean Energy"
-          width={330}
-          height={82}
-          className="h-12 md:h-14 w-auto object-contain"
-          priority
-          unoptimized
-        />
-      </div>
-
       <div className="flex items-center justify-between relative">
         {/* Title & Refresh Icon */}
         <div className="flex items-center gap-2 z-10">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Menu,
   Sun,
@@ -25,15 +26,30 @@ export default function SolisTopNav({ onOpenMobileMenu }: SolisTopNavProps) {
 
   return (
     <header className="h-14 bg-transparent px-4 sm:px-6 flex items-center justify-between z-20 select-none">
-      {/* Mobile hamburger menu (visible on phone/tablet) */}
-      <div className="flex items-center gap-2 md:hidden">
-        <button
-          onClick={onOpenMobileMenu}
-          className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/80 transition-colors"
-          title="Open Menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+      {/* Left: Power2Go Official Brand Logo aligned with Profile Section */}
+      <div className="flex items-center gap-3">
+        {/* Mobile hamburger menu (visible on phone/tablet) */}
+        <div className="flex items-center md:hidden">
+          <button
+            onClick={onOpenMobileMenu}
+            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/80 transition-colors"
+            title="Open Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex items-center">
+          <Image
+            src="/power2go-logo.png"
+            alt="Power2Go - Power Your Future With Clean Energy"
+            width={280}
+            height={68}
+            className="h-9 sm:h-10 w-auto object-contain"
+            priority
+            unoptimized
+          />
+        </div>
       </div>
 
       {/* Right Controls matching SolisCloud Screenshot */}
