@@ -10,12 +10,14 @@ import {
   List,
 } from "lucide-react";
 import SolisMobileDeviceSettingsModal from "./SolisMobileDeviceSettingsModal";
+import SolisMobileDeviceDetailsScreen from "./SolisMobileDeviceDetailsScreen";
 
 interface SolisMobileDevicesViewProps {
   devices: any;
   plantName?: string;
   plantId?: string;
   onSelectInverter?: (sn: string) => void;
+  onSelectPlant?: (plantId: string) => void;
 }
 
 export default function SolisMobileDevicesView({
@@ -23,10 +25,29 @@ export default function SolisMobileDevicesView({
   plantName = "P2G 50KW",
   plantId = "3212F1",
   onSelectInverter,
+  onSelectPlant,
 }: SolisMobileDevicesViewProps) {
+  const searchParams = useSearchParams();
+  const modalParam = searchParams.get("modal");
+  const snParam = searchParams.get("sn");
+
   const [filterType, setFilterType] = useState<"All" | "Inverter" | "Battery" | "Datalogger">("All");
   const [isGridMode, setIsGridMode] = useState<boolean>(true);
   const [selectedDeviceForSettings, setSelectedDeviceForSettings] = useState<any | null>(null);
+  const [activeDetailDevice, setActiveDetailDevice] = useState<any | null>(() => {
+    if (modalParam === "details" || modalParam === "settings") {
+      return {
+        id: "inv-init",
+        type: "Inverter",
+        name: "Inverter",
+        sn: snParam || (plantName.includes("50KW") ? "1053050255210107" : "1053050258180112"),
+        status: plantName.includes("50KW") ? "Warning" : "Online",
+        image: "/images/solis_inverter_card.jpg",
+        ratedPowerKw: 50,
+      };
+    }
+    return null;
+  });
 
   const inverters = devices?.inverters || [];
   const batteries = devices?.batteries || [];
@@ -37,31 +58,43 @@ export default function SolisMobileDevicesView({
   const allDevices: any[] = [];
 
   // Inverters
-  inverters.forEach((inv: any, idx: number) => {
+  if (inverters.length > 0) {
+    inverters.forEach((inv: any, idx: number) => {
+      allDevices.push({
+        id: `inv-${idx}`,
+        type: "Inverter",
+        name: "Inverter",
+        sn: inv.sn || (plantName.includes("50KW") ? "1053050255210107" : "1053050258180112"),
+        status: idx === 0 && plantName.includes("50KW") ? "Warning" : "Online",
+        image: "/images/solis_inverter_card.jpg",
+        ratedPowerKw: inv.ratedPowerKw || 50,
+      });
+    });
+  } else {
     allDevices.push({
-      id: `inv-${idx}`,
+      id: "inv-default",
       type: "Inverter",
       name: "Inverter",
-      sn: inv.sn || "1053050255210107",
-      status: idx === 0 && plantName.includes("50KW") ? "Warning" : "Online",
+      sn: plantName.includes("50KW") ? "1053050255210107" : "1053050258180112",
+      status: plantName.includes("50KW") ? "Warning" : "Online",
       image: "/images/solis_inverter_card.jpg",
-      ratedPowerKw: inv.ratedPowerKw || 50,
+      ratedPowerKw: 50,
     });
-  });
+  }
 
   // Batteries
   if (plantName.includes("50KW")) {
     allDevices.push({
-      id: "bat-50k-1",
+      id: "bat-50k-2",
       type: "Battery",
       name: "Battery",
-      sn: "1053050255210107BAT0",
+      sn: "1053050255210107BAT02",
       status: "Online",
       image: "/images/solis_battery_card.jpg",
       capacityKwh: 26,
     });
     allDevices.push({
-      id: "bat-50k-2",
+      id: "bat-50k-1",
       type: "Battery",
       name: "Battery",
       sn: "1053050255210107BAT01",
@@ -97,30 +130,37 @@ export default function SolisMobileDevicesView({
   }
 
   // Dataloggers
-  dataloggers.forEach((dl: any, idx: number) => {
+  if (dataloggers.length > 0) {
+    dataloggers.forEach((dl: any, idx: number) => {
+      allDevices.push({
+        id: `dl-${idx}`,
+        type: "Datalogger",
+        name: "Datalogger",
+        sn: dl.sn || "7A12551308F022F8",
+        status: "Online",
+        image: "/images/solis_datalogger_card.jpg",
+      });
+    });
+  } else {
     allDevices.push({
-      id: `dl-${idx}`,
+      id: "dl-def-1",
       type: "Datalogger",
       name: "Datalogger",
-      sn: dl.sn || "7A12551308F022F8",
+      sn: "7A12551308F022F8",
       status: "Online",
       image: "/images/solis_datalogger_card.jpg",
     });
-  });
+  }
 
   // Smart Meters
   allDevices.push({
     id: "mtr-1",
     type: "Meter",
     name: "Meter",
-    sn: `${inverters[0]?.sn || "1053050255210107"}MTR01`,
+    sn: `${(inverters[0]?.sn) || (plantName.includes("50KW") ? "1053050255210107" : "1053050258180112")}MTR01`,
     status: "Online",
     image: "/images/solis_meter_card.jpg",
   });
-
-  const searchParams = useSearchParams();
-  const modalParam = searchParams.get("modal");
-  const snParam = searchParams.get("sn");
 
   const displayedDevices = allDevices.filter((d) => {
     if (filterType === "All") return true;
@@ -128,15 +168,47 @@ export default function SolisMobileDevicesView({
   });
 
   useEffect(() => {
-    if (modalParam === "settings") {
-      const match = allDevices.find((d) => snParam ? d.sn === snParam : d.type === "Inverter") || allDevices[0];
-      if (match) setSelectedDeviceForSettings(match);
+    if (modalParam === "settings" || modalParam === "details") {
+      if (allDevices.length > 0) {
+        const match = allDevices.find((d) => snParam ? d.sn === snParam : d.type === "Inverter") || allDevices[0];
+        if (match) setActiveDetailDevice(match);
+      }
     }
-  }, [modalParam, snParam]);
+  }, [modalParam, snParam, allDevices.length]);
 
   const handleDeviceClick = (item: any) => {
-    setSelectedDeviceForSettings(item);
+    setActiveDetailDevice(item);
   };
+
+  if (activeDetailDevice) {
+    return (
+      <SolisMobileDeviceDetailsScreen
+        device={activeDetailDevice}
+        plantName={plantName}
+        plantId={plantId}
+        onBack={() => setActiveDetailDevice(null)}
+        onSelectPlant={onSelectPlant}
+        onSelectDevice={(sn, type) => {
+          const match = allDevices.find((d) => d.sn === sn) || {
+            id: `dev-${sn}`,
+            type,
+            name: type,
+            sn,
+            status: "Online",
+            image:
+              type === "Inverter"
+                ? "/images/solis_inverter_card.jpg"
+                : type === "Battery"
+                ? "/images/solis_battery_card.jpg"
+                : type === "Meter"
+                ? "/images/solis_meter_card.jpg"
+                : "/images/solis_datalogger_card.jpg",
+          };
+          setActiveDetailDevice(match);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">

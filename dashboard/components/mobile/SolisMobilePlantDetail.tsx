@@ -1031,6 +1031,7 @@ export default function SolisMobilePlantDetail({
             devices={plantDetailsData?.devices}
             plantName={meta.name}
             plantId={meta.displayId}
+            onSelectPlant={onSelectPlant}
           />
         </div>
       )}

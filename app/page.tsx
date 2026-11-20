@@ -31,7 +31,7 @@ import {
 
 function SolisCloudDashboard() {
   const searchParams = useSearchParams();
-  const stationIdParam = searchParams.get("stationId") || "";
+  const stationIdParam = searchParams.get("stationId") || searchParams.get("plant") || "";
   const tabParam = searchParams.get("tab") || "Overview";
 
   // View Mode: "plant_overview" (default exact SolisCloud replication) or "plant_detail" / "device_overview"

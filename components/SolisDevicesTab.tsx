@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import SolisInverterDetailsView from "./SolisInverterDetailsView";
 import SolisMeterDetailsView from "./SolisMeterDetailsView";
+import SolisBatteryDetailsView from "./SolisBatteryDetailsView";
 import SolisAlarmDetailModal, { AlarmItem } from "./SolisAlarmDetailModal";
 import SolisOperationLogModal from "./SolisOperationLogModal";
 
@@ -43,24 +44,31 @@ export default function SolisDevicesTab({
   const snParam = searchParams.get("sn");
   const subtabParam = searchParams.get("subtab");
 
-  // View mode: "table" | "inverter-details" | "meter-details"
-  const [viewMode, setViewMode] = useState<"table" | "inverter-details" | "meter-details">(
+  // View mode: "table" | "inverter-details" | "meter-details" | "battery-details"
+  const [viewMode, setViewMode] = useState<"table" | "inverter-details" | "meter-details" | "battery-details">(
     viewParam === "inverter"
       ? "inverter-details"
       : viewParam === "meter" || subtabParam === "Meter"
       ? "meter-details"
+      : viewParam === "battery" || subtabParam === "Battery"
+      ? "battery-details"
       : "table"
   );
   const [selectedInverterSn, setSelectedInverterSn] = useState<string>(
     snParam || "1053050258180112"
   );
+  const [selectedBatterySn, setSelectedBatterySn] = useState<string>("1053050255210107BAT01");
   const [selectedAlarmForModal, setSelectedAlarmForModal] = useState<AlarmItem | null>(null);
   const [isOperationLogOpen, setIsOperationLogOpen] = useState(false);
 
   useEffect(() => {
     if (viewParam === "inverter") setViewMode("inverter-details");
     else if (viewParam === "meter" || subtabParam === "Meter") setViewMode("meter-details");
-    if (snParam) setSelectedInverterSn(snParam);
+    else if (viewParam === "battery" || subtabParam === "Battery") setViewMode("battery-details");
+    if (snParam) {
+      if (snParam.includes("BAT")) setSelectedBatterySn(snParam);
+      else setSelectedInverterSn(snParam);
+    }
   }, [viewParam, snParam, subtabParam]);
 
   const [activeSubTab, setActiveSubTab] = useState<DeviceSubTab>("Inverter");
@@ -82,6 +90,84 @@ export default function SolisDevicesTab({
   const [pageSize] = useState(10);
   const [goToPage, setGoToPage] = useState("1");
 
+  // If in Inverter Details view mode
+  if (viewMode === "inverter-details") {
+    return (
+      <>
+        <SolisInverterDetailsView
+          initialSn={selectedInverterSn}
+          onBackToDevices={() => setViewMode("table")}
+          onOpenAlarmDetail={(al) => setSelectedAlarmForModal(al)}
+          onOpenOperationLog={() => setIsOperationLogOpen(true)}
+          onSelectPlantByName={onSelectPlantByName}
+          onSelectBattery={() => setViewMode("battery-details")}
+          onSelectMeter={() => setViewMode("meter-details")}
+          onSelectDatalogger={(sn) => alert(`Associated Datalogger: ${sn} (Online / Normal Signal)`)}
+        />
+        <SolisAlarmDetailModal
+          alarm={selectedAlarmForModal}
+          isOpen={Boolean(selectedAlarmForModal)}
+          onClose={() => setSelectedAlarmForModal(null)}
+          onViewDevice={(sn) => setSelectedInverterSn(sn)}
+        />
+        <SolisOperationLogModal
+          isOpen={isOperationLogOpen}
+          onClose={() => setIsOperationLogOpen(false)}
+          plantName={devices?.plantName || "Towfiq chinoy"}
+        />
+      </>
+    );
+  }
+
+  // If in Meter Details view mode
+  if (viewMode === "meter-details") {
+    return (
+      <>
+        <SolisMeterDetailsView
+          meterSn={`${selectedInverterSn}MTR01`}
+          plantName={devices?.plantName || "Towfiq chinoy"}
+          plantId={devices?.plantId || "3649E0"}
+          dataloggerSn={devices?.dataloggers?.[0]?.sn || "7A12580709004122"}
+          onBackToDevices={() => setViewMode("table")}
+          onOpenOperationLog={() => setIsOperationLogOpen(true)}
+          onSelectPlantByName={onSelectPlantByName}
+        />
+        <SolisOperationLogModal
+          isOpen={isOperationLogOpen}
+          onClose={() => setIsOperationLogOpen(false)}
+          plantName={devices?.plantName || "Towfiq chinoy"}
+        />
+      </>
+    );
+  }
+
+  // If in Battery Details view mode
+  if (viewMode === "battery-details") {
+    return (
+      <>
+        <SolisBatteryDetailsView
+          batterySn={selectedBatterySn}
+          plantName={devices?.plantName || "P2G 50KW"}
+          plantId={devices?.plantId || "3212F1"}
+          connectedInverterSn={selectedInverterSn}
+          dataloggerSn={devices?.dataloggers?.[0]?.sn || "7A12551308F022F8"}
+          onBackToDevices={() => setViewMode("table")}
+          onOpenOperationLog={() => setIsOperationLogOpen(true)}
+          onSelectInverter={(sn) => {
+            setSelectedInverterSn(sn);
+            setViewMode("inverter-details");
+          }}
+          onSelectPlantByName={onSelectPlantByName}
+        />
+        <SolisOperationLogModal
+          isOpen={isOperationLogOpen}
+          onClose={() => setIsOperationLogOpen(false)}
+          plantName={devices?.plantName || "P2G 50KW"}
+        />
+      </>
+    );
+  }
+
   if (isLoading || !devices) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-12 text-center">
@@ -95,54 +181,6 @@ export default function SolisDevicesTab({
   const batteries = devices.batteries || [];
   const dataloggers = devices.dataloggers || [];
   const meters = devices.meters || [];
-
-  // If in Inverter Details view mode
-  if (viewMode === "inverter-details") {
-    return (
-      <>
-        <SolisInverterDetailsView
-          initialSn={selectedInverterSn}
-          onBackToDevices={() => setViewMode("table")}
-          onOpenAlarmDetail={(al) => setSelectedAlarmForModal(al)}
-          onOpenOperationLog={() => setIsOperationLogOpen(true)}
-          onSelectPlantByName={onSelectPlantByName}
-        />
-        <SolisAlarmDetailModal
-          alarm={selectedAlarmForModal}
-          isOpen={Boolean(selectedAlarmForModal)}
-          onClose={() => setSelectedAlarmForModal(null)}
-          onViewDevice={(sn) => setSelectedInverterSn(sn)}
-        />
-        <SolisOperationLogModal
-          isOpen={isOperationLogOpen}
-          onClose={() => setIsOperationLogOpen(false)}
-          plantName={devices.plantName || "Towfiq chinoy"}
-        />
-      </>
-    );
-  }
-
-  // If in Meter Details view mode
-  if (viewMode === "meter-details") {
-    return (
-      <>
-        <SolisMeterDetailsView
-          meterSn={`${selectedInverterSn}MTR01`}
-          plantName={devices.plantName || "Towfiq chinoy"}
-          plantId={devices.plantId || "3649E0"}
-          dataloggerSn={dataloggers[0]?.sn || "7A12580709004122"}
-          onBackToDevices={() => setViewMode("table")}
-          onOpenOperationLog={() => setIsOperationLogOpen(true)}
-          onSelectPlantByName={onSelectPlantByName}
-        />
-        <SolisOperationLogModal
-          isOpen={isOperationLogOpen}
-          onClose={() => setIsOperationLogOpen(false)}
-          plantName={devices.plantName || "Towfiq chinoy"}
-        />
-      </>
-    );
-  }
 
   // Filter & Sort Inverters
   const filteredInverters = inverters.filter((inv: any) => {
@@ -523,11 +561,19 @@ export default function SolisDevicesTab({
                 <th className="py-3 px-3.5">Delta mV</th>
                 <th className="py-3 px-3.5">Cycles</th>
                 <th className="py-3 px-3.5">Connected Inverter</th>
+                <th className="py-3 px-3.5 text-center">Operation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-slate-700">
               {batteries.map((bat: any, idx: number) => (
-                <tr key={bat.sn || idx} className="hover:bg-orange-50/20 transition-colors">
+                <tr
+                  key={bat.sn || idx}
+                  onClick={() => {
+                    setSelectedBatterySn(bat.sn);
+                    setViewMode("battery-details");
+                  }}
+                  className="hover:bg-orange-50/20 transition-colors cursor-pointer"
+                >
                   <td className="py-3.5 px-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/40" />
@@ -537,7 +583,7 @@ export default function SolisDevicesTab({
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-slate-900">
                     {bat.name || "HV LiFePO4 Storage Unit"}
                   </td>
-                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] font-medium">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] font-medium hover:underline">
                     {bat.sn}
                   </td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono">{bat.nominalCapacityAh || 100}Ah</td>
@@ -550,6 +596,18 @@ export default function SolisDevicesTab({
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-emerald-600">{bat.cellDeltaMv}mV</td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono">{bat.cycles}</td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-slate-500">{bat.connectedInverterSn}</td>
+                  <td className="py-3.5 px-3.5 whitespace-nowrap text-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBatterySn(bat.sn);
+                        setViewMode("battery-details");
+                      }}
+                      className="px-2.5 py-1 rounded border border-gray-200 bg-white text-xs font-normal text-slate-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all shadow-2xs"
+                    >
+                      Operation
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -569,7 +627,16 @@ export default function SolisDevicesTab({
             </thead>
             <tbody className="divide-y divide-gray-100 text-slate-700">
               {dataloggers.map((col: any, idx: number) => (
-                <tr key={col.sn || idx} className="hover:bg-orange-50/20 transition-colors">
+                <tr
+                  key={col.sn || idx}
+                  onClick={() => {
+                    if (col.connectedInverterSn) {
+                      openInverterDetails(col.connectedInverterSn);
+                    }
+                  }}
+                  className="hover:bg-orange-50/20 transition-colors cursor-pointer"
+                  title="Click to view Connected Inverter details"
+                >
                   <td className="py-3.5 px-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/40" />
@@ -580,7 +647,9 @@ export default function SolisDevicesTab({
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] font-medium">{col.sn}</td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono">{col.model || "WL-WiFi"}</td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap text-emerald-600 font-medium">Excellent (100%)</td>
-                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-slate-500">{col.connectedInverterSn}</td>
+                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] hover:underline font-medium">
+                    {col.connectedInverterSn}
+                  </td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-500">20/11/2026 12:51:24 (UTC+05:00)</td>
                 </tr>
               ))}

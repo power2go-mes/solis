@@ -53,7 +53,41 @@ export default function SolisMeterDetailsView({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  // Render ECharts for Meter Active Power Curve
+  const handlePrevDate = () => {
+    if (activeDateTab === "Day") {
+      if (currentDateStr === "20/11/2026") setCurrentDateStr("19/11/2026");
+      else if (currentDateStr === "19/11/2026") setCurrentDateStr("18/11/2026");
+    } else if (activeDateTab === "Month") {
+      if (currentDateStr === "11/2026") setCurrentDateStr("10/2026");
+      else if (currentDateStr === "10/2026") setCurrentDateStr("09/2026");
+    } else if (activeDateTab === "Year") {
+      if (currentDateStr === "2026") setCurrentDateStr("2025");
+      else if (currentDateStr === "2025") setCurrentDateStr("2024");
+    }
+  };
+
+  const handleNextDate = () => {
+    if (activeDateTab === "Day") {
+      if (currentDateStr === "18/11/2026") setCurrentDateStr("19/11/2026");
+      else if (currentDateStr === "19/11/2026") setCurrentDateStr("20/11/2026");
+    } else if (activeDateTab === "Month") {
+      if (currentDateStr === "09/2026") setCurrentDateStr("10/2026");
+      else if (currentDateStr === "10/2026") setCurrentDateStr("11/2026");
+    } else if (activeDateTab === "Year") {
+      if (currentDateStr === "2024") setCurrentDateStr("2025");
+      else if (currentDateStr === "2025") setCurrentDateStr("2026");
+    }
+  };
+
+  const handleTabChange = (tab: "Day" | "Month" | "Year" | "Lifetime") => {
+    setActiveDateTab(tab);
+    if (tab === "Day") setCurrentDateStr("20/11/2026");
+    else if (tab === "Month") setCurrentDateStr("11/2026");
+    else if (tab === "Year") setCurrentDateStr("2026");
+    else if (tab === "Lifetime") setCurrentDateStr("Lifetime");
+  };
+
+  // Render ECharts for Meter
   useEffect(() => {
     if (!chartRef.current) return;
     if (chartInstance.current) chartInstance.current.dispose();
@@ -61,105 +95,183 @@ export default function SolisMeterDetailsView({
     const chart = echarts.init(chartRef.current);
     chartInstance.current = chart;
 
-    const times: string[] = [];
-    const activePower: (number | null)[] = [];
+    let option: echarts.EChartsOption = {};
 
-    // Time points from 00:00 to 22:00 every 10 mins
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += 10) {
-        const hh = String(h).padStart(2, "0");
-        const mm = String(m).padStart(2, "0");
-        const t = `${hh}:${mm}`;
-        times.push(t);
+    if (activeDateTab === "Day") {
+      const times: string[] = [];
+      const activePower: (number | null)[] = [];
 
-        const mins = h * 60 + m;
-        // Curve only goes up to 13:30 in live screenshot
-        if (mins <= 810) {
-          if (mins < 370) {
-            // Flat ~0 kW baseline overnight
-            activePower.push(Number((-0.05 + Math.random() * 0.05).toFixed(2)));
-          } else if (mins >= 370 && mins <= 650) {
-            // Negative active power dipping to -4.1 kW during solar import/export shift
-            const prog = (mins - 370) / (650 - 370);
-            const dip = -Math.sin(prog * Math.PI) * 3.8 - (mins % 30 === 0 ? 0.3 : 0);
-            activePower.push(Number(dip.toFixed(2)));
-          } else if (mins > 650 && mins <= 700) {
-            // Recovering rapidly to 0
-            const rec = -1.5 + ((mins - 650) / 50) * 1.5;
-            activePower.push(Number(rec.toFixed(2)));
+      for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 10) {
+          const hh = String(h).padStart(2, "0");
+          const mm = String(m).padStart(2, "0");
+          times.push(`${hh}:${mm}`);
+
+          const mins = h * 60 + m;
+          if (mins <= 810) {
+            if (mins < 370) {
+              activePower.push(Number((-0.05 + Math.random() * 0.05).toFixed(2)));
+            } else if (mins >= 370 && mins <= 650) {
+              const prog = (mins - 370) / (650 - 370);
+              const dip = -Math.sin(prog * Math.PI) * 3.8 - (mins % 30 === 0 ? 0.3 : 0);
+              activePower.push(Number(dip.toFixed(2)));
+            } else if (mins > 650 && mins <= 700) {
+              const rec = -1.5 + ((mins - 650) / 50) * 1.5;
+              activePower.push(Number(rec.toFixed(2)));
+            } else {
+              activePower.push(0);
+            }
           } else {
-            // Hovering at 0 kW
-            activePower.push(0);
+            activePower.push(null);
           }
-        } else {
-          activePower.push(null);
         }
       }
-    }
 
-    const option: echarts.EChartsOption = {
-      animation: false,
-      grid: {
-        top: 25,
-        left: 45,
-        right: 25,
-        bottom: 30,
-      },
-      tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "cross", crossStyle: { color: "#f37021" } },
-        backgroundColor: "rgba(255, 255, 255, 0.96)",
-        borderColor: "#f37021",
-        borderWidth: 1,
-        textStyle: { color: "#0f172a", fontSize: 11 },
-        formatter: (params: any) => {
-          if (!Array.isArray(params) || params.length === 0) return "";
-          const p = params[0];
-          return `<div style="font-weight:bold; margin-bottom:4px; font-family:monospace;">${p.axisValue}</div>
-            <div style="display:flex; justify-content:space-between; gap:12px;">
-              <span style="color:#f37021; font-weight:600;">Active Power:</span>
-              <span style="font-family:monospace; font-weight:bold;">${p.value !== null ? p.value + " kW" : "--"}</span>
-            </div>`;
-        },
-      },
-      xAxis: {
-        type: "category",
-        data: times,
-        boundaryGap: false,
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-        axisLabel: {
-          color: "#94a3b8",
-          fontSize: 10,
-          interval: 12,
-        },
-      },
-      yAxis: {
-        type: "value",
-        name: "kW",
-        nameTextStyle: { color: "#94a3b8", fontSize: 10 },
-        max: 0.9,
-        min: -4.5,
-        interval: 0.9,
-        splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
-        axisLabel: { color: "#94a3b8", fontSize: 10 },
-      },
-      series: [
-        {
-          name: "Active Power",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: activePowerChecked ? activePower : [],
-          lineStyle: { color: "#f37021", width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(243, 112, 33, 0.05)" },
-              { offset: 1, color: "rgba(243, 112, 33, 0.35)" },
-            ]),
+      option = {
+        animation: false,
+        grid: { top: 25, left: 45, right: 25, bottom: 30 },
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "cross", crossStyle: { color: "#f37021" } },
+          backgroundColor: "rgba(255, 255, 255, 0.96)",
+          borderColor: "#f37021",
+          borderWidth: 1,
+          textStyle: { color: "#0f172a", fontSize: 11 },
+          formatter: (params: any) => {
+            if (!Array.isArray(params) || params.length === 0) return "";
+            const p = params[0];
+            return `<div style="font-weight:bold; margin-bottom:4px; font-family:monospace;">${p.axisValue}</div>
+              <div style="display:flex; justify-content:space-between; gap:12px;">
+                <span style="color:#f37021; font-weight:600;">Active Power:</span>
+                <span style="font-family:monospace; font-weight:bold;">${p.value !== null ? p.value + " kW" : "--"}</span>
+              </div>`;
           },
         },
-      ],
-    };
+        xAxis: {
+          type: "category",
+          data: times,
+          boundaryGap: false,
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10, interval: 12 },
+        },
+        yAxis: {
+          type: "value",
+          name: "kW",
+          nameTextStyle: { color: "#94a3b8", fontSize: 10 },
+          max: 0.9,
+          min: -4.5,
+          interval: 0.9,
+          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        series: [
+          {
+            name: "Active Power",
+            type: "line",
+            smooth: true,
+            showSymbol: false,
+            data: activePowerChecked ? activePower : [],
+            lineStyle: { color: "#f37021", width: 2 },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "rgba(243, 112, 33, 0.05)" },
+                { offset: 1, color: "rgba(243, 112, 33, 0.35)" },
+              ]),
+            },
+          },
+        ],
+      };
+    } else if (activeDateTab === "Month") {
+      const days = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, "0"));
+      const importData = new Array(30).fill(null);
+      const exportData = new Array(30).fill(null);
+
+      importData[17] = 2.5;
+      importData[18] = 28.72;
+      importData[19] = 29.0;
+
+      exportData[18] = 19.5;
+      exportData[19] = 39.3;
+
+      option = {
+        animation: false,
+        grid: { top: 30, left: 45, right: 25, bottom: 30 },
+        tooltip: { trigger: "axis" },
+        xAxis: {
+          type: "category",
+          data: days,
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        yAxis: {
+          type: "value",
+          name: "kWh",
+          max: 50,
+          interval: 10,
+          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        series: [
+          { name: "Daily Import", type: "bar", data: importData, itemStyle: { color: "#06b6d4" } },
+          { name: "Daily Export", type: "bar", data: exportData, itemStyle: { color: "#3b82f6" } },
+        ],
+      };
+    } else if (activeDateTab === "Year") {
+      const months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
+      const importData = new Array(12).fill(null);
+      const exportData = new Array(12).fill(null);
+
+      importData[10] = 31.5;
+      exportData[10] = 58.2;
+
+      option = {
+        animation: false,
+        grid: { top: 30, left: 45, right: 25, bottom: 30 },
+        tooltip: { trigger: "axis" },
+        xAxis: {
+          type: "category",
+          data: months,
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        yAxis: {
+          type: "value",
+          name: "kWh",
+          max: 100,
+          interval: 20,
+          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        series: [
+          { name: "Monthly Import", type: "bar", data: importData, itemStyle: { color: "#06b6d4" } },
+          { name: "Monthly Export", type: "bar", data: exportData, itemStyle: { color: "#3b82f6" } },
+        ],
+      };
+    } else {
+      const years = ["2024", "2025", "2026"];
+      option = {
+        animation: false,
+        grid: { top: 30, left: 45, right: 25, bottom: 30 },
+        tooltip: { trigger: "axis" },
+        xAxis: {
+          type: "category",
+          data: years,
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        yAxis: {
+          type: "value",
+          name: "MWh",
+          max: 5,
+          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        series: [
+          { name: "Total Import", type: "bar", data: [0, 0.4, 1.8], itemStyle: { color: "#06b6d4" } },
+          { name: "Total Export", type: "bar", data: [0, 0.6, 2.9], itemStyle: { color: "#3b82f6" } },
+        ],
+      };
+    }
 
     chart.setOption(option);
 
@@ -169,7 +281,7 @@ export default function SolisMeterDetailsView({
       window.removeEventListener("resize", handleResize);
       chart.dispose();
     };
-  }, [activePowerChecked]);
+  }, [activePowerChecked, activeDateTab, currentDateStr]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 items-start w-full">
@@ -410,15 +522,17 @@ export default function SolisMeterDetailsView({
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1 bg-white">
                 <button
-                  onClick={() => setCurrentDateStr("19/11/2026")}
+                  onClick={handlePrevDate}
                   className="p-0.5 hover:text-[#f37021] text-slate-400"
+                  title="Previous Date"
                 >
                   &lt;
                 </button>
-                <span className="font-mono text-slate-800 text-[11px] px-1">{currentDateStr}</span>
+                <span className="font-mono text-slate-800 text-[11px] px-1 font-semibold">{currentDateStr}</span>
                 <button
-                  onClick={() => setCurrentDateStr("20/11/2026")}
+                  onClick={handleNextDate}
                   className="p-0.5 hover:text-[#f37021] text-slate-400"
+                  title="Next Date"
                 >
                   &gt;
                 </button>
@@ -428,7 +542,7 @@ export default function SolisMeterDetailsView({
                 {(["Day", "Month", "Year", "Lifetime"] as const).map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveDateTab(tab)}
+                    onClick={() => handleTabChange(tab)}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                       activeDateTab === tab
                         ? "bg-orange-50 text-[#f37021] font-bold border border-orange-300"
@@ -450,103 +564,139 @@ export default function SolisMeterDetailsView({
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-4 items-start">
-            {/* Left Parameter Panel */}
-            <div className="w-full lg:w-56 p-3 rounded-xl bg-gray-50/60 border border-gray-100 text-xs shrink-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-800">Parameters(1)</span>
-                <button className="text-slate-400 hover:text-[#f37021] p-0.5">
-                  <RotateCw className="w-3 h-3" />
-                </button>
-              </div>
-
-              <div className="space-y-2 text-[11px]">
-                {/* Energy */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
-                    <span>Energy</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                  <div className="pl-3 space-y-1 text-slate-600">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="checkbox" className="accent-[#f37021] w-3 h-3" />
-                      <span>Total Export</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="checkbox" className="accent-[#f37021] w-3 h-3" />
-                      <span>Total Import</span>
-                    </label>
-                  </div>
+          {activeDateTab !== "Day" ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-[#fafbfc] border border-gray-100">
+                <div>
+                  <span className="text-[11px] text-slate-400 block">{activeDateTab === "Year" ? "Annual" : activeDateTab === "Month" ? "Monthly" : "Lifetime"} Import</span>
+                  <span className="text-sm font-bold font-mono text-slate-900">28.72 kWh</span>
                 </div>
-
-                {/* Active Power */}
-                <div className="space-y-1 pt-1 border-t border-gray-200/50">
-                  <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
-                    <span>Active Power</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                  <div className="pl-3">
-                    <label className="flex items-center gap-1.5 cursor-pointer text-[#f37021] font-semibold">
-                      <input
-                        type="checkbox"
-                        checked={activePowerChecked}
-                        onChange={(e) => setActivePowerChecked(e.target.checked)}
-                        className="accent-[#f37021] w-3 h-3"
-                      />
-                      <span>Active Power</span>
-                    </label>
-                  </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">{activeDateTab === "Year" ? "Annual" : activeDateTab === "Month" ? "Monthly" : "Lifetime"} Export</span>
+                  <span className="text-sm font-bold font-mono text-slate-900">0 kWh</span>
                 </div>
-
-                {/* Apparent Power */}
-                <div className="space-y-1 pt-1 border-t border-gray-200/50">
-                  <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
-                    <span>Apparent Power</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Peak Active Power</span>
+                  <span className="text-sm font-bold font-mono text-slate-900">4.1 kW</span>
                 </div>
-
-                {/* Voltage */}
-                <div className="space-y-1 pt-1 border-t border-gray-200/50">
-                  <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
-                    <span>Voltage</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                </div>
-
-                {/* Current */}
-                <div className="space-y-1 pt-1 border-t border-gray-200/50">
-                  <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
-                    <span>Current</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Average Power Factor</span>
+                  <span className="text-sm font-bold font-mono text-slate-900">0.99</span>
                 </div>
               </div>
-            </div>
 
-            {/* Right Chart Area */}
-            <div className="flex-1 w-full min-w-0">
-              <div className="flex items-center justify-between text-xs mb-2">
-                <div className="flex items-center gap-6">
-                  <div>
-                    <span className="text-slate-400 text-[11px] block">Daily Export</span>
-                    <span className="font-mono font-bold text-slate-900">0 kWh</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 text-[11px] block">Daily Import</span>
-                    <span className="font-mono font-bold text-slate-900">28.72 kWh</span>
-                  </div>
-                </div>
-
+              <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#f37021]" />
-                  <span className="text-slate-700 font-medium">Active Power</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4]" />
+                  <span className="text-slate-700 font-medium">Import Energy</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
+                  <span className="text-slate-700 font-medium">Export Energy</span>
                 </div>
               </div>
 
               <div ref={chartRef} className="w-full h-72 sm:h-80" />
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col lg:flex-row gap-4 items-start">
+              {/* Left Parameter Panel */}
+              <div className="w-full lg:w-56 p-3 rounded-xl bg-gray-50/60 border border-gray-100 text-xs shrink-0 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800">Parameters(1)</span>
+                  <button className="text-slate-400 hover:text-[#f37021] p-0.5">
+                    <RotateCw className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  {/* Energy */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
+                      <span>Energy</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <div className="pl-3 space-y-1 text-slate-600">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" className="accent-[#f37021] w-3 h-3" />
+                        <span>Total Export</span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" className="accent-[#f37021] w-3 h-3" />
+                        <span>Total Import</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Active Power */}
+                  <div className="space-y-1 pt-1 border-t border-gray-200/50">
+                    <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
+                      <span>Active Power</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <div className="pl-3">
+                      <label className="flex items-center gap-1.5 cursor-pointer text-[#f37021] font-semibold">
+                        <input
+                          type="checkbox"
+                          checked={activePowerChecked}
+                          onChange={(e) => setActivePowerChecked(e.target.checked)}
+                          className="accent-[#f37021] w-3 h-3"
+                        />
+                        <span>Active Power</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Apparent Power */}
+                  <div className="space-y-1 pt-1 border-t border-gray-200/50">
+                    <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
+                      <span>Apparent Power</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Voltage */}
+                  <div className="space-y-1 pt-1 border-t border-gray-200/50">
+                    <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
+                      <span>Voltage</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Current */}
+                  <div className="space-y-1 pt-1 border-t border-gray-200/50">
+                    <div className="flex items-center justify-between font-semibold text-slate-700 cursor-pointer">
+                      <span>Current</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Chart Area */}
+              <div className="flex-1 w-full min-w-0">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <div className="flex items-center gap-6">
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">Daily Export</span>
+                      <span className="font-mono font-bold text-slate-900">0 kWh</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">Daily Import</span>
+                      <span className="font-mono font-bold text-slate-900">28.72 kWh</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#f37021]" />
+                    <span className="text-slate-700 font-medium">Active Power</span>
+                  </div>
+                </div>
+
+                <div ref={chartRef} className="w-full h-72 sm:h-80" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
