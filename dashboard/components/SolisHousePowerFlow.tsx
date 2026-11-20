@@ -397,7 +397,7 @@ export default function SolisHousePowerFlow({
                   isBatteryCharging
                     ? "border-emerald-400 bg-emerald-50 text-emerald-600"
                     : isBatteryActive
-                    ? "border-amber-400 bg-amber-50 text-amber-600"
+                    ? "border-orange-400 bg-orange-50 text-[#f37021]"
                     : "border-slate-300 bg-slate-100 text-slate-500"
                 }`}
               >

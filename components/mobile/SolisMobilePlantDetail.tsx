@@ -26,6 +26,8 @@ import {
 
 import SolisMobileCommercialPowerFlow from "./SolisMobileCommercialPowerFlow";
 import SolisMobileEnergyBreakdown from "./SolisMobileEnergyBreakdown";
+import SolisMobileDevicesView from "./SolisMobileDevicesView";
+import SolisMobileAlarmsView from "./SolisMobileAlarmsView";
 import SolisPlantInfoTab from "../SolisPlantInfoTab";
 import SolisDevicesTab from "../SolisDevicesTab";
 import SolisAlarmsTab from "../SolisAlarmsTab";
@@ -131,18 +133,54 @@ const MOBILE_METAS: Record<string, MobilePlantMeta> = {
     toGridKwh: 0.1,
     toGridPercent: 1,
   },
-  // P2G 1ST 6kw
-  "1298491919450840394": {
-    displayId: "342004",
-    name: "P2G 1ST 6kw",
-    address: "Ahbab Street, Korangi, Karachi",
-    capacityKwp: 20.0,
+  // Towfiq chinoy
+  "1298491919451014032": {
+    displayId: "3649E0",
+    name: "Towfiq chinoy",
+    address: "Karachi, Sindh, Pakistan",
+    capacityKwp: 29.67,
     temp: "21/32℃",
+    defaultYieldKwh: 45.2,
+    defaultConsumptionKwh: 18.4,
+    defaultDischargeKwh: 6.2,
+    defaultChargeKwh: 14.5,
+    defaultImportKwh: 5.2,
+    defaultExportKwh: 12.0,
+    toConsumptionKwh: 33.2,
+    toConsumptionPercent: 73,
+    toGridKwh: 12.0,
+    toGridPercent: 27,
+  },
+  // P2G 20kw
+  "1298491919450851319": {
+    displayId: "3212E5",
+    name: "P2G 20kw",
+    address: "Ahbab Street, Korangi Industrial Area, Karachi",
+    capacityKwp: 18.0,
+    temp: "21/29℃",
     defaultYieldKwh: 0.0,
-    defaultConsumptionKwh: 4.2,
-    defaultDischargeKwh: 0.3,
-    defaultChargeKwh: 0.9,
-    defaultImportKwh: 3.6,
+    defaultConsumptionKwh: 0.0,
+    defaultDischargeKwh: 0.0,
+    defaultChargeKwh: 0.0,
+    defaultImportKwh: 0.0,
+    defaultExportKwh: 0.0,
+    toConsumptionKwh: 0.0,
+    toConsumptionPercent: 0,
+    toGridKwh: 0.0,
+    toGridPercent: 0,
+  },
+  // P2G 15KW
+  "1298491919450734544": {
+    displayId: "3212D8",
+    name: "P2G 15KW",
+    address: "1D-203, Ahbab Street, Korangi, Karachi",
+    capacityKwp: 20.0,
+    temp: "21/29℃",
+    defaultYieldKwh: 0.0,
+    defaultConsumptionKwh: 0.0,
+    defaultDischargeKwh: 0.0,
+    defaultChargeKwh: 0.0,
+    defaultImportKwh: 0.0,
     defaultExportKwh: 0.0,
     toConsumptionKwh: 0.0,
     toConsumptionPercent: 0,
@@ -984,17 +1022,24 @@ export default function SolisMobilePlantDetail({
       </div>
     )}
 
-      {/* Device Tab View */}
+      {/* Device Tab View (Exact 2-Col Solis Mobile Parity) */}
       {activeBottomNav === "Device" && (
         <div className="px-3 pb-24 mt-3">
-          <SolisDevicesTab devices={plantDetailsData?.devices} isLoading={isDetailsLoading} />
+          <SolisMobileDevicesView
+            devices={plantDetailsData?.devices}
+            plantName={meta.name}
+            plantId={meta.displayId}
+          />
         </div>
       )}
 
-      {/* Alarm Tab View */}
+      {/* Alarm Tab View (Exact Solis Mobile Card Parity) */}
       {activeBottomNav === "Alarm" && (
         <div className="px-3 pb-24 mt-3">
-          <SolisAlarmsTab alarmsData={plantDetailsData?.alarms} isLoading={isDetailsLoading} />
+          <SolisMobileAlarmsView
+            alarmsData={plantDetailsData?.alarms}
+            plantName={meta.name}
+          />
         </div>
       )}
 
@@ -1006,16 +1051,16 @@ export default function SolisMobilePlantDetail({
       )}
 
       {/* ======================================================== */}
-      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm, Info */}
+      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm, Settings */}
       {/* ======================================================== */}
       <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1 text-xs font-semibold pointer-events-auto">
+        <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1.5 text-xs font-semibold pointer-events-auto">
           {/* Overview */}
           <button
             onClick={() => setActiveBottomNav("Overview")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeBottomNav === "Overview"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
@@ -1027,35 +1072,36 @@ export default function SolisMobilePlantDetail({
             onClick={() => setActiveBottomNav("Device")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeBottomNav === "Device"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
             Device
           </button>
 
-          {/* Alarm */}
+          {/* Alarm with red notification dot */}
           <button
             onClick={() => setActiveBottomNav("Alarm")}
-            className={`px-4 py-1.5 rounded-full transition-all ${
+            className={`px-4 py-1.5 rounded-full transition-all flex items-center gap-1 ${
               activeBottomNav === "Alarm"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
-            Alarm
+            <span>Alarm</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${activeBottomNav === "Alarm" ? "bg-white" : "bg-red-500 animate-pulse"}`} />
           </button>
 
-          {/* Info */}
+          {/* Settings / Info */}
           <button
-            onClick={() => setActiveBottomNav("Info")}
+            onClick={() => setActiveBottomNav("Settings")}
             className={`px-4 py-1.5 rounded-full transition-all ${
-              activeBottomNav === "Info" || activeBottomNav === "Settings"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+              activeBottomNav === "Settings" || activeBottomNav === "Info"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
-            Info
+            Settings
           </button>
         </div>
       </div>

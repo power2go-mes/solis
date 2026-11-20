@@ -44,16 +44,16 @@ if (process.env.NODE_ENV !== "production") {
   global._solisDbPool = pool;
 }
 
-// 5 Authorized SolisCloud Plants Registry
+// 8 Authorized SolisCloud Plants Registry (Discovered Live on SolisCloud)
 export const AUTHORIZED_PLANTS: PlantInfo[] = [
   {
-    id: "1298491919450797504",
-    name: "Menu Karachi Office",
+    id: "1298491919451014032",
+    name: "Towfiq chinoy",
     location: "Karachi, Pakistan",
-    capacityKwp: 80.0,
-    inverterCount: 2,
+    capacityKwp: 29.67,
+    inverterCount: 1,
     batteryInstalled: true,
-    dataloggerSn: "7A12570303D040F0",
+    dataloggerSn: "7A12580709004122",
     hasDataInDb: true,
   },
   {
@@ -77,13 +77,13 @@ export const AUTHORIZED_PLANTS: PlantInfo[] = [
     hasDataInDb: true,
   },
   {
-    id: "1298491919450740581",
-    name: "P2G 50KW",
+    id: "1298491919450851319",
+    name: "P2G 20kw",
     location: "Karachi, Pakistan",
-    capacityKwp: 32.0,
+    capacityKwp: 18.0,
     inverterCount: 1,
-    batteryInstalled: true,
-    dataloggerSn: "7A12551308F022F8",
+    batteryInstalled: false,
+    dataloggerSn: "7A12532605C0A5DB",
     hasDataInDb: true,
   },
   {
@@ -94,6 +94,36 @@ export const AUTHORIZED_PLANTS: PlantInfo[] = [
     inverterCount: 1,
     batteryInstalled: true,
     dataloggerSn: "7A1256240B001722",
+    hasDataInDb: true,
+  },
+  {
+    id: "1298491919450797504",
+    name: "Menu Karachi Office",
+    location: "Karachi, Pakistan",
+    capacityKwp: 80.0,
+    inverterCount: 2,
+    batteryInstalled: true,
+    dataloggerSn: "7A12570303D040F0",
+    hasDataInDb: true,
+  },
+  {
+    id: "1298491919450740581",
+    name: "P2G 50KW",
+    location: "Karachi, Pakistan",
+    capacityKwp: 32.0,
+    inverterCount: 1,
+    batteryInstalled: true,
+    dataloggerSn: "7A12551308F022F8",
+    hasDataInDb: true,
+  },
+  {
+    id: "1298491919450734544",
+    name: "P2G 15KW",
+    location: "Karachi, Pakistan",
+    capacityKwp: 20.0,
+    inverterCount: 1,
+    batteryInstalled: false,
+    dataloggerSn: "7A12541606D04928",
     hasDataInDb: true,
   },
 ];
@@ -1219,8 +1249,22 @@ export async function getLifetimeEnergyBreakdown(
   }
 }
 
-// 7 SolisCloud Plants matching exact reference overview
+// 8 SolisCloud Plants matching account overview
 export const ALL_SOLIS_OVERVIEW_PLANTS = [
+  {
+    id: "1298491919451014032",
+    name: "Towfiq chinoy",
+    address: "Karachi, Sindh, Pakistan",
+    defaultCapacity: 29.67,
+    inverterTotal: 1,
+    defaultStatus: "Online" as const,
+    owner: "Towfiq chinoy",
+    ownerContact: "qasim.moosvi@gmail.com",
+    installer: "Sunhancee",
+    installerContact: "support@sunhancee.com",
+    plantType: "Residential",
+    investmentType: "Self-owned",
+  },
   {
     id: "1298491919450958553",
     name: "OPL Residence",

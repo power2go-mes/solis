@@ -283,30 +283,42 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, an
 NOTIFY pgrst, 'reload schema';
 `;
 
-async function getClient(connectionString) {
-  const client = new Client({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000,
-  });
-  await client.connect();
-  return client;
+let tablesEnsured = false;
+async function ensureTables(client) {
+  if (tablesEnsured) return;
+  try {
+    await client.query(SCHEMA_SQL);
+    await client.query(`
+      ALTER TABLE IF EXISTS solis_alarm_logs ADD COLUMN IF NOT EXISTS protection_category TEXT;
+      ALTER TABLE IF EXISTS solis_alarm_logs ADD COLUMN IF NOT EXISTS protection_desc TEXT;
+
+      ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS alarm_hex TEXT;
+      ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS fail01_hex TEXT;
+      ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS fail02_hex TEXT;
+      ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS decoded_summary TEXT;
+      ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS decoded_faults JSONB;
+    `);
+    tablesEnsured = true;
+  } catch (e) {
+    console.warn("ensureTables warning:", e.message);
+  }
 }
 
-async function ensureTables(client) {
-  await client.query(SCHEMA_SQL);
-
-  // Dynamic column migrations for existing tables
-  await client.query(`
-    ALTER TABLE IF EXISTS solis_alarm_logs ADD COLUMN IF NOT EXISTS protection_category TEXT;
-    ALTER TABLE IF EXISTS solis_alarm_logs ADD COLUMN IF NOT EXISTS protection_desc TEXT;
-
-    ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS alarm_hex TEXT;
-    ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS fail01_hex TEXT;
-    ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS fail02_hex TEXT;
-    ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS decoded_summary TEXT;
-    ALTER TABLE IF EXISTS solis_bms_telemetry ADD COLUMN IF NOT EXISTS decoded_faults JSONB;
-  `);
+async function getClient(connectionString) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const client = new Client({
+        connectionString,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10000,
+      });
+      await client.connect();
+      return client;
+    } catch (err) {
+      if (attempt === 4) throw err;
+      await new Promise(r => setTimeout(r, 1200 * attempt));
+    }
+  }
 }
 
 function numOrNull(val) {

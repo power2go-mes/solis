@@ -26,6 +26,8 @@ import {
 
 import SolisMobileCommercialPowerFlow from "./SolisMobileCommercialPowerFlow";
 import SolisMobileEnergyBreakdown from "./SolisMobileEnergyBreakdown";
+import SolisMobileDevicesView from "./SolisMobileDevicesView";
+import SolisMobileAlarmsView from "./SolisMobileAlarmsView";
 import SolisPlantInfoTab from "../SolisPlantInfoTab";
 import SolisDevicesTab from "../SolisDevicesTab";
 import SolisAlarmsTab from "../SolisAlarmsTab";
@@ -131,18 +133,54 @@ const MOBILE_METAS: Record<string, MobilePlantMeta> = {
     toGridKwh: 0.1,
     toGridPercent: 1,
   },
-  // P2G 1ST 6kw
-  "1298491919450840394": {
-    displayId: "342004",
-    name: "P2G 1ST 6kw",
-    address: "Ahbab Street, Korangi, Karachi",
-    capacityKwp: 20.0,
+  // Towfiq chinoy
+  "1298491919451014032": {
+    displayId: "3649E0",
+    name: "Towfiq chinoy",
+    address: "Karachi, Sindh, Pakistan",
+    capacityKwp: 29.67,
     temp: "21/32℃",
+    defaultYieldKwh: 45.2,
+    defaultConsumptionKwh: 18.4,
+    defaultDischargeKwh: 6.2,
+    defaultChargeKwh: 14.5,
+    defaultImportKwh: 5.2,
+    defaultExportKwh: 12.0,
+    toConsumptionKwh: 33.2,
+    toConsumptionPercent: 73,
+    toGridKwh: 12.0,
+    toGridPercent: 27,
+  },
+  // P2G 20kw
+  "1298491919450851319": {
+    displayId: "3212E5",
+    name: "P2G 20kw",
+    address: "Ahbab Street, Korangi Industrial Area, Karachi",
+    capacityKwp: 18.0,
+    temp: "21/29℃",
     defaultYieldKwh: 0.0,
-    defaultConsumptionKwh: 4.2,
-    defaultDischargeKwh: 0.3,
-    defaultChargeKwh: 0.9,
-    defaultImportKwh: 3.6,
+    defaultConsumptionKwh: 0.0,
+    defaultDischargeKwh: 0.0,
+    defaultChargeKwh: 0.0,
+    defaultImportKwh: 0.0,
+    defaultExportKwh: 0.0,
+    toConsumptionKwh: 0.0,
+    toConsumptionPercent: 0,
+    toGridKwh: 0.0,
+    toGridPercent: 0,
+  },
+  // P2G 15KW
+  "1298491919450734544": {
+    displayId: "3212D8",
+    name: "P2G 15KW",
+    address: "1D-203, Ahbab Street, Korangi, Karachi",
+    capacityKwp: 20.0,
+    temp: "21/29℃",
+    defaultYieldKwh: 0.0,
+    defaultConsumptionKwh: 0.0,
+    defaultDischargeKwh: 0.0,
+    defaultChargeKwh: 0.0,
+    defaultImportKwh: 0.0,
     defaultExportKwh: 0.0,
     toConsumptionKwh: 0.0,
     toConsumptionPercent: 0,
@@ -176,6 +214,8 @@ export default function SolisMobilePlantDetail({
     battery: true,
     soc: true,
     load: true,
+    purchaseTariff: true,
+    feedInTariff: true,
   });
 
   // Data states
@@ -187,7 +227,9 @@ export default function SolisMobilePlantDetail({
 
   // Chart ref
   const chartRef = useRef<HTMLDivElement>(null);
+  const socChartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
+  const socChartInstance = useRef<echarts.ECharts | null>(null);
 
   const meta =
     MOBILE_METAS[selectedPlantId] ||
@@ -313,6 +355,17 @@ export default function SolisMobilePlantDetail({
   const liveBatteryKw = Number(telemetry?.battery_power_kw ?? (selectedPlantId === "1298491919450740581" ? 2.1 : 0.0));
   const liveBatteryState = telemetry?.battery_direction ?? "Charging";
   const liveGridKw = Number(telemetry?.grid_power_kw ?? 0.0);
+  const powerSeriesControls = [
+    { key: "pv", label: "PV", color: "#eab308" },
+    { key: "grid", label: "Grid", color: "#3b82f6" },
+    { key: "battery", label: "Battery", color: "#22c55e" },
+    { key: "load", label: "Total Load", color: "#8b5cf6" },
+  ] as const;
+  const socSeriesControls = [
+    { key: "soc", label: "SOC", color: "#10b981" },
+    { key: "purchaseTariff", label: "Purchase Tariff", color: "#38bdf8" },
+    { key: "feedInTariff", label: "Feed-in Tariff", color: "#2563eb" },
+  ] as const;
 
   // ECharts: Multi-series Chart Analysis
   useEffect(() => {
@@ -326,6 +379,9 @@ export default function SolisMobilePlantDetail({
 
     if (!dayCurveData) {
       chart.clear();
+      if (socChartRef.current) {
+        echarts.getInstanceByDom(socChartRef.current)?.clear();
+      }
       return;
     }
 
@@ -402,18 +458,6 @@ export default function SolisMobilePlantDetail({
       });
     }
 
-    if (visibleSeries.soc) {
-      seriesList.push({
-        name: "SOC",
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        showSymbol: false,
-        data: socData,
-        lineStyle: { color: "#10b981", width: 1.8 },
-      });
-    }
-
     const option: echarts.EChartsOption = {
       animation: true,
       animationDuration: 400,
@@ -447,47 +491,72 @@ export default function SolisMobilePlantDetail({
           },
         },
       },
-      yAxis: [
-        {
-          type: "value",
-          name: "kW",
-          min: -5,
-          max: 20,
-          interval: 5,
-          nameLocation: "end",
-          nameTextStyle: { color: "#64748b", fontSize: 10, padding: [0, 6, 2, 0] },
-          splitLine: { lineStyle: { type: "dashed", color: "#f1f5f9" } },
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: "#94a3b8", fontSize: 9 },
-        },
-        {
-          type: "value",
-          name: "%",
-          min: 0,
-          max: 100,
-          interval: 20,
-          nameLocation: "end",
-          nameTextStyle: { color: "#64748b", fontSize: 10, padding: [0, 0, 2, 6] },
-          splitLine: { show: false },
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: "#94a3b8", fontSize: 9 },
-        },
-      ],
+      yAxis: {
+        type: "value",
+        name: "kW",
+        nameLocation: "end",
+        nameTextStyle: { color: "#64748b", fontSize: 10, padding: [0, 6, 2, 0] },
+        splitLine: { lineStyle: { type: "dashed", color: "#f1f5f9" } },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#94a3b8", fontSize: 9 },
+      },
       series: seriesList,
+    };
+
+    const tariffPurchase = dayCurveData.purchaseTariffData || timestamps.map(() => 4.5);
+    const tariffFeedIn = dayCurveData.feedInTariffData || timestamps.map(() => 2.2);
+    const socSeries: echarts.SeriesOption[] = [];
+    if (visibleSeries.soc) {
+      socSeries.push({ name: "SOC", type: "line", smooth: true, showSymbol: false, data: socData, lineStyle: { color: "#10b981", width: 1.8 } });
+    }
+    if (visibleSeries.purchaseTariff) {
+      socSeries.push({ name: "Purchase Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: tariffPurchase, lineStyle: { color: "#38bdf8", width: 1.5 } });
+    }
+    if (visibleSeries.feedInTariff) {
+      socSeries.push({ name: "Feed-in Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: tariffFeedIn, lineStyle: { color: "#2563eb", width: 1.5 } });
+    }
+
+    const socOption: echarts.EChartsOption = {
+      animation: true,
+      animationDuration: 400,
+      tooltip: { trigger: "axis", backgroundColor: "rgba(255, 255, 255, 0.95)", borderColor: "#e2e8f0", borderWidth: 1, textStyle: { color: "#1e293b", fontSize: 11 } },
+      grid: { top: 26, right: 42, bottom: 30, left: 38, containLabel: true },
+      xAxis: {
+        type: "category",
+        data: timestamps,
+        axisLine: { lineStyle: { color: "#e2e8f0" } },
+        axisTick: { show: false },
+        axisLabel: { color: "#94a3b8", fontSize: 9, interval: (index: number) => index % 36 === 0 },
+      },
+      yAxis: [
+        { type: "value", name: "%", min: 0, max: 100, interval: 20, nameLocation: "end", nameTextStyle: { color: "#64748b", fontSize: 10 }, splitLine: { lineStyle: { type: "dashed", color: "#f1f5f9" } }, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: "#94a3b8", fontSize: 9 } },
+        { type: "value", name: "PKR/kWh", min: 0, max: 5, interval: 1, nameLocation: "end", nameTextStyle: { color: "#64748b", fontSize: 9 }, splitLine: { show: false }, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: "#94a3b8", fontSize: 9 } },
+      ],
+      series: socSeries,
     };
 
     chart.setOption(option, true);
     chart.resize();
+    let socChart = socChartRef.current ? echarts.getInstanceByDom(socChartRef.current) : null;
+    if (socChartRef.current && (!socChart || socChart.isDisposed())) socChart = echarts.init(socChartRef.current);
+    if (socChart) {
+      socChartInstance.current = socChart;
+      socChart.setOption(socOption, true);
+      socChart.resize();
+    }
   }, [dayCurveData, visibleSeries, granularity, currentDate]);
 
   // Resize handler
   useEffect(() => {
-    const handleResize = () => chartInstance.current?.resize();
+    const handleResize = () => {
+      chartInstance.current?.resize();
+      socChartInstance.current?.resize();
+    };
     window.addEventListener("resize", handleResize);
-    const observer = chartRef.current ? new ResizeObserver(handleResize) : null;
-    if (chartRef.current && observer) observer.observe(chartRef.current);
+    const observer = new ResizeObserver(handleResize);
+    if (chartRef.current) observer.observe(chartRef.current);
+    if (socChartRef.current) observer.observe(socChartRef.current);
     return () => {
       window.removeEventListener("resize", handleResize);
       observer?.disconnect();
@@ -799,111 +868,34 @@ export default function SolisMobilePlantDetail({
             </div>
           </div>
 
-          <div className={granularity === "Day" ? "" : "hidden"}>
-            {/* ECharts Canvas with explicit height */}
-            <div
-              ref={chartRef}
-              className="w-full"
-              style={{ width: "100%", height: "clamp(240px, 62vw, 320px)", minHeight: "240px" }}
-            />
-
-            {/* Interactive Legend Switches matching exact SolisCloud pills */}
-            <div className="flex items-center justify-between flex-wrap gap-2 pt-2.5 border-t border-gray-100 text-[11px] font-medium text-slate-700">
-            {/* PV Switch */}
-            <button
-              onClick={() => setVisibleSeries((s) => ({ ...s, pv: !s.pv }))}
-              className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-            >
-              <div
-                className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
-                  visibleSeries.pv ? "bg-slate-200 justify-end" : "bg-slate-100 justify-start"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full transition-all shadow-xs ${
-                    visibleSeries.pv ? "bg-[#eab308]" : "bg-slate-300"
-                  }`}
-                />
+          <div className={granularity === "Day" ? "space-y-3" : "hidden"}>
+              <div>
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold text-slate-500">
+                  <span>Power (kW)</span>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {powerSeriesControls.map((series) => (
+                      <button key={series.key} type="button" aria-pressed={visibleSeries[series.key]} onClick={() => setVisibleSeries((state) => ({ ...state, [series.key]: !state[series.key] }))} className={`flex items-center gap-1.5 ${visibleSeries[series.key] ? "text-slate-700" : "text-slate-400 line-through"}`}>
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: series.color, opacity: visibleSeries[series.key] ? 1 : 0.35 }} />{series.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div ref={chartRef} className="w-full" style={{ width: "100%", height: "clamp(220px, 58vw, 300px)", minHeight: "220px" }} />
               </div>
-              <span className="text-[11px] font-medium text-slate-700">PV</span>
-            </button>
 
-            {/* Grid Switch */}
-            <button
-              onClick={() => setVisibleSeries((s) => ({ ...s, grid: !s.grid }))}
-              className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-            >
-              <div
-                className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
-                  visibleSeries.grid ? "bg-slate-200 justify-end" : "bg-slate-100 justify-start"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full transition-all shadow-xs ${
-                    visibleSeries.grid ? "bg-[#3b82f6]" : "bg-slate-300"
-                  }`}
-                />
+              <div className="border-t border-gray-100 pt-2">
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold text-slate-500">
+                  <span>Battery & Tariff</span>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {socSeriesControls.map((series) => (
+                      <button key={series.key} type="button" aria-pressed={visibleSeries[series.key]} onClick={() => setVisibleSeries((state) => ({ ...state, [series.key]: !state[series.key] }))} className={`flex items-center gap-1.5 ${visibleSeries[series.key] ? "text-slate-700" : "text-slate-400 line-through"}`}>
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: series.color, opacity: visibleSeries[series.key] ? 1 : 0.35 }} />{series.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div ref={socChartRef} className="w-full" style={{ width: "100%", height: "clamp(200px, 52vw, 260px)", minHeight: "200px" }} />
               </div>
-              <span className="text-[11px] font-medium text-slate-700">Grid</span>
-            </button>
-
-            {/* Battery Switch */}
-            <button
-              onClick={() => setVisibleSeries((s) => ({ ...s, battery: !s.battery }))}
-              className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-            >
-              <div
-                className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
-                  visibleSeries.battery ? "bg-slate-200 justify-end" : "bg-slate-100 justify-start"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full transition-all shadow-xs ${
-                    visibleSeries.battery ? "bg-[#22c55e]" : "bg-slate-300"
-                  }`}
-                />
-              </div>
-              <span className="text-[11px] font-medium text-slate-700">Battery</span>
-            </button>
-
-            {/* SOC Switch */}
-            <button
-              onClick={() => setVisibleSeries((s) => ({ ...s, soc: !s.soc }))}
-              className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-            >
-              <div
-                className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
-                  visibleSeries.soc ? "bg-slate-200 justify-end" : "bg-slate-100 justify-start"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full transition-all shadow-xs ${
-                    visibleSeries.soc ? "bg-[#10b981]" : "bg-slate-300"
-                  }`}
-                />
-              </div>
-              <span className="text-[11px] font-medium text-slate-700">SOC</span>
-            </button>
-
-            {/* Total Load Switch */}
-            <button
-              onClick={() => setVisibleSeries((s) => ({ ...s, load: !s.load }))}
-              className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-            >
-              <div
-                className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
-                  visibleSeries.load ? "bg-slate-200 justify-end" : "bg-slate-100 justify-start"
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full transition-all shadow-xs ${
-                    visibleSeries.load ? "bg-[#8b5cf6]" : "bg-slate-300"
-                  }`}
-                />
-              </div>
-              <span className="text-[11px] font-medium text-slate-700">Total Load</span>
-            </button>
-            </div>
           </div>
 
           {granularity !== "Day" && (
@@ -1030,17 +1022,24 @@ export default function SolisMobilePlantDetail({
       </div>
     )}
 
-      {/* Device Tab View */}
+      {/* Device Tab View (Exact 2-Col Solis Mobile Parity) */}
       {activeBottomNav === "Device" && (
         <div className="px-3 pb-24 mt-3">
-          <SolisDevicesTab devices={plantDetailsData?.devices} isLoading={isDetailsLoading} />
+          <SolisMobileDevicesView
+            devices={plantDetailsData?.devices}
+            plantName={meta.name}
+            plantId={meta.displayId}
+          />
         </div>
       )}
 
-      {/* Alarm Tab View */}
+      {/* Alarm Tab View (Exact Solis Mobile Card Parity) */}
       {activeBottomNav === "Alarm" && (
         <div className="px-3 pb-24 mt-3">
-          <SolisAlarmsTab alarmsData={plantDetailsData?.alarms} isLoading={isDetailsLoading} />
+          <SolisMobileAlarmsView
+            alarmsData={plantDetailsData?.alarms}
+            plantName={meta.name}
+          />
         </div>
       )}
 
@@ -1052,16 +1051,16 @@ export default function SolisMobilePlantDetail({
       )}
 
       {/* ======================================================== */}
-      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm, Info */}
+      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm, Settings */}
       {/* ======================================================== */}
       <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1 text-xs font-semibold pointer-events-auto">
+        <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1.5 text-xs font-semibold pointer-events-auto">
           {/* Overview */}
           <button
             onClick={() => setActiveBottomNav("Overview")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeBottomNav === "Overview"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
@@ -1073,35 +1072,36 @@ export default function SolisMobilePlantDetail({
             onClick={() => setActiveBottomNav("Device")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeBottomNav === "Device"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
             Device
           </button>
 
-          {/* Alarm */}
+          {/* Alarm with red notification dot */}
           <button
             onClick={() => setActiveBottomNav("Alarm")}
-            className={`px-4 py-1.5 rounded-full transition-all ${
+            className={`px-4 py-1.5 rounded-full transition-all flex items-center gap-1 ${
               activeBottomNav === "Alarm"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
-            Alarm
+            <span>Alarm</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${activeBottomNav === "Alarm" ? "bg-white" : "bg-red-500 animate-pulse"}`} />
           </button>
 
-          {/* Info */}
+          {/* Settings / Info */}
           <button
-            onClick={() => setActiveBottomNav("Info")}
+            onClick={() => setActiveBottomNav("Settings")}
             className={`px-4 py-1.5 rounded-full transition-all ${
-              activeBottomNav === "Info" || activeBottomNav === "Settings"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
+              activeBottomNav === "Settings" || activeBottomNav === "Info"
+                ? "bg-gradient-to-r from-orange-400 to-[#f37021] text-white font-bold shadow-md shadow-orange-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
-            Info
+            Settings
           </button>
         </div>
       </div>

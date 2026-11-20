@@ -127,12 +127,46 @@ const PLANT_METAS: Record<string, PlantMeta> = {
     co2Tons: 9.18,
     coalTons: 3.69,
   },
-  // P2G 1ST 6kw
-  "1298491919450840394": {
-    displayId: "342004",
-    name: "P2G 1ST 6kw",
+  // Towfiq chinoy (from user reference screenshot 2)
+  "1298491919451014032": {
+    displayId: "3649E0",
+    name: "Towfiq chinoy",
     guestSuffix: "",
-    address: "Ahbab Street, Korangi, Karachi, Pakistan",
+    address: "Karachi, Sindh, Pakistan",
+    gps: "E67.001100, N24.860700",
+    capacityKwp: 29.67,
+    owner: "Towfiq chinoy",
+    temp: "21~32°C",
+    sunriseSunset: "06:52/17:43",
+    wind: "WSW 5.1m/s",
+    humidity: "48%",
+    trees: 1.85,
+    co2Tons: 3.32,
+    coalTons: 1.33,
+  },
+  // P2G 20kw
+  "1298491919450851319": {
+    displayId: "3212E5",
+    name: "P2G 20kw",
+    guestSuffix: "",
+    address: "Ahbab Street, Korangi Industrial Area, Karachi, Pakistan",
+    gps: "E67.142010, N24.831200",
+    capacityKwp: 18.0,
+    owner: "Qasim Moosvi",
+    temp: "21~32°C",
+    sunriseSunset: "06:52/17:43",
+    wind: "WSW 5.1m/s",
+    humidity: "48%",
+    trees: 0.1,
+    co2Tons: 0.2,
+    coalTons: 0.08,
+  },
+  // P2G 15KW
+  "1298491919450734544": {
+    displayId: "3212D8",
+    name: "P2G 15KW",
+    guestSuffix: "",
+    address: "1D-203, Ahbab Street, Korangi, Karachi, Pakistan",
     gps: "E67.142010, N24.831200",
     capacityKwp: 20.0,
     owner: "Qasim Moosvi",
@@ -140,9 +174,9 @@ const PLANT_METAS: Record<string, PlantMeta> = {
     sunriseSunset: "06:52/17:43",
     wind: "WSW 5.1m/s",
     humidity: "48%",
-    trees: 0.18,
-    co2Tons: 0.32,
-    coalTons: 0.13,
+    trees: 0.1,
+    co2Tons: 0.2,
+    coalTons: 0.08,
   },
 };
 
@@ -204,6 +238,9 @@ export default function SolisClientDashboard({
   const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [visiblePowerSeries, setVisiblePowerSeries] = useState({ PV: true, Grid: true, Battery: true, "Total Load": true });
+  const [visibleSocSeries, setVisibleSocSeries] = useState({ SOC: true, "Purchase Tariff": true, "Feed-in Tariff": true });
+  const [visibleEnergySeries, setVisibleEnergySeries] = useState({ PV: true, Import: true, Export: true, Charge: true, Discharge: true, Consumption: true });
 
   // Chart DOM refs
   const powerChartRef = useRef<HTMLDivElement>(null);
@@ -733,51 +770,23 @@ export default function SolisClientDashboard({
         axisLabel: { color: "#94a3b8", fontSize: 10 },
       },
       series: [
-        {
-          name: "PV",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: solarKw,
+        ...(visiblePowerSeries.PV ? [{
+          name: "PV", type: "line", smooth: true, showSymbol: false, data: solarKw,
           lineStyle: { color: "#eab308", width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(234, 179, 8, 0.25)" },
-              { offset: 1, color: "rgba(234, 179, 8, 0.0)" },
-            ]),
-          },
-        },
-        {
-          name: "Grid",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: gridKw,
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "rgba(234, 179, 8, 0.25)" }, { offset: 1, color: "rgba(234, 179, 8, 0.0)" },
+          ]) },
+        }] : []),
+        ...(visiblePowerSeries.Grid ? [{
+          name: "Grid", type: "line", smooth: true, showSymbol: false, data: gridKw,
           lineStyle: { color: "#3b82f6", width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(59, 130, 246, 0.2)" },
-              { offset: 1, color: "rgba(59, 130, 246, 0.0)" },
-            ]),
-          },
-        },
-        {
-          name: "Battery",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: batKw,
-          lineStyle: { color: "#22c55e", width: 2 },
-        },
-        {
-          name: "Total Load",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: loadKw,
-          lineStyle: { color: "#a855f7", width: 2 },
-        },
-      ],
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "rgba(59, 130, 246, 0.2)" }, { offset: 1, color: "rgba(59, 130, 246, 0.0)" },
+          ]) },
+        }] : []),
+        ...(visiblePowerSeries.Battery ? [{ name: "Battery", type: "line", smooth: true, showSymbol: false, data: batKw, lineStyle: { color: "#22c55e", width: 2 } }] : []),
+        ...(visiblePowerSeries["Total Load"] ? [{ name: "Total Load", type: "line", smooth: true, showSymbol: false, data: loadKw, lineStyle: { color: "#a855f7", width: 2 } }] : []),
+      ] as echarts.SeriesOption[],
     };
 
     chart.setOption(option, true);
@@ -792,7 +801,7 @@ export default function SolisClientDashboard({
         powerChartInstance.current = null;
       }
     };
-  }, [activeTab, dayCurveData]);
+  }, [activeTab, dayCurveData, visiblePowerSeries]);
 
   // -------------------------------------------------------------
   // ECharts 2: Battery SOC & Tariff Curve with "Now" line
@@ -897,52 +906,19 @@ export default function SolisClientDashboard({
         },
       ],
       series: [
-        {
-          name: "SOC",
-          type: "line",
-          smooth: true,
-          showSymbol: false,
-          data: batterySoc,
+        ...(visibleSocSeries.SOC ? [{
+          name: "SOC", type: "line", smooth: true, showSymbol: false, data: batterySoc,
           lineStyle: { color: "#22c55e", width: 2 },
-          markLine:
-            nowIndex >= 0
-              ? {
-                symbol: "none",
-                silent: true,
-                lineStyle: {
-                  type: "dashed",
-                  color: "#f97316",
-                  width: 1.5,
-                },
-                label: {
-                  show: true,
-                  position: "insideEndTop",
-                  formatter: "Now",
-                  color: "#f97316",
-                  fontWeight: 600,
-                  fontSize: 11,
-                },
-                data: [{ xAxis: nowTimeStr }],
-              }
-              : undefined,
-        },
-        {
-          name: "Purchase Tariff",
-          type: "line",
-          yAxisIndex: 1,
-          showSymbol: false,
-          data: purchaseTariff,
-          lineStyle: { color: "#38bdf8", width: 1.5 },
-        },
-        {
-          name: "Feed-in Tariff",
-          type: "line",
-          yAxisIndex: 1,
-          showSymbol: false,
-          data: feedInTariff,
-          lineStyle: { color: "#2563eb", width: 1.5 },
-        },
-      ],
+          markLine: nowIndex >= 0 ? {
+            symbol: "none", silent: true,
+            lineStyle: { type: "dashed", color: "#f97316", width: 1.5 },
+            label: { show: true, position: "insideEndTop", formatter: "Now", color: "#f97316", fontWeight: 600, fontSize: 11 },
+            data: [{ xAxis: nowTimeStr }],
+          } : undefined,
+        }] : []),
+        ...(visibleSocSeries["Purchase Tariff"] ? [{ name: "Purchase Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: purchaseTariff, lineStyle: { color: "#38bdf8", width: 1.5 } }] : []),
+        ...(visibleSocSeries["Feed-in Tariff"] ? [{ name: "Feed-in Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: feedInTariff, lineStyle: { color: "#2563eb", width: 1.5 } }] : []),
+      ] as echarts.SeriesOption[],
     };
 
     chart.setOption(option, true);
@@ -952,12 +928,12 @@ export default function SolisClientDashboard({
 
     return () => {
       clearTimeout(timer);
-      if (powerChartInstance.current && !powerChartInstance.current.isDisposed()) {
-        powerChartInstance.current.dispose();
-        powerChartInstance.current = null;
+      if (socChartInstance.current && !socChartInstance.current.isDisposed()) {
+        socChartInstance.current.dispose();
+        socChartInstance.current = null;
       }
     };
-  }, [activeTab, dayCurveData]);
+  }, [activeTab, dayCurveData, visibleSocSeries]);
 
   // -------------------------------------------------------------
   // ECharts 3: Grouped Bar Chart for Month, Year, Lifetime
@@ -979,6 +955,15 @@ export default function SolisClientDashboard({
     if (!currentDataset || !currentDataset.labels || currentDataset.labels.length === 0) {
       currentDataset = getFallbackBreakdown(activeTab as any, currentMonth, currentYear);
     }
+
+    const energySeries = [
+      { name: "PV", data: currentDataset.pvData, color: "#facc15" },
+      { name: "Import", data: currentDataset.importData, color: "#38bdf8" },
+      { name: "Export", data: currentDataset.exportData, color: "#2563eb" },
+      { name: "Charge", data: currentDataset.chargeData, color: "#10b981" },
+      { name: "Discharge", data: currentDataset.dischargeData, color: "#34d399" },
+      { name: "Consumption", data: currentDataset.consumptionData, color: "#8b5cf6" },
+    ] as const;
 
     const option: echarts.EChartsOption = {
       animation: true,
@@ -1050,51 +1035,16 @@ export default function SolisClientDashboard({
         axisTick: { show: false },
         axisLabel: { color: "#94a3b8", fontSize: 10 },
       },
-      series: [
-        {
-          name: "PV",
-          type: "bar",
-          data: currentDataset.pvData,
-          itemStyle: { color: "#facc15", borderRadius: [2, 2, 0, 0] },
+      series: energySeries
+        .filter((series) => visibleEnergySeries[series.name as keyof typeof visibleEnergySeries])
+        .map((series) => ({
+          name: series.name,
+          type: "bar" as const,
+          data: series.data,
+          itemStyle: { color: series.color, borderRadius: [2, 2, 0, 0] },
           barMaxWidth: activeTab === "Year" ? 10 : 6,
           barGap: "20%",
-        },
-        {
-          name: "Import",
-          type: "bar",
-          data: currentDataset.importData,
-          itemStyle: { color: "#38bdf8", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Export",
-          type: "bar",
-          data: currentDataset.exportData,
-          itemStyle: { color: "#2563eb", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Charge",
-          type: "bar",
-          data: currentDataset.chargeData,
-          itemStyle: { color: "#10b981", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Discharge",
-          type: "bar",
-          data: currentDataset.dischargeData,
-          itemStyle: { color: "#34d399", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-        {
-          name: "Consumption",
-          type: "bar",
-          data: currentDataset.consumptionData,
-          itemStyle: { color: "#8b5cf6", borderRadius: [2, 2, 0, 0] },
-          barMaxWidth: activeTab === "Year" ? 10 : 6,
-        },
-      ],
+        })),
     };
 
     chart.setOption(option, true);
@@ -1113,7 +1063,7 @@ export default function SolisClientDashboard({
         barChartInstance.current = null;
       }
     };
-  }, [activeTab, monthData, yearData, lifetimeData, currentMonth, currentYear]);
+  }, [activeTab, monthData, yearData, lifetimeData, currentMonth, currentYear, visibleEnergySeries]);
 
   // Window & ResizeObserver resize handling
   useEffect(() => {
@@ -1640,22 +1590,16 @@ export default function SolisClientDashboard({
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]" />
-                          <span>PV</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
-                          <span>Grid</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                          <span>Battery</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#a855f7]" />
-                          <span>Total Load</span>
-                        </div>
+                        {[
+                          { key: "PV" as const, color: "#eab308" },
+                          { key: "Grid" as const, color: "#3b82f6" },
+                          { key: "Battery" as const, color: "#22c55e" },
+                          { key: "Total Load" as const, color: "#a855f7" },
+                        ].map((item) => (
+                          <button key={item.key} type="button" aria-pressed={visiblePowerSeries[item.key]} onClick={() => setVisiblePowerSeries((state) => ({ ...state, [item.key]: !state[item.key] }))} className={`flex items-center gap-1.5 ${visiblePowerSeries[item.key] ? "text-slate-600" : "text-slate-400 line-through"}`}>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color, opacity: visiblePowerSeries[item.key] ? 1 : 0.35 }} />{item.key}
+                          </button>
+                        ))}
                       </div>
                       <button
                         onClick={loadDayCurve}
@@ -1672,18 +1616,15 @@ export default function SolisClientDashboard({
                   <div className="pt-2 border-t border-gray-100">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                          <span>SOC</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
-                          <span>Purchase Tariff</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                          <span>Feed-in Tariff</span>
-                        </div>
+                        {[
+                          { key: "SOC" as const, color: "#22c55e" },
+                          { key: "Purchase Tariff" as const, color: "#38bdf8" },
+                          { key: "Feed-in Tariff" as const, color: "#2563eb" },
+                        ].map((item) => (
+                          <button key={item.key} type="button" aria-pressed={visibleSocSeries[item.key]} onClick={() => setVisibleSocSeries((state) => ({ ...state, [item.key]: !state[item.key] }))} className={`flex items-center gap-1.5 ${visibleSocSeries[item.key] ? "text-slate-600" : "text-slate-400 line-through"}`}>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color, opacity: visibleSocSeries[item.key] ? 1 : 0.35 }} />{item.key}
+                          </button>
+                        ))}
                       </div>
                       <button
                         onClick={loadDayCurve}
@@ -1703,30 +1644,18 @@ export default function SolisClientDashboard({
                 <div key="bar-chart-container" className="space-y-3 pt-2">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3.5 text-xs font-medium text-slate-600 flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#facc15]" />
-                        <span>PV</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
-                        <span>Import</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                        <span>Export</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
-                        <span>Charge</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
-                        <span>Discharge</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
-                        <span>Consumption</span>
-                      </div>
+                      {[
+                        { key: "PV" as const, color: "#facc15" },
+                        { key: "Import" as const, color: "#38bdf8" },
+                        { key: "Export" as const, color: "#2563eb" },
+                        { key: "Charge" as const, color: "#10b981" },
+                        { key: "Discharge" as const, color: "#34d399" },
+                        { key: "Consumption" as const, color: "#8b5cf6" },
+                      ].map((item) => (
+                        <button key={item.key} type="button" aria-pressed={visibleEnergySeries[item.key]} onClick={() => setVisibleEnergySeries((state) => ({ ...state, [item.key]: !state[item.key] }))} className={`flex items-center gap-1.5 ${visibleEnergySeries[item.key] ? "text-slate-600" : "text-slate-400 line-through"}`}>
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color, opacity: visibleEnergySeries[item.key] ? 1 : 0.35 }} />{item.key}
+                        </button>
+                      ))}
                     </div>
                     <button
                       onClick={() => {

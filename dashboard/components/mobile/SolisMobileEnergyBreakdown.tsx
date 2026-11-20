@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 import { EnergyBreakdownResult } from "@/lib/types";
 
 type Period = "month" | "year";
+type SeriesKey = (typeof SERIES)[number]["key"];
 
 interface SolisMobileEnergyBreakdownProps {
   stationId: string;
@@ -32,6 +33,14 @@ function initialPeriodValue(period: Period) {
 
 export default function SolisMobileEnergyBreakdown({ stationId, period }: SolisMobileEnergyBreakdownProps) {
   const [periodValue, setPeriodValue] = useState(() => initialPeriodValue(period));
+  const [visibleSeries, setVisibleSeries] = useState<Record<SeriesKey, boolean>>({
+    pvData: true,
+    importData: true,
+    exportData: true,
+    chargeData: true,
+    dischargeData: true,
+    consumptionData: true,
+  });
   const [response, setResponse] = useState<{
     key: string;
     data?: EnergyBreakdownResult;
@@ -110,7 +119,7 @@ export default function SolisMobileEnergyBreakdown({ stationId, period }: SolisM
         splitLine: { lineStyle: { type: "dashed", color: "#F1F5F9" } },
         axisLabel: { color: "#94A3B8", fontSize: 10 },
       },
-      series: SERIES.map((series) => ({
+      series: SERIES.filter((series) => visibleSeries[series.key]).map((series) => ({
         name: series.name,
         type: "bar" as const,
         data: data[series.key],
@@ -120,7 +129,7 @@ export default function SolisMobileEnergyBreakdown({ stationId, period }: SolisM
       })),
     }, true);
     chart.resize();
-  }, [data, period]);
+  }, [data, period, visibleSeries]);
 
   useEffect(() => {
     const element = chartRef.current;
@@ -187,10 +196,16 @@ export default function SolisMobileEnergyBreakdown({ stationId, period }: SolisM
 
       <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] font-medium text-slate-700">
         {SERIES.map((series) => (
-          <span key={series.name} className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: series.color }} />
+          <button
+            key={series.name}
+            type="button"
+            aria-pressed={visibleSeries[series.key]}
+            onClick={() => setVisibleSeries((state) => ({ ...state, [series.key]: !state[series.key] }))}
+            className={`flex items-center gap-1.5 whitespace-nowrap ${visibleSeries[series.key] ? "text-slate-700" : "text-slate-400 line-through"}`}
+          >
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: series.color, opacity: visibleSeries[series.key] ? 1 : 0.35 }} />
             {series.name}
-          </span>
+          </button>
         ))}
       </div>
 

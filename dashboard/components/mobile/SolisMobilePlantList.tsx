@@ -18,6 +18,7 @@ import {
 import { SolisPlantOverviewItem } from "@/lib/types";
 
 const PLANT_IMAGES: Record<string, string> = {
+  "1298491919451014032": "/images/solis_plant_room.jpg", // Towfiq chinoy
   "1298491919450851319": "/solis/station_list6-VM077FAH.png", // P2G 20kw
   "1298491919450840394": "/solis/station_list7-B5Urfb3c.png", // P2G 1ST 6kw
   "1298491919450797504": "/solis/station_list1-DwRSyVIC.png", // Menu Karachi Office
@@ -28,6 +29,31 @@ const PLANT_IMAGES: Record<string, string> = {
 };
 
 const DEFAULT_MOBILE_PLANTS: SolisPlantOverviewItem[] = [
+  {
+    id: "1298491919451014032",
+    name: "Towfiq chinoy",
+    address: "Karachi, Sindh, Pakistan",
+    status: "Online",
+    dailyYieldKwh: 45.2,
+    powerKw: 12.4,
+    capacityKwp: 29.67,
+    dailyChargeKwh: 14.5,
+    dailyDischargeKwh: 6.2,
+    totalYieldKwh: 3450,
+    totalYieldStr: "3.450MWh",
+    totalChargeKwh: 1250,
+    totalChargeStr: "1.250MWh",
+    inverterCount: 1,
+    inverterTotal: 1,
+    inverterOnline: 1,
+    installer: "Sunhancee",
+    installerContact: "support@sunhancee.com",
+    owner: "Towfiq chinoy",
+    ownerContact: "qasim.moosvi@gmail.com",
+    weather: "Clear",
+    temperature: "31℃",
+    latestTime: "20/11/2026 12:49:51",
+  },
   {
     id: "1298491919450851319",
     name: "P2G 20kw",

@@ -35,8 +35,8 @@ const pool =
   new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 20,
-    idleTimeoutMillis: 30000,
+    max: 4,
+    idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000,
   });
 
@@ -44,16 +44,16 @@ if (process.env.NODE_ENV !== "production") {
   global._solisDbPool = pool;
 }
 
-// 5 Authorized SolisCloud Plants Registry
+// 8 Authorized SolisCloud Plants Registry (Discovered Live on SolisCloud)
 export const AUTHORIZED_PLANTS: PlantInfo[] = [
   {
-    id: "1298491919450797504",
-    name: "Menu Karachi Office",
+    id: "1298491919451014032",
+    name: "Towfiq chinoy",
     location: "Karachi, Pakistan",
-    capacityKwp: 80.0,
-    inverterCount: 2,
+    capacityKwp: 29.67,
+    inverterCount: 1,
     batteryInstalled: true,
-    dataloggerSn: "7A12570303D040F0",
+    dataloggerSn: "7A12580709004122",
     hasDataInDb: true,
   },
   {
@@ -77,13 +77,13 @@ export const AUTHORIZED_PLANTS: PlantInfo[] = [
     hasDataInDb: true,
   },
   {
-    id: "1298491919450740581",
-    name: "P2G 50KW",
+    id: "1298491919450851319",
+    name: "P2G 20kw",
     location: "Karachi, Pakistan",
-    capacityKwp: 32.0,
+    capacityKwp: 18.0,
     inverterCount: 1,
-    batteryInstalled: true,
-    dataloggerSn: "7A12551308F022F8",
+    batteryInstalled: false,
+    dataloggerSn: "7A12532605C0A5DB",
     hasDataInDb: true,
   },
   {
@@ -94,6 +94,36 @@ export const AUTHORIZED_PLANTS: PlantInfo[] = [
     inverterCount: 1,
     batteryInstalled: true,
     dataloggerSn: "7A1256240B001722",
+    hasDataInDb: true,
+  },
+  {
+    id: "1298491919450797504",
+    name: "Menu Karachi Office",
+    location: "Karachi, Pakistan",
+    capacityKwp: 80.0,
+    inverterCount: 2,
+    batteryInstalled: true,
+    dataloggerSn: "7A12570303D040F0",
+    hasDataInDb: true,
+  },
+  {
+    id: "1298491919450740581",
+    name: "P2G 50KW",
+    location: "Karachi, Pakistan",
+    capacityKwp: 32.0,
+    inverterCount: 1,
+    batteryInstalled: true,
+    dataloggerSn: "7A12551308F022F8",
+    hasDataInDb: true,
+  },
+  {
+    id: "1298491919450734544",
+    name: "P2G 15KW",
+    location: "Karachi, Pakistan",
+    capacityKwp: 20.0,
+    inverterCount: 1,
+    batteryInstalled: false,
+    dataloggerSn: "7A12541606D04928",
     hasDataInDb: true,
   },
 ];
@@ -140,7 +170,7 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
         const isOnlineToday = curveMatch?.curve_date_str === todayPkt;
         const updatedTime = match ? new Date(match.updated_at).getTime() : 0;
         const isStale = !isOnlineToday || (updatedTime > 0 ? Date.now() - updatedTime > 45 * 60 * 1000 : false);
-        
+
         let solarKw = 0;
         let rawBatKw = 0;
         let soc = Number(match?.battery_soc) || 0;
@@ -1219,8 +1249,22 @@ export async function getLifetimeEnergyBreakdown(
   }
 }
 
-// 7 SolisCloud Plants matching exact reference overview
+// 8 SolisCloud Plants matching account overview
 export const ALL_SOLIS_OVERVIEW_PLANTS = [
+  {
+    id: "1298491919451014032",
+    name: "Towfiq chinoy",
+    address: "Karachi, Sindh, Pakistan",
+    defaultCapacity: 29.67,
+    inverterTotal: 1,
+    defaultStatus: "Online" as const,
+    owner: "Towfiq chinoy",
+    ownerContact: "qasim.moosvi@gmail.com",
+    installer: "Sunhancee",
+    installerContact: "support@sunhancee.com",
+    plantType: "Residential",
+    investmentType: "Self-owned",
+  },
   {
     id: "1298491919450958553",
     name: "OPL Residence",
@@ -1394,15 +1438,15 @@ export async function getPlantOverviewData(): Promise<SolisOverviewResponse> {
       let totalYieldStr = raw.allEnergyStr
         ? `${totalYieldVal}${raw.allEnergyStr}`
         : totalYieldVal >= 1000
-        ? `${(totalYieldVal / 1000).toFixed(3)}MWh`
-        : `${totalYieldVal.toFixed(1)}kWh`;
+          ? `${(totalYieldVal / 1000).toFixed(3)}MWh`
+          : `${totalYieldVal.toFixed(1)}kWh`;
 
       let totalChargeVal = Number(raw.batteryChargeTotalEnergy) || 0;
       let totalChargeStr = raw.batteryChargeTotalEnergyStr
         ? `${totalChargeVal}${raw.batteryChargeTotalEnergyStr}`
         : totalChargeVal >= 1000
-        ? `${(totalChargeVal / 1000).toFixed(3)}MWh`
-        : `${totalChargeVal.toFixed(0)}kWh`;
+          ? `${(totalChargeVal / 1000).toFixed(3)}MWh`
+          : `${totalChargeVal.toFixed(0)}kWh`;
 
       // Convert monthly kWh to MWh if unit is kWh
       const monthChargeRaw = Number(raw.batteryChargeMonthEnergy) || 0;
