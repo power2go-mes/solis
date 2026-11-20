@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,17 +13,45 @@ import {
   Filter,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
 } from "lucide-react";
+import SolisAlarmDetailModal, { AlarmItem } from "./SolisAlarmDetailModal";
 
 interface SolisAlarmsTabProps {
   alarmsData: any;
   isLoading?: boolean;
+  onViewDevice?: (deviceSn: string) => void;
 }
 
-export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTabProps) {
+export default function SolisAlarmsTab({ alarmsData, isLoading, onViewDevice }: SolisAlarmsTabProps) {
+  const searchParams = useSearchParams();
+  const alarmIdParam = searchParams.get("alarmId");
+
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedAlarmId, setExpandedAlarmId] = useState<number | null>(null);
+  const [selectedAlarmForModal, setSelectedAlarmForModal] = useState<AlarmItem | null>(null);
+
+  useEffect(() => {
+    if (alarmIdParam && alarmsData?.records) {
+      const match = alarmsData.records.find((r: any) => String(r.id) === alarmIdParam || r.alarmCode === alarmIdParam);
+      if (match) {
+        setSelectedAlarmForModal({
+          id: match.id,
+          alarmCode: match.alarmCode,
+          alarmName: match.alarmName,
+          severity: match.severity || "Warning",
+          deviceSn: match.deviceSn,
+          plantName: match.plantName || "Solis Station",
+          beginTime: match.beginTime,
+          endTime: match.endTime,
+          duration: match.duration,
+          status: match.status,
+          advice: match.advice,
+        });
+      }
+    }
+  }, [alarmIdParam, alarmsData]);
 
   if (isLoading || !alarmsData) {
     return (
@@ -71,9 +100,25 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
   const activeCount = rawRecords.filter((a: any) => !a.status.toLowerCase().includes("cleared") && !a.status.toLowerCase().includes("recovered") && !a.status.toLowerCase().includes("resolved")).length;
   const clearedCount = rawRecords.length - activeCount;
 
+  const handleRowClick = (alarm: any) => {
+    setSelectedAlarmForModal({
+      id: alarm.id,
+      alarmCode: alarm.alarmCode,
+      alarmName: alarm.alarmName,
+      severity: alarm.severity || "Warning",
+      deviceSn: alarm.deviceSn,
+      plantName: alarm.plantName || "Solis Station",
+      beginTime: alarm.beginTime,
+      endTime: alarm.endTime,
+      duration: alarm.duration,
+      status: alarm.status,
+      advice: alarm.advice,
+    });
+  };
+
   return (
     <div className="space-y-4">
-      {/* 1. Top Alarm KPI Summary Cards (Strictly White, Orange, Green, Black) */}
+      {/* 1. Top Alarm KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Total Alarms */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
@@ -90,7 +135,7 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
           </div>
         </div>
 
-        {/* Active Alarms (Orange highlight) */}
+        {/* Active Alarms */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -105,7 +150,7 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
           </div>
         </div>
 
-        {/* Cleared Alarms (Green highlight) */}
+        {/* Cleared Alarms */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -121,7 +166,7 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
         </div>
       </div>
 
-      {/* 2. Filter Bar & Search Input (Strictly White, Orange, Green, Black) */}
+      {/* 2. Filter Bar & Search Input */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs">
           {[
@@ -169,7 +214,7 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
                 <th className="py-3 px-3">Recovery Time</th>
                 <th className="py-3 px-3">Duration</th>
                 <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3 text-right">Guidance</th>
+                <th className="py-3 px-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -185,7 +230,10 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
                   const isCleared = alarm.status.toLowerCase().includes("cleared") || alarm.status.toLowerCase().includes("recovered") || alarm.status.toLowerCase().includes("resolved");
                   return (
                     <React.Fragment key={alarm.id}>
-                      <tr className="hover:bg-gray-50/60 transition-colors">
+                      <tr
+                        onClick={() => handleRowClick(alarm)}
+                        className="hover:bg-orange-50/20 cursor-pointer transition-colors"
+                      >
                         <td className="py-3 px-4 whitespace-nowrap">
                           {getSeverityBadge(alarm.severity)}
                         </td>
@@ -222,33 +270,17 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
                         </td>
                         <td className="py-3 px-3 text-right whitespace-nowrap">
                           <button
-                            onClick={() => setExpandedAlarmId(isExpanded ? null : alarm.id)}
-                            className="p-1 rounded hover:bg-gray-100 text-slate-400 hover:text-slate-600 transition-colors"
-                            title={isExpanded ? "Hide Guidance" : "Show SolisCloud Guidance"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRowClick(alarm);
+                            }}
+                            className="px-2.5 py-1 rounded-md border border-gray-200 bg-white hover:bg-orange-50 hover:border-orange-300 text-[#f37021] text-xs font-medium transition-all shadow-2xs inline-flex items-center gap-1"
                           >
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            <span>Details</span>
+                            <ExternalLink className="w-3 h-3" />
                           </button>
                         </td>
                       </tr>
-
-                      {/* Expandable Official SolisCloud Troubleshooting Guidance */}
-                      {isExpanded && (
-                        <tr className="bg-emerald-50/20 border-b border-gray-100">
-                          <td colSpan={9} className="py-3 px-4 text-xs">
-                            <div className="flex items-start gap-2 text-slate-700">
-                              <ShieldAlert className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                              <div>
-                                <span className="font-bold text-slate-900 block mb-0.5">
-                                  Official SolisCloud Troubleshooting Guidance:
-                                </span>
-                                <p className="text-slate-600 leading-relaxed font-sans">
-                                  {alarm.advice}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
                     </React.Fragment>
                   );
                 })
@@ -257,6 +289,14 @@ export default function SolisAlarmsTab({ alarmsData, isLoading }: SolisAlarmsTab
           </table>
         </div>
       </div>
+
+      {/* Alarm Detail Modal */}
+      <SolisAlarmDetailModal
+        alarm={selectedAlarmForModal}
+        isOpen={Boolean(selectedAlarmForModal)}
+        onClose={() => setSelectedAlarmForModal(null)}
+        onViewDevice={onViewDevice}
+      />
     </div>
   );
 }

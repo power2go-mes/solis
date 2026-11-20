@@ -1,18 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Filter, AlertCircle, CheckCircle2 } from "lucide-react";
+import SolisAlarmDetailModal from "../SolisAlarmDetailModal";
 
 interface SolisMobileAlarmsViewProps {
   alarmsData: any;
   plantName?: string;
+  onViewDevice?: (deviceSn: string) => void;
 }
 
 export default function SolisMobileAlarmsView({
   alarmsData,
   plantName = "P2G 50KW",
+  onViewDevice,
 }: SolisMobileAlarmsViewProps) {
   const [activeTab, setActiveTab] = useState<"Current" | "History">("Current");
+  const [selectedAlarmForModal, setSelectedAlarmForModal] = useState<any | null>(null);
 
   const rawRecords = alarmsData?.records || [];
 
@@ -35,7 +40,7 @@ export default function SolisMobileAlarmsView({
       id: "p2g-al-2",
       alarmCode: "107D",
       alarmMsg: "NO-Battery2",
-      severity: "Info",
+      severity: "Notice",
       alarmDeviceSn: "1053050255210107",
       alarmBeginTimeStr: "20/11/2026 00:26",
       stateStr: "Active",
@@ -52,6 +57,33 @@ export default function SolisMobileAlarmsView({
       : historyAlarms.length > 0
       ? historyAlarms
       : rawRecords.slice(0, 10);
+
+  const searchParams = useSearchParams();
+  const modalParam = searchParams.get("modal");
+  const codeParam = searchParams.get("alarmCode");
+
+  useEffect(() => {
+    if (modalParam === "alarm" || codeParam) {
+      const match = displayedAlarms.find((a: any) => codeParam ? a.alarmCode === codeParam : true) || displayedAlarms[0];
+      if (match) handleAlarmCardClick(match);
+    }
+  }, [modalParam, codeParam]);
+
+  const handleAlarmCardClick = (item: any) => {
+    setSelectedAlarmForModal({
+      id: item.id || item.alarmCode,
+      alarmCode: item.alarmCode,
+      alarmName: item.alarmMsg || item.name || "System Alarm",
+      severity: item.severity || (item.alarmLevel === "2" ? "Warning" : "Notice"),
+      deviceSn: item.alarmDeviceSn || item.deviceSn || "1053050255210107",
+      plantName: plantName,
+      beginTime: item.alarmBeginTimeStr || "20/11/2026 00:26 (UTC+05:00)",
+      endTime: item.alarmEndTimeStr || (item.stateStr === "Active" ? undefined : "20/11/2026 00:30 (UTC+05:00)"),
+      duration: item.duration || "Ongoing",
+      status: item.stateStr || (activeTab === "Current" ? "Active" : "Recovered / Resolved"),
+      advice: item.advice,
+    });
+  };
 
   return (
     <div className="space-y-3.5 w-full max-w-full overflow-hidden">
@@ -104,12 +136,12 @@ export default function SolisMobileAlarmsView({
               item.alarmLevel === "2" ||
               item.alarmMsg?.includes("UN-V") ||
               item.alarmMsg?.includes("OV-");
-            const isInfo = !isWarning;
 
             return (
               <div
                 key={item.id || item.alarmCode}
-                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 space-y-1.5 transition-all w-full box-border"
+                onClick={() => handleAlarmCardClick(item)}
+                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 space-y-1.5 transition-all w-full box-border cursor-pointer hover:border-orange-300 active:scale-[0.99]"
               >
                 {/* Row 1: Badge + Alarm Code & Name + Red Indicator Dot */}
                 <div className="flex items-center justify-between w-full">
@@ -149,6 +181,14 @@ export default function SolisMobileAlarmsView({
           })
         )}
       </div>
+
+      {/* Alarm Detail Modal */}
+      <SolisAlarmDetailModal
+        alarm={selectedAlarmForModal}
+        isOpen={Boolean(selectedAlarmForModal)}
+        onClose={() => setSelectedAlarmForModal(null)}
+        onViewDevice={onViewDevice}
+      />
     </div>
   );
 }
