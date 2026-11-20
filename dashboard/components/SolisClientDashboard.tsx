@@ -36,6 +36,7 @@ import { ChartSeriesData } from "@/lib/db";
 interface SolisClientDashboardProps {
   selectedPlantId: string;
   plantsList: PlantInfo[];
+  initialTab?: string;
   onSelectPlant: (plantId: string) => void;
   onBackToOverview: () => void;
 }
@@ -210,11 +211,12 @@ function formatPktDisplayTime(): string {
 export default function SolisClientDashboard({
   selectedPlantId,
   plantsList,
+  initialTab = "Overview",
   onSelectPlant,
   onBackToOverview,
 }: SolisClientDashboardProps) {
-  // Navigation Submenu: Overview, Layout, Info, Device, Alarm, Alert, Tariff
-  const [activeSubnav, setActiveSubnav] = useState<string>("Overview");
+  // Navigation Submenu: Overview, Layout, Info, Device, Alarm, Alert
+  const [activeSubnav, setActiveSubnav] = useState<string>(initialTab);
 
   // Operating Data Tab: "Day" | "Month" | "Year" | "Lifetime"
   const [activeTab, setActiveTab] = useState<"Day" | "Month" | "Year" | "Lifetime">("Day");
@@ -1338,10 +1340,13 @@ export default function SolisClientDashboard({
           <button
             key={item}
             onClick={() => setActiveSubnav(item)}
-            className={`px-3 py-1 rounded-md font-medium transition-all ${activeSubnav === item
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
+            className={`px-3 py-1 rounded-md font-medium transition-all ${
+              activeSubnav === item
+                ? item === "Overview" || item === "Layout"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
+                  : "bg-orange-50 text-[#f37021] border border-orange-300 font-semibold shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-gray-100/70"
-              }`}
+            }`}
           >
             {item}
           </button>

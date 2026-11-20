@@ -32,6 +32,7 @@ import {
 function SolisCloudDashboard() {
   const searchParams = useSearchParams();
   const stationIdParam = searchParams.get("stationId") || "";
+  const tabParam = searchParams.get("tab") || "Overview";
 
   // View Mode: "plant_overview" (default exact SolisCloud replication) or "plant_detail" / "device_overview"
   const [activeView, setActiveView] = useState<"plant_overview" | "device_overview">(
@@ -232,6 +233,7 @@ function SolisCloudDashboard() {
                 <SolisClientDashboard
                   selectedPlantId={selectedPlantId}
                   plantsList={plantsList}
+                  initialTab={tabParam}
                   onSelectPlant={(newId) => {
                     setSelectedPlantId(newId);
                     loadTelemetry(newId);
@@ -259,6 +261,7 @@ function SolisCloudDashboard() {
           <SolisMobilePlantDetail
             selectedPlantId={selectedPlantId}
             plantsList={plantsList}
+            initialTab={tabParam}
             onSelectPlant={(plantId) => handleSelectPlant(plantId)}
             onBack={() => setActiveView("plant_overview")}
           />

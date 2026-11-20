@@ -54,7 +54,7 @@ export default function SolisMobileAlarmsView({
       : rawRecords.slice(0, 10);
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3.5 w-full max-w-full overflow-hidden">
       {/* 1. Header Filter Pills: Current | History + Filter Icon */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center bg-gray-100/70 p-0.5 rounded-xl border border-gray-100 text-xs">
@@ -90,7 +90,7 @@ export default function SolisMobileAlarmsView({
       </div>
 
       {/* 2. Alarms List (Exact Solis Mobile Card Parity) */}
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 w-full">
         {displayedAlarms.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-xs text-slate-500">
             <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
@@ -109,13 +109,13 @@ export default function SolisMobileAlarmsView({
             return (
               <div
                 key={item.id || item.alarmCode}
-                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 space-y-1.5 transition-all"
+                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 space-y-1.5 transition-all w-full box-border"
               >
                 {/* Row 1: Badge + Alarm Code & Name + Red Indicator Dot */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-1.5">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                         isWarning
                           ? "bg-orange-50 text-[#f37021] border border-orange-200"
                           : "bg-emerald-50 text-emerald-600 border border-emerald-200"
@@ -123,24 +123,24 @@ export default function SolisMobileAlarmsView({
                     >
                       {isWarning ? "Warning" : "Info"}
                     </span>
-                    <span className="text-xs font-bold text-slate-900 font-mono">
+                    <span className="text-xs font-bold text-slate-900">
                       {item.alarmCode} | {item.alarmMsg || item.name}
                     </span>
                   </div>
-                  <span className="w-2 h-2 rounded-full bg-red-500 shadow-xs shadow-red-500/40" />
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
                 </div>
 
                 {/* Row 2: Inverter Device SN */}
-                <p className="text-[11px] text-slate-500 font-mono">
+                <p className="text-[11px] text-slate-500">
                   {plantName} Inverter: {item.alarmDeviceSn || item.deviceSn || "1053050255210107"}
                 </p>
 
                 {/* Row 3: Timestamp & Status */}
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="text-[10px] text-slate-400 font-mono">
+                <div className="flex items-center justify-between pt-0.5 w-full">
+                  <span className="text-[10px] text-slate-400">
                     {item.alarmBeginTimeStr || "20/11/2026 00:26"} (UTC+05:00) ~ Ongoing
                   </span>
-                  <span className="text-xs font-bold text-[#f37021]">
+                  <span className="text-xs font-bold text-red-500 shrink-0">
                     {item.stateStr || "Active"}
                   </span>
                 </div>

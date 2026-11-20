@@ -37,6 +37,7 @@ import { ChartSeriesData } from "@/lib/db";
 interface SolisMobilePlantDetailProps {
   selectedPlantId: string;
   plantsList: PlantInfo[];
+  initialTab?: string;
   onSelectPlant: (plantId: string) => void;
   onBack: () => void;
 }
@@ -197,11 +198,12 @@ function getPktDateStr(): string {
 export default function SolisMobilePlantDetail({
   selectedPlantId,
   plantsList,
+  initialTab = "Overview",
   onSelectPlant,
   onBack,
 }: SolisMobilePlantDetailProps) {
   // Navigation tabs at bottom
-  const [activeBottomNav, setActiveBottomNav] = useState<string>("Overview");
+  const [activeBottomNav, setActiveBottomNav] = useState<string>(initialTab);
 
   // Granularity selector: Day | Month | Year | Lifetime
   const [granularity, setGranularity] = useState<"Day" | "Month" | "Year">("Day");
@@ -578,18 +580,22 @@ export default function SolisMobilePlantDetail({
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Center Title & ID & State Pill */}
+        {/* Center Title & ID */}
         <div className="flex flex-col items-center">
           <span className="text-sm font-bold text-slate-900 leading-tight">{meta.name}</span>
           <span className="text-[10px] text-slate-400 font-mono mt-0.5">ID:{meta.displayId}</span>
-          <span className="mt-0.5 px-2 py-0.2 rounded border border-emerald-400 text-[10px] font-semibold text-emerald-600 bg-emerald-50/40">
-            {liveBatteryState || "Charging"}
-          </span>
+          {activeBottomNav === "Overview" && (
+            <span className="mt-0.5 px-2 py-0.2 rounded border border-emerald-400 text-[10px] font-semibold text-emerald-600 bg-emerald-50/40">
+              {liveBatteryState || "Charging"}
+            </span>
+          )}
         </div>
 
         {/* Right Info & Circle 3-Dots Button */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-mono">0 kW</span>
+          {activeBottomNav === "Overview" && (
+            <span className="text-xs text-slate-400 font-mono">0 kW</span>
+          )}
           <button
             className="w-8 h-8 rounded-full border border-gray-200 bg-white flex items-center justify-center text-slate-600 hover:bg-gray-50 active:scale-95 transition-all shadow-2xs"
             title="Options"
@@ -600,27 +606,31 @@ export default function SolisMobilePlantDetail({
       </div>
 
       {/* ======================================================== */}
-      {/* 2. SUB-HEADER: Weather & Top Quick Icons                 */}
+      {/* 2. SUB-HEADER: Weather & Top Quick Icons (Overview only) */}
       {/* ======================================================== */}
-      <div className="px-3.5 pt-2.5 pb-1 flex items-center justify-between text-xs">
-        {/* Weather & Online Pill */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 font-semibold text-slate-700">
-            <span className="text-amber-500">☀️</span>
-            <span>{meta.temp}</span>
+      {activeBottomNav === "Overview" && (
+        <div className="px-3.5 pt-2.5 pb-1 flex items-center justify-between text-xs">
+          {/* Weather & Online Pill */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 font-semibold text-slate-700">
+              <span className="text-amber-500">☀️</span>
+              <span>{meta.temp}</span>
+            </div>
+            <span className="px-2 py-0.2 rounded-full border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-600">
+              Online
+            </span>
           </div>
-          <span className="px-2 py-0.2 rounded-full border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-600">
-            Online
-          </span>
         </div>
+      )}
 
-        {/* Drawer Icon */}
-        <div className="flex items-center gap-2">
-          {/* Circular Navy Blue Button with << */}
-          <button className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center shadow-md -mr-1">
-            <span className="text-[11px] font-mono font-bold">&laquo;</span>
-          </button>
-        </div>
+      {/* Floating Navy Blue Quick Drawer Button with << on right edge */}
+      <div className="fixed right-2.5 top-1/2 -translate-y-1/2 z-30 pointer-events-auto">
+        <button
+          className="w-9 h-9 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center shadow-lg border border-white/80 active:scale-95 transition-transform"
+          title="Quick Drawer"
+        >
+          <span className="text-sm font-mono font-bold leading-none">&laquo;</span>
+        </button>
       </div>
 
       {activeBottomNav === "Overview" && (

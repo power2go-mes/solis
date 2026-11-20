@@ -44,27 +44,46 @@ export default function SolisMobileDevicesView({
   });
 
   // Batteries
-  batteries.forEach((bat: any, idx: number) => {
+  if (plantName.includes("50KW")) {
     allDevices.push({
-      id: `bat-${idx}`,
+      id: "bat-50k-1",
       type: "Battery",
       name: "Battery",
-      sn: bat.sn || `1053050255210107BAT0${idx + 1}`,
+      sn: "1053050255210107BAT0",
       status: "Online",
       image: "/images/solis_battery_card.jpg",
     });
-  });
+    allDevices.push({
+      id: "bat-50k-2",
+      type: "Battery",
+      name: "Battery",
+      sn: "1053050255210107BAT01",
+      status: "Online",
+      image: "/images/solis_battery_card.jpg",
+    });
+  } else {
+    batteries.forEach((bat: any, idx: number) => {
+      allDevices.push({
+        id: `bat-${idx}`,
+        type: "Battery",
+        name: "Battery",
+        sn: bat.sn || `${inverters[0]?.sn || "1053050255210107"}BAT0${idx + 1}`,
+        status: "Online",
+        image: "/images/solis_battery_card.jpg",
+      });
+    });
 
-  // If batteries list is empty but plant has battery, add default card
-  if (batteries.length === 0 && !plantName.includes("20KW") && !plantName.includes("15KW")) {
-    allDevices.push({
-      id: "bat-def-1",
-      type: "Battery",
-      name: "Battery",
-      sn: `${inverters[0]?.sn || "1053050255210107"}BAT01`,
-      status: "Online",
-      image: "/images/solis_battery_card.jpg",
-    });
+    // If batteries list is empty but plant has battery, add default card
+    if (batteries.length === 0 && !plantName.includes("20KW") && !plantName.includes("15KW")) {
+      allDevices.push({
+        id: "bat-def-1",
+        type: "Battery",
+        name: "Battery",
+        sn: `${inverters[0]?.sn || "1053050255210107"}BAT01`,
+        status: "Online",
+        image: "/images/solis_battery_card.jpg",
+      });
+    }
   }
 
   // Dataloggers
