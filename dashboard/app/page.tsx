@@ -17,6 +17,13 @@ import SolisClientDashboard from "@/components/SolisClientDashboard";
 import SolisMobilePlantList from "@/components/mobile/SolisMobilePlantList";
 import SolisMobilePlantDetail from "@/components/mobile/SolisMobilePlantDetail";
 
+// SolisCloud O&M & Reports Components
+import SolisOMAlarmsPage from "@/components/SolisOMAlarmsPage";
+import SolisPlantReportView from "@/components/reports/SolisPlantReportView";
+import SolisInverterReportView from "@/components/reports/SolisInverterReportView";
+import SolisBatteryReportView from "@/components/reports/SolisBatteryReportView";
+import { SidebarViewType } from "@/components/SolisSidebar";
+
 // Client Detailed 4-Graph Components
 import ClientTiles from "@/components/ClientTiles";
 import DualPowerSOCCharts from "@/components/DualPowerSOCCharts";
@@ -33,10 +40,11 @@ function SolisCloudDashboard() {
   const searchParams = useSearchParams();
   const stationIdParam = searchParams.get("stationId") || searchParams.get("plant") || "";
   const tabParam = searchParams.get("tab") || "Overview";
+  const viewParam = (searchParams.get("view") as SidebarViewType) || "";
 
-  // View Mode: "plant_overview" (default exact SolisCloud replication) or "plant_detail" / "device_overview"
-  const [activeView, setActiveView] = useState<"plant_overview" | "device_overview">(
-    stationIdParam ? "device_overview" : "plant_overview"
+  // View Mode: "plant_overview", "device_overview", "om_alarms", "om_alerts", "report_plant", "report_inverter", "report_battery"
+  const [activeView, setActiveView] = useState<SidebarViewType>(
+    viewParam || (stationIdParam ? "device_overview" : "plant_overview")
   );
   const [selectedPlantId, setSelectedPlantId] = useState<string>(
     stationIdParam || "1298491919450873747"
@@ -225,6 +233,62 @@ function SolisCloudDashboard() {
                   onSelectPlant={handleSelectPlant}
                 />
               </>
+            ) : activeView === "om_alarms" ? (
+              /* ============================================================== */
+              /* O&M ALARMS INFORMATION PAGE (EXACT MEDIA REFERENCE 1795173161)  */
+              /* ============================================================== */
+              <SolisOMAlarmsPage
+                initialCategory="Alarm"
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  setActiveView("device_overview");
+                }}
+                onSelectDevice={(sn) => {
+                  setActiveView("device_overview");
+                }}
+              />
+            ) : activeView === "om_alerts" ? (
+              /* ============================================================== */
+              /* O&M ALERTS INFORMATION PAGE                                    */
+              /* ============================================================== */
+              <SolisOMAlarmsPage
+                initialCategory="Alert"
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  setActiveView("device_overview");
+                }}
+                onSelectDevice={(sn) => {
+                  setActiveView("device_overview");
+                }}
+              />
+            ) : activeView === "report_plant" ? (
+              /* ============================================================== */
+              /* PLANT GENERATION & PERFORMANCE REPORT                          */
+              /* ============================================================== */
+              <SolisPlantReportView
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  setActiveView("device_overview");
+                }}
+              />
+            ) : activeView === "report_inverter" ? (
+              /* ============================================================== */
+              /* INVERTER TELEMETRY & EFFICIENCY REPORT                         */
+              /* ============================================================== */
+              <SolisInverterReportView
+                onSelectInverter={(sn) => {
+                  setActiveView("device_overview");
+                }}
+              />
+            ) : activeView === "report_battery" ? (
+              /* ============================================================== */
+              /* BATTERY STORAGE & HEALTH REPORT                                */
+              /* ============================================================== */
+              <SolisBatteryReportView
+                onSelectBattery={(sn) => {
+                  setActiveView("device_overview");
+                }}
+              />
             ) : (
               /* ============================================================== */
               /* EXACT SOLISCLOUD CLIENT DASHBOARD (MATCHING REFERENCE IMAGE 9) */
@@ -257,6 +321,65 @@ function SolisCloudDashboard() {
             onSelectPlant={(plantId) => handleSelectPlant(plantId)}
             onCreatePlant={() => setIsCreatePlantOpen(true)}
           />
+        ) : activeView === "om_alarms" || activeView === "om_alerts" ? (
+          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                onClick={() => setActiveView("plant_overview")}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+              >
+                ← Back to Overview
+              </button>
+            </div>
+            <SolisOMAlarmsPage
+              initialCategory={activeView === "om_alarms" ? "Alarm" : "Alert"}
+              onSelectPlant={(plantId) => {
+                setSelectedPlantId(plantId);
+                setActiveView("device_overview");
+              }}
+            />
+          </div>
+        ) : activeView === "report_plant" ? (
+          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                onClick={() => setActiveView("plant_overview")}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+              >
+                ← Back to Overview
+              </button>
+            </div>
+            <SolisPlantReportView
+              onSelectPlant={(plantId) => {
+                setSelectedPlantId(plantId);
+                setActiveView("device_overview");
+              }}
+            />
+          </div>
+        ) : activeView === "report_inverter" ? (
+          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                onClick={() => setActiveView("plant_overview")}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+              >
+                ← Back to Overview
+              </button>
+            </div>
+            <SolisInverterReportView />
+          </div>
+        ) : activeView === "report_battery" ? (
+          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                onClick={() => setActiveView("plant_overview")}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+              >
+                ← Back to Overview
+              </button>
+            </div>
+            <SolisBatteryReportView />
+          </div>
         ) : (
           <SolisMobilePlantDetail
             selectedPlantId={selectedPlantId}
