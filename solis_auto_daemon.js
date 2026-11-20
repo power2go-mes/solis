@@ -318,12 +318,14 @@ function parseCurveRows(stationId, dateStr, curveData) {
 async function runLiveSync() {
   const startTime = Date.now();
   const todayDateStr = getPktDateStr();
+  const yesterdayObj = new Date(Date.now() + 5 * 3600 * 1000 - 24 * 3600 * 1000);
+  const yesterdayDateStr = yesterdayObj.toISOString().slice(0, 10);
   const todayMonthStr = getPktMonthStr();
   const pktLogTime = getPktTimestampLog();
 
   console.log(`\n-----------------------------------------------------------------`);
   console.log(`[${pktLogTime}] Starting 10-Minute Live Telemetry Sync...`);
-  console.log(`Target Date: ${todayDateStr} | Month: ${todayMonthStr}`);
+  console.log(`Target Dates: ${yesterdayDateStr} (finalize) & ${todayDateStr} (live) | Month: ${todayMonthStr}`);
 
   await doLogin();
 
@@ -342,41 +344,45 @@ async function runLiveSync() {
       });
       const mix = mixRes.json?.data || {};
 
-      // 2. Today's 5-Minute Curve
-      let curveRes = await postRequest("/api/chart/station/day/v2", {
-        id: p.id,
-        time: todayDateStr,
-        timeZone: 5,
-      });
-
-      if (!curveRes.json?.success && curveRes.json?.code === "1000") {
-        await doLogin();
-        curveRes = await postRequest("/api/chart/station/day/v2", {
+      // 2. Fetch curves for Yesterday (to finalize late evening 18:00-23:55) and Today
+      let latestCurvePoint = null;
+      for (const dStr of [yesterdayDateStr, todayDateStr]) {
+        let curveRes = await postRequest("/api/chart/station/day/v2", {
           id: p.id,
-          time: todayDateStr,
+          time: dStr,
           timeZone: 5,
         });
-      }
 
-      let latestCurvePoint = null;
-      if (curveRes.json?.success && curveRes.json.data) {
-        const rows = parseCurveRows(p.id, todayDateStr, curveRes.json.data);
-        if (rows.length > 0) {
-          await uploadCurveBatch(rows);
-          totalCurvePoints += rows.length;
-          const lastRow = rows[rows.length - 1];
-          if (lastRow.tStr && lastRow.tStr.slice(0, 5) > maxCurveTime) {
-            maxCurveTime = lastRow.tStr.slice(0, 5);
+        if (!curveRes.json?.success && curveRes.json?.code === "1000") {
+          await doLogin();
+          curveRes = await postRequest("/api/chart/station/day/v2", {
+            id: p.id,
+            time: dStr,
+            timeZone: 5,
+          });
+        }
+
+        if (curveRes.json?.success && curveRes.json.data) {
+          const rows = parseCurveRows(p.id, dStr, curveRes.json.data);
+          if (rows.length > 0) {
+            await uploadCurveBatch(rows);
+            totalCurvePoints += rows.length;
+            if (dStr === todayDateStr) {
+              const lastRow = rows[rows.length - 1];
+              if (lastRow.tStr && lastRow.tStr.slice(0, 5) > maxCurveTime) {
+                maxCurveTime = lastRow.tStr.slice(0, 5);
+              }
+              latestCurvePoint = {
+                timeStr: lastRow.tStr,
+                solarKw: lastRow.sKw,
+                batKw: lastRow.bKw,
+                batState: lastRow.bState,
+                soc: lastRow.soc,
+                gridKw: lastRow.gKw,
+                loadKw: lastRow.lKw,
+              };
+            }
           }
-          latestCurvePoint = {
-            timeStr: lastRow.tStr,
-            solarKw: lastRow.sKw,
-            batKw: lastRow.bKw,
-            batState: lastRow.bState,
-            soc: lastRow.soc,
-            gridKw: lastRow.gKw,
-            loadKw: lastRow.lKw,
-          };
         }
       }
 
@@ -513,20 +519,42 @@ async function runMissingDataAudit() {
   try {
     await doLogin();
 
-    // 1. Check for dates with daily energy but missing curve points
+    // 1. Check for dates with daily energy but missing or incomplete curve points (<260 points or stopped before 23:45)
     const missingCurveRes = await pool.query(`
       SELECT e.station_id, e.energy_date::text as target_date
       FROM solis_daily_energy e
       LEFT JOIN (
-        SELECT DISTINCT station_id, curve_date
+        SELECT station_id, curve_date, count(*) as pt_count, max(time_str) as max_time
         FROM solis_battery_power_curve
+        GROUP BY station_id, curve_date
       ) c ON e.station_id = c.station_id AND e.energy_date = c.curve_date
       WHERE c.curve_date IS NULL
+         OR (e.energy_date < CURRENT_DATE AND (c.max_time < '23:45:00' OR c.pt_count < 260))
       ORDER BY e.station_id, e.energy_date DESC
     `);
 
     const missingCurveJobs = missingCurveRes.rows;
-    console.log(`Found ${missingCurveJobs.length} missing curve days in database audit.`);
+
+    // 2. Also proactively verify the last 7 days for any missing late evening points
+    for (let d = 1; d <= 7; d++) {
+      const pastObj = new Date(Date.now() + 5 * 3600 * 1000 - d * 24 * 3600 * 1000);
+      const pastDateStr = pastObj.toISOString().slice(0, 10);
+      for (const plant of PLANTS) {
+        if (!missingCurveJobs.some((j) => j.station_id === plant.id && j.target_date === pastDateStr)) {
+          const check = await pool.query(
+            `SELECT count(*) as cnt, max(time_str) as max_t FROM solis_battery_power_curve WHERE station_id = $1 AND curve_date = $2`,
+            [plant.id, pastDateStr]
+          );
+          const cnt = Number(check.rows[0]?.cnt || 0);
+          const maxT = check.rows[0]?.max_t || "";
+          if (cnt < 260 || maxT < "23:45:00") {
+            missingCurveJobs.push({ station_id: plant.id, target_date: pastDateStr });
+          }
+        }
+      }
+    }
+
+    console.log(`Found ${missingCurveJobs.length} missing/incomplete curve days in database audit.`);
 
     let backfilledPoints = 0;
     let backfilledDays = 0;
@@ -655,7 +683,20 @@ async function startDaemon() {
   }, SIX_HOURS);
 }
 
-startDaemon().catch((err) => {
-  console.error("Fatal Daemon Startup Error:", err);
-  process.exit(1);
-});
+if (process.argv.includes("--run-audit-now")) {
+  (async () => {
+    try {
+      await runLiveSyncWithRetry();
+      await runMissingDataAudit();
+      process.exit(0);
+    } catch (err) {
+      console.error("Audit error:", err);
+      process.exit(1);
+    }
+  })();
+} else {
+  startDaemon().catch((err) => {
+    console.error("Fatal Daemon Startup Error:", err);
+    process.exit(1);
+  });
+}
