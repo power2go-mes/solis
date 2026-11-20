@@ -557,12 +557,7 @@ export default function SolisMobilePlantList({
         </div>
       </div>
 
-      {/* Floating Circular Navy Blue Button with << on Right Screen Edge */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-30 pointer-events-auto">
-        <button className="w-9 h-9 rounded-l-full bg-[#1e3a5f] text-white flex items-center justify-center shadow-lg pr-1 active:scale-95 transition-all">
-          <span className="text-xs font-mono font-bold">&laquo;</span>
-        </button>
-      </div>
+
 
       {/* Floating Up-Arrow Button at Bottom Right */}
       <div className="fixed right-4 bottom-20 z-30 pointer-events-auto">

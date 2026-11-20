@@ -623,15 +623,7 @@ export default function SolisMobilePlantDetail({
         </div>
       )}
 
-      {/* Floating Navy Blue Quick Drawer Button with << on right edge */}
-      <div className="fixed right-2.5 top-1/2 -translate-y-1/2 z-30 pointer-events-auto">
-        <button
-          className="w-9 h-9 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center shadow-lg border border-white/80 active:scale-95 transition-transform"
-          title="Quick Drawer"
-        >
-          <span className="text-sm font-mono font-bold leading-none">&laquo;</span>
-        </button>
-      </div>
+
 
       {activeBottomNav === "Overview" && (
         <div className="px-3 space-y-3.5 mt-1">
