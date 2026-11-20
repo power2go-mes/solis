@@ -52,7 +52,7 @@ function SolisCloudDashboard() {
 
   // Layout UI State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
   const [isCreatePlantOpen, setIsCreatePlantOpen] = useState<boolean>(false);
 
   // Overview Data State

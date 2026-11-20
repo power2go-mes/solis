@@ -3,21 +3,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
-  LayoutGrid,
   Wrench,
   BarChart3,
   Heart,
   ChevronDown,
   ChevronRight,
-  ArrowRight,
   Sun,
   X,
-  Bell,
-  AlertTriangle,
-  FileText,
-  Cpu,
-  BatteryCharging,
-  Layers,
 } from "lucide-react";
 
 export type SidebarViewType =
@@ -38,6 +30,53 @@ interface SolisSidebarProps {
   onToggleCollapse: () => void;
 }
 
+/**
+ * SolisCloud 4-Square Overview Icon with Bottom-Left Checkmark
+ * Exactly matching SolisCloud reference UI (media_1795175182642_da25cbfa.png)
+ */
+function SolisOverviewIcon({ className = "w-5 h-5 text-[#f37021]" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+      <path
+        d="M5.5 17.2L7 18.7L9.5 15.5"
+        stroke="white"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+/**
+ * SolisCloud Sidebar Expand/Collapse Icon (3 horizontal bars + arrow: ≡→)
+ */
+function SolisSidebarToggleIcon({ isCollapsed }: { isCollapsed: boolean }) {
+  return (
+    <svg
+      className={`w-4 h-4 text-slate-700 transition-transform duration-200 ${
+        !isCollapsed ? "rotate-180" : ""
+      }`}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="3" y1="5" x2="11" y2="5" />
+      <line x1="3" y1="10" x2="8" y2="10" />
+      <line x1="3" y1="15" x2="11" y2="15" />
+      <path d="M12 7.5L16.5 10L12 12.5" />
+    </svg>
+  );
+}
+
 export default function SolisSidebar({
   activeView,
   onSelectView,
@@ -46,8 +85,8 @@ export default function SolisSidebar({
   isCollapsed,
   onToggleCollapse,
 }: SolisSidebarProps) {
-  // Flyout menu states for slim/collapsed mode
-  const [activeFlyout, setActiveFlyout] = useState<"overview" | "om" | "report" | null>(null);
+  // Flyout menu states for slim/collapsed mode - default to "overview" as in reference UI
+  const [activeFlyout, setActiveFlyout] = useState<"overview" | "om" | "report" | "service" | null>("overview");
   const flyoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Accordion open states for expanded mode
@@ -68,7 +107,7 @@ export default function SolisSidebar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleMouseEnter = (menu: "overview" | "om" | "report") => {
+  const handleMouseEnter = (menu: "overview" | "om" | "report" | "service") => {
     if (!isCollapsed) return;
     if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
     setActiveFlyout(menu);
@@ -78,7 +117,7 @@ export default function SolisSidebar({
     if (!isCollapsed) return;
     flyoutTimeoutRef.current = setTimeout(() => {
       setActiveFlyout(null);
-    }, 250);
+    }, 300);
   };
 
   const isOMActive = activeView === "om_alarms" || activeView === "om_alerts";
@@ -92,13 +131,13 @@ export default function SolisSidebar({
   return (
     <>
       {/* ========================================================================= */}
-      {/* DESKTOP SIDEBAR: Supports Collapsed (60px) and Expanded (210px)           */}
-      {/* Exactly replicates SolisCloud reference UI (media_1795173161971_1c931bd5) */}
+      {/* DESKTOP SIDEBAR: Slim Collapsed (58px) by default with Flyout Popovers     */}
+      {/* Exactly replicates SolisCloud reference UI (media_1795175182642_da25cbfa)  */}
       {/* ========================================================================= */}
       <aside
         ref={sidebarRef}
-        className={`hidden md:flex flex-col justify-between bg-white border-r border-gray-200/80 py-3.5 z-30 select-none relative transition-all duration-300 ${
-          isCollapsed ? "w-[60px] items-center" : "w-[210px] px-3"
+        className={`hidden md:flex flex-col justify-between bg-white border-r border-slate-100 py-3.5 z-40 select-none relative transition-all duration-300 ${
+          isCollapsed ? "w-[58px] items-center" : "w-[210px] px-3"
         }`}
       >
         {/* Top Header Logo in Expanded Mode */}
@@ -123,9 +162,9 @@ export default function SolisSidebar({
         )}
 
         {/* Navigation Items List */}
-        <div className={`flex flex-col w-full space-y-3 ${isCollapsed ? "items-center pt-1" : "space-y-1"}`}>
+        <div className={`flex flex-col w-full ${isCollapsed ? "items-center space-y-4 pt-1" : "space-y-1.5"}`}>
           {/* =================================================================== */}
-          {/* 1. OVERVIEW MENU                                                    */}
+          {/* 1. OVERVIEW MENU (4-Square Grid Icon with Checkmark)                 */}
           {/* =================================================================== */}
           {isCollapsed ? (
             <div
@@ -135,24 +174,29 @@ export default function SolisSidebar({
             >
               <button
                 onClick={() => setActiveFlyout(activeFlyout === "overview" ? null : "overview")}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
                   isOverviewActive
-                    ? "bg-gradient-to-b from-orange-50 to-orange-100/40 border border-orange-300 text-[#f37021] shadow-2xs"
-                    : "text-gray-400 hover:text-gray-700 hover:bg-gray-50 border border-transparent"
+                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#f37021] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
                 }`}
                 title="Overview"
               >
-                <LayoutGrid className="w-5 h-5 text-[#f37021]" />
+                <SolisOverviewIcon
+                  className={`w-5 h-5 ${isOverviewActive ? "text-[#f37021]" : "text-slate-400"}`}
+                />
               </button>
 
-              {/* Flyout Popover */}
+              {/* Flyout Popover matching media_1795175182642_da25cbfa.png */}
               {activeFlyout === "overview" && (
                 <div
-                  className="absolute left-[54px] top-0 w-44 bg-white rounded-xl shadow-xl shadow-slate-900/10 border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
-                  onMouseEnter={() => handleMouseEnter("overview")}
+                  className="absolute left-[58px] top-0 w-52 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100 p-2.5 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
+                  onMouseEnter={() => {
+                    if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
+                    setActiveFlyout("overview");
+                  }}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <div className="text-[11px] font-semibold text-slate-400 px-2.5 pt-1 pb-1.5">
+                  <div className="text-[13px] font-medium text-slate-400 px-3 pt-1 pb-2">
                     Overview
                   </div>
                   <button
@@ -160,10 +204,10 @@ export default function SolisSidebar({
                       onSelectView("plant_overview");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium mb-1 ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "plant_overview"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     Plant Overview
@@ -173,10 +217,10 @@ export default function SolisSidebar({
                       onSelectView("device_overview");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                       activeView === "device_overview"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     Device Overview
@@ -196,7 +240,7 @@ export default function SolisSidebar({
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4 text-[#f37021]" />
+                  <SolisOverviewIcon className="w-4 h-4 text-[#f37021]" />
                   <span>Overview</span>
                 </div>
                 {isOverviewExpanded ? (
@@ -234,7 +278,7 @@ export default function SolisSidebar({
           )}
 
           {/* =================================================================== */}
-          {/* 2. O&M MENU (With Red Notification Dot)                             */}
+          {/* 2. O&M MENU (Wrench with Red Notification Dot)                       */}
           {/* =================================================================== */}
           {isCollapsed ? (
             <div
@@ -244,28 +288,31 @@ export default function SolisSidebar({
             >
               <button
                 onClick={() => setActiveFlyout(activeFlyout === "om" ? null : "om")}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all relative ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all relative ${
                   isOMActive
-                    ? "bg-gradient-to-b from-orange-50 to-orange-100/40 border border-orange-300 text-[#f37021] shadow-2xs"
-                    : "text-gray-400 hover:text-gray-700 hover:bg-gray-50 border border-transparent"
+                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#f37021] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
                 }`}
                 title="O&M"
               >
-                <Wrench className="w-4 h-4" />
+                <Wrench className="w-5 h-5" />
                 {/* Solis Red Notification Dot */}
-                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#ef4444] ring-2 ring-white" />
               </button>
 
               {/* Flyout Popover */}
               {activeFlyout === "om" && (
                 <div
-                  className="absolute left-[54px] top-0 w-44 bg-white rounded-xl shadow-xl shadow-slate-900/10 border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
-                  onMouseEnter={() => handleMouseEnter("om")}
+                  className="absolute left-[58px] top-0 w-52 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100 p-2.5 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
+                  onMouseEnter={() => {
+                    if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
+                    setActiveFlyout("om");
+                  }}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <div className="text-[11px] font-semibold text-slate-400 px-2.5 pt-1 pb-1.5 flex items-center justify-between">
+                  <div className="text-[13px] font-medium text-slate-400 px-3 pt-1 pb-2 flex items-center justify-between">
                     <span>O&M</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
                   </div>
                   {/* Alarm */}
                   <button
@@ -273,14 +320,14 @@ export default function SolisSidebar({
                       onSelectView("om_alarms");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium mb-1 flex items-center justify-between ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 flex items-center justify-between ${
                       activeView === "om_alarms"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     <span>Alarm</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
                   </button>
                   {/* Alert */}
                   <button
@@ -288,14 +335,23 @@ export default function SolisSidebar({
                       onSelectView("om_alerts");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "om_alerts"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     Alert
                   </button>
+                  <div className="text-xs text-slate-400 px-3.5 py-2 truncate">
+                    Warning Message...
+                  </div>
+                  <div className="text-xs text-slate-400 px-3.5 py-2 truncate">
+                    Dispersion Rate A...
+                  </div>
+                  <div className="text-xs text-slate-400 px-3.5 py-2 truncate">
+                    Fleet Analysis
+                  </div>
                 </div>
               )}
             </div>
@@ -314,7 +370,7 @@ export default function SolisSidebar({
                   <Wrench className="w-4 h-4 text-slate-600" />
                   <span className="flex items-center gap-1">
                     <span>O&M</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
                   </span>
                 </div>
                 {isOMExpanded ? (
@@ -326,7 +382,6 @@ export default function SolisSidebar({
 
               {isOMExpanded && (
                 <div className="pl-6 pr-1 space-y-1 py-0.5 animate-in fade-in duration-150">
-                  {/* Alarm (Active orange pill matching media_1795173161971_1c931bd5.jpg) */}
                   <button
                     onClick={() => onSelectView("om_alarms")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium flex items-center justify-between ${
@@ -336,10 +391,9 @@ export default function SolisSidebar({
                     }`}
                   >
                     <span>Alarm</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
                   </button>
 
-                  {/* Alert */}
                   <button
                     onClick={() => onSelectView("om_alerts")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
@@ -376,64 +430,64 @@ export default function SolisSidebar({
             >
               <button
                 onClick={() => setActiveFlyout(activeFlyout === "report" ? null : "report")}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
                   isReportActive
-                    ? "bg-gradient-to-b from-orange-50 to-orange-100/40 border border-orange-300 text-[#f37021] shadow-2xs"
-                    : "text-gray-400 hover:text-gray-700 hover:bg-gray-50 border border-transparent"
+                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#f37021] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
                 }`}
                 title="Report"
               >
-                <BarChart3 className="w-4 h-4" />
+                <BarChart3 className="w-5 h-5" />
               </button>
 
               {/* Flyout Popover */}
               {activeFlyout === "report" && (
                 <div
-                  className="absolute left-[54px] top-0 w-48 bg-white rounded-xl shadow-xl shadow-slate-900/10 border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
-                  onMouseEnter={() => handleMouseEnter("report")}
+                  className="absolute left-[58px] top-0 w-52 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100 p-2.5 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
+                  onMouseEnter={() => {
+                    if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
+                    setActiveFlyout("report");
+                  }}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <div className="text-[11px] font-semibold text-slate-400 px-2.5 pt-1 pb-1.5">
-                    Reports
+                  <div className="text-[13px] font-medium text-slate-400 px-3 pt-1 pb-2">
+                    Report
                   </div>
-                  {/* Plant Report */}
                   <button
                     onClick={() => {
                       onSelectView("report_plant");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium mb-1 ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "report_plant"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     Plant Report
                   </button>
-                  {/* Inverter Report */}
                   <button
                     onClick={() => {
                       onSelectView("report_inverter");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium mb-1 ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "report_inverter"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     Inverter Report
                   </button>
-                  {/* Battery Report */}
                   <button
                     onClick={() => {
                       onSelectView("report_battery");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all font-medium ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                       activeView === "report_battery"
-                        ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
                     Battery Report
@@ -504,14 +558,52 @@ export default function SolisSidebar({
           {/* 4. SERVICE MENU                                                     */}
           {/* =================================================================== */}
           {isCollapsed ? (
-            <div className="w-full flex justify-center">
+            <div
+              className="relative w-full flex justify-center"
+              onMouseEnter={() => handleMouseEnter("service")}
+              onMouseLeave={handleMouseLeave}
+            >
               <button
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                onClick={() => setActiveFlyout(activeFlyout === "service" ? null : "service")}
+                className="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent transition-all"
                 title="Service"
-                onClick={() => alert("Solis Customer Support Hotline: +92 21 111-POWER2GO")}
               >
-                <Heart className="w-4 h-4" />
+                <Heart className="w-5 h-5" />
               </button>
+
+              {/* Flyout Popover for Service */}
+              {activeFlyout === "service" && (
+                <div
+                  className="absolute left-[58px] top-0 w-52 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100 p-2.5 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
+                  onMouseEnter={() => {
+                    if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
+                    setActiveFlyout("service");
+                  }}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <div className="text-[13px] font-medium text-slate-400 px-3 pt-1 pb-2">
+                    Service
+                  </div>
+                  <button
+                    onClick={() => {
+                      alert("Solis Customer Support Hotline: +92 21 111-POWER2GO");
+                      setActiveFlyout(null);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal transition-all mb-1"
+                  >
+                    Service Hotline
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert("Online Warranty Service: All Solis inverters covered under 5-year replacement warranty.");
+                      setActiveFlyout(null);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal transition-all"
+                  >
+                    Online Warranty
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -527,25 +619,14 @@ export default function SolisSidebar({
           )}
         </div>
 
-        {/* Bottom Toggle Control: SolisCloud Icon (3 horizontal bars + arrow) */}
-        <div className={`w-full flex ${isCollapsed ? "justify-center" : "justify-start px-2"} pt-4`}>
+        {/* Bottom Toggle Control: SolisCloud 3 horizontal bars + arrow (≡→) */}
+        <div className={`w-full flex ${isCollapsed ? "justify-center" : "justify-start px-3"} pt-4 pb-2`}>
           <button
             onClick={onToggleCollapse}
-            className="p-2 rounded-lg flex items-center gap-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+            className="p-2 rounded-xl flex items-center gap-2 text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
-            <div className="flex items-center">
-              <div className="flex flex-col gap-1 w-3.5">
-                <span className="h-0.5 w-full bg-slate-600 rounded-full" />
-                <span className="h-0.5 w-2 bg-slate-600 rounded-full" />
-                <span className="h-0.5 w-full bg-slate-600 rounded-full" />
-              </div>
-              <ArrowRight
-                className={`w-2.5 h-2.5 text-slate-600 -ml-0.5 transition-transform ${
-                  !isCollapsed ? "rotate-180" : ""
-                }`}
-              />
-            </div>
+            <SolisSidebarToggleIcon isCollapsed={isCollapsed} />
             {!isCollapsed && <span className="text-xs font-semibold text-slate-600">Collapse</span>}
           </button>
         </div>
@@ -622,7 +703,7 @@ export default function SolisSidebar({
                 <div>
                   <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1 flex items-center gap-1.5">
                     <span>O&M</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
                   </div>
                   <button
                     onClick={() => {
@@ -636,7 +717,7 @@ export default function SolisSidebar({
                     }`}
                   >
                     <span>Alarm</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
                   </button>
                   <button
                     onClick={() => {
