@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import * as echarts from "echarts";
 import {
@@ -30,6 +31,7 @@ import SolisDevicesTab from "./SolisDevicesTab";
 import SolisAlarmsTab from "./SolisAlarmsTab";
 import SolisAlertsTab from "./SolisAlertsTab";
 import SolisLayoutTab from "./SolisLayoutTab";
+import SolisModifyPlantModal from "./SolisModifyPlantModal";
 import { PlantInfo, TelemetryLatest, EnergyBreakdownResult, DailyEnergyRecord } from "@/lib/types";
 import { ChartSeriesData } from "@/lib/db";
 
@@ -226,8 +228,16 @@ export default function SolisClientDashboard({
   const [currentMonth, setCurrentMonth] = useState<string>(getPktMonthStr);
   const [currentYear, setCurrentYear] = useState<string>(getPktYearStr);
 
+  const searchParams = useSearchParams();
+  const modalParam = searchParams.get("modal");
+
   // Plant switcher dropdown
   const [isPlantDropdownOpen, setIsPlantDropdownOpen] = useState<boolean>(false);
+  const [isModifyModalOpen, setIsModifyModalOpen] = useState<boolean>(modalParam === "modify");
+
+  useEffect(() => {
+    if (modalParam === "modify") setIsModifyModalOpen(true);
+  }, [modalParam]);
 
   // Data states
   const [telemetry, setTelemetry] = useState<TelemetryLatest | null>(null);
@@ -1324,7 +1334,8 @@ export default function SolisClientDashboard({
         {/* Right: Modify Information Button */}
         <div className="flex items-center gap-2 self-start sm:self-center">
           <button
-            className="px-3.5 py-1.5 bg-white border border-gray-200 hover:border-gray-300 text-slate-700 hover:text-slate-900 font-medium rounded-lg text-xs shadow-2xs transition-colors flex items-center gap-1.5"
+            onClick={() => setIsModifyModalOpen(true)}
+            className="px-3.5 py-1.5 bg-white border border-gray-200 hover:border-gray-300 text-slate-700 hover:text-slate-900 font-medium rounded-lg text-xs shadow-2xs transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
             title="Modify Information"
           >
             <span>Modify Information</span>
@@ -1895,18 +1906,41 @@ export default function SolisClientDashboard({
 
           {/* Card 4: Device Tab (Inverter, Battery, Datalogger, Meter) */}
           {activeSubnav === "Device" && (
-            <SolisDevicesTab devices={plantDetailsData?.devices} isLoading={isDetailsLoading} />
+            <SolisDevicesTab
+              devices={plantDetailsData?.devices}
+              isLoading={isDetailsLoading}
+              onSelectPlantByName={(name) => {
+                const match = plantsList.find((p) => p.name.toLowerCase() === name.toLowerCase());
+                if (match) onSelectPlant(match.id);
+              }}
+            />
           )}
 
           {/* Card 5: Alarm Tab (SolisCloud Fault & Recovery Audit) */}
           {activeSubnav === "Alarm" && (
-            <SolisAlarmsTab alarmsData={plantDetailsData?.alarms} isLoading={isDetailsLoading} />
+            <SolisAlarmsTab
+              alarmsData={plantDetailsData?.alarms}
+              isLoading={isDetailsLoading}
+              onViewDevice={(sn) => {
+                setActiveSubnav("Device");
+              }}
+            />
           )}
 
       {/* Card 6: Alert Tab (Operational & Diagnostic Notifications) */}
       {activeSubnav === "Alert" && (
         <SolisAlertsTab alertsData={plantDetailsData?.alerts} isLoading={isDetailsLoading} />
       )}
+
+      {/* Modify Information Modal */}
+      <SolisModifyPlantModal
+        isOpen={isModifyModalOpen}
+        onClose={() => setIsModifyModalOpen(false)}
+        plantInfo={plantDetailsData?.plantInfo}
+        onSave={(updated) => {
+          setPlantDetailsData((prev: any) => ({ ...prev, plantInfo: updated }));
+        }}
+      />
     </div>
   );
 }
