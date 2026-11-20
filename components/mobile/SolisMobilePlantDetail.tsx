@@ -341,6 +341,9 @@ export default function SolisMobilePlantDetail({
 
     if (!dayCurveData) {
       chart.clear();
+      if (socChartRef.current) {
+        echarts.getInstanceByDom(socChartRef.current)?.clear();
+      }
       return;
     }
 
@@ -827,8 +830,7 @@ export default function SolisMobilePlantDetail({
             </div>
           </div>
 
-          {granularity === "Day" && (
-            <div className="space-y-3">
+          <div className={granularity === "Day" ? "space-y-3" : "hidden"}>
               <div>
                 <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold text-slate-500">
                   <span>Power (kW)</span>
@@ -856,8 +858,7 @@ export default function SolisMobilePlantDetail({
                 </div>
                 <div ref={socChartRef} className="w-full" style={{ width: "100%", height: "clamp(200px, 52vw, 260px)", minHeight: "200px" }} />
               </div>
-            </div>
-          )}
+          </div>
 
           {granularity !== "Day" && (
             <SolisMobileEnergyBreakdown

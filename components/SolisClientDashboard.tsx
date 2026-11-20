@@ -752,7 +752,7 @@ export default function SolisClientDashboard({
         }] : []),
         ...(visiblePowerSeries.Battery ? [{ name: "Battery", type: "line", smooth: true, showSymbol: false, data: batKw, lineStyle: { color: "#22c55e", width: 2 } }] : []),
         ...(visiblePowerSeries["Total Load"] ? [{ name: "Total Load", type: "line", smooth: true, showSymbol: false, data: loadKw, lineStyle: { color: "#a855f7", width: 2 } }] : []),
-      ],
+      ] as echarts.SeriesOption[],
     };
 
     chart.setOption(option, true);
@@ -884,7 +884,7 @@ export default function SolisClientDashboard({
         }] : []),
         ...(visibleSocSeries["Purchase Tariff"] ? [{ name: "Purchase Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: purchaseTariff, lineStyle: { color: "#38bdf8", width: 1.5 } }] : []),
         ...(visibleSocSeries["Feed-in Tariff"] ? [{ name: "Feed-in Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: feedInTariff, lineStyle: { color: "#2563eb", width: 1.5 } }] : []),
-      ],
+      ] as echarts.SeriesOption[],
     };
 
     chart.setOption(option, true);
@@ -894,9 +894,9 @@ export default function SolisClientDashboard({
 
     return () => {
       clearTimeout(timer);
-      if (powerChartInstance.current && !powerChartInstance.current.isDisposed()) {
-        powerChartInstance.current.dispose();
-        powerChartInstance.current = null;
+      if (socChartInstance.current && !socChartInstance.current.isDisposed()) {
+        socChartInstance.current.dispose();
+        socChartInstance.current = null;
       }
     };
   }, [activeTab, dayCurveData, visibleSocSeries]);
@@ -1556,22 +1556,16 @@ export default function SolisClientDashboard({
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]" />
-                          <span>PV</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
-                          <span>Grid</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                          <span>Battery</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#a855f7]" />
-                          <span>Total Load</span>
-                        </div>
+                        {[
+                          { key: "PV" as const, color: "#eab308" },
+                          { key: "Grid" as const, color: "#3b82f6" },
+                          { key: "Battery" as const, color: "#22c55e" },
+                          { key: "Total Load" as const, color: "#a855f7" },
+                        ].map((item) => (
+                          <button key={item.key} type="button" aria-pressed={visiblePowerSeries[item.key]} onClick={() => setVisiblePowerSeries((state) => ({ ...state, [item.key]: !state[item.key] }))} className={`flex items-center gap-1.5 ${visiblePowerSeries[item.key] ? "text-slate-600" : "text-slate-400 line-through"}`}>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color, opacity: visiblePowerSeries[item.key] ? 1 : 0.35 }} />{item.key}
+                          </button>
+                        ))}
                       </div>
                       <button
                         onClick={loadDayCurve}
@@ -1588,18 +1582,15 @@ export default function SolisClientDashboard({
                   <div className="pt-2 border-t border-gray-100">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-4 text-xs font-medium text-slate-600 flex-wrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                          <span>SOC</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
-                          <span>Purchase Tariff</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                          <span>Feed-in Tariff</span>
-                        </div>
+                        {[
+                          { key: "SOC" as const, color: "#22c55e" },
+                          { key: "Purchase Tariff" as const, color: "#38bdf8" },
+                          { key: "Feed-in Tariff" as const, color: "#2563eb" },
+                        ].map((item) => (
+                          <button key={item.key} type="button" aria-pressed={visibleSocSeries[item.key]} onClick={() => setVisibleSocSeries((state) => ({ ...state, [item.key]: !state[item.key] }))} className={`flex items-center gap-1.5 ${visibleSocSeries[item.key] ? "text-slate-600" : "text-slate-400 line-through"}`}>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color, opacity: visibleSocSeries[item.key] ? 1 : 0.35 }} />{item.key}
+                          </button>
+                        ))}
                       </div>
                       <button
                         onClick={loadDayCurve}
@@ -1619,30 +1610,18 @@ export default function SolisClientDashboard({
                 <div key="bar-chart-container" className="space-y-3 pt-2">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3.5 text-xs font-medium text-slate-600 flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#facc15]" />
-                        <span>PV</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]" />
-                        <span>Import</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                        <span>Export</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
-                        <span>Charge</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
-                        <span>Discharge</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
-                        <span>Consumption</span>
-                      </div>
+                      {[
+                        { key: "PV" as const, color: "#facc15" },
+                        { key: "Import" as const, color: "#38bdf8" },
+                        { key: "Export" as const, color: "#2563eb" },
+                        { key: "Charge" as const, color: "#10b981" },
+                        { key: "Discharge" as const, color: "#34d399" },
+                        { key: "Consumption" as const, color: "#8b5cf6" },
+                      ].map((item) => (
+                        <button key={item.key} type="button" aria-pressed={visibleEnergySeries[item.key]} onClick={() => setVisibleEnergySeries((state) => ({ ...state, [item.key]: !state[item.key] }))} className={`flex items-center gap-1.5 ${visibleEnergySeries[item.key] ? "text-slate-600" : "text-slate-400 line-through"}`}>
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color, opacity: visibleEnergySeries[item.key] ? 1 : 0.35 }} />{item.key}
+                        </button>
+                      ))}
                     </div>
                     <button
                       onClick={() => {

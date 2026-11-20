@@ -35,8 +35,8 @@ const pool =
   new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 20,
-    idleTimeoutMillis: 30000,
+    max: 4,
+    idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000,
   });
 
@@ -140,7 +140,7 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
         const isOnlineToday = curveMatch?.curve_date_str === todayPkt;
         const updatedTime = match ? new Date(match.updated_at).getTime() : 0;
         const isStale = !isOnlineToday || (updatedTime > 0 ? Date.now() - updatedTime > 45 * 60 * 1000 : false);
-        
+
         let solarKw = 0;
         let rawBatKw = 0;
         let soc = Number(match?.battery_soc) || 0;
@@ -1394,15 +1394,15 @@ export async function getPlantOverviewData(): Promise<SolisOverviewResponse> {
       let totalYieldStr = raw.allEnergyStr
         ? `${totalYieldVal}${raw.allEnergyStr}`
         : totalYieldVal >= 1000
-        ? `${(totalYieldVal / 1000).toFixed(3)}MWh`
-        : `${totalYieldVal.toFixed(1)}kWh`;
+          ? `${(totalYieldVal / 1000).toFixed(3)}MWh`
+          : `${totalYieldVal.toFixed(1)}kWh`;
 
       let totalChargeVal = Number(raw.batteryChargeTotalEnergy) || 0;
       let totalChargeStr = raw.batteryChargeTotalEnergyStr
         ? `${totalChargeVal}${raw.batteryChargeTotalEnergyStr}`
         : totalChargeVal >= 1000
-        ? `${(totalChargeVal / 1000).toFixed(3)}MWh`
-        : `${totalChargeVal.toFixed(0)}kWh`;
+          ? `${(totalChargeVal / 1000).toFixed(3)}MWh`
+          : `${totalChargeVal.toFixed(0)}kWh`;
 
       // Convert monthly kWh to MWh if unit is kWh
       const monthChargeRaw = Number(raw.batteryChargeMonthEnergy) || 0;
