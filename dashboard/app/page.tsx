@@ -22,6 +22,7 @@ import SolisOMAlarmsPage from "@/components/SolisOMAlarmsPage";
 import SolisPlantReportView from "@/components/reports/SolisPlantReportView";
 import SolisInverterReportView from "@/components/reports/SolisInverterReportView";
 import SolisBatteryReportView from "@/components/reports/SolisBatteryReportView";
+import SolisDeviceOverviewPage from "@/components/SolisDeviceOverviewPage";
 import { SidebarViewType } from "@/components/SolisSidebar";
 
 // Client Detailed 4-Graph Components
@@ -42,9 +43,9 @@ function SolisCloudDashboard() {
   const tabParam = searchParams.get("tab") || "Overview";
   const viewParam = (searchParams.get("view") as SidebarViewType) || "";
 
-  // View Mode: "plant_overview", "device_overview", "om_alarms", "om_alerts", "report_plant", "report_inverter", "report_battery"
-  const [activeView, setActiveView] = useState<SidebarViewType>(
-    viewParam || (stationIdParam ? "device_overview" : "plant_overview")
+  // View Mode: "plant_overview", "device_overview", "plant_detail", "om_alarms", "om_alerts", "report_plant", "report_inverter", "report_battery"
+  const [activeView, setActiveView] = useState<SidebarViewType | "plant_detail">(
+    (viewParam as any) || (stationIdParam ? "plant_detail" : "plant_overview")
   );
   const [selectedPlantId, setSelectedPlantId] = useState<string>(
     stationIdParam || "1298491919450873747"
@@ -146,11 +147,11 @@ function SolisCloudDashboard() {
     return () => clearInterval(interval);
   }, [loadOverviewData, loadTelemetry, activeView, selectedPlantId]);
 
-  // Handle Plant Row Click -> Navigate to detailed 4-graph view
+  // Handle Plant Row Click -> Navigate to detailed plant dashboard
   const handleSelectPlant = (plantId: string) => {
     setSelectedPlantId(plantId);
     loadTelemetry(plantId);
-    setActiveView("device_overview");
+    setActiveView("plant_detail");
   };
 
   const currentPlantInfo = plantsList.find((p) => p.id === selectedPlantId);
@@ -289,6 +290,27 @@ function SolisCloudDashboard() {
                   setActiveView("device_overview");
                 }}
               />
+            ) : activeView === "device_overview" ? (
+              /* ============================================================== */
+              /* EXACT SOLISCLOUD DEVICE OVERVIEW PAGE (MEDIA_1795195322999)     */
+              /* ============================================================== */
+              <SolisDeviceOverviewPage
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  loadTelemetry(plantId);
+                  setActiveView("plant_detail");
+                }}
+                onSelectPlantByName={(name) => {
+                  const match = plantsList.find((p) =>
+                    p.name.toLowerCase().includes(name.toLowerCase())
+                  );
+                  if (match) {
+                    setSelectedPlantId(match.id);
+                    loadTelemetry(match.id);
+                  }
+                  setActiveView("plant_detail");
+                }}
+              />
             ) : (
               /* ============================================================== */
               /* EXACT SOLISCLOUD CLIENT DASHBOARD (MATCHING REFERENCE IMAGE 9) */
@@ -379,6 +401,30 @@ function SolisCloudDashboard() {
               </button>
             </div>
             <SolisBatteryReportView />
+          </div>
+        ) : activeView === "device_overview" ? (
+          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                onClick={() => setActiveView("plant_overview")}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+              >
+                ← Back to Overview
+              </button>
+            </div>
+            <SolisDeviceOverviewPage
+              onSelectPlant={(plantId) => {
+                setSelectedPlantId(plantId);
+                setActiveView("plant_detail");
+              }}
+              onSelectPlantByName={(name) => {
+                const match = plantsList.find((p) =>
+                  p.name.toLowerCase().includes(name.toLowerCase())
+                );
+                if (match) setSelectedPlantId(match.id);
+                setActiveView("plant_detail");
+              }}
+            />
           </div>
         ) : (
           <SolisMobilePlantDetail
