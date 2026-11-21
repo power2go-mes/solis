@@ -395,7 +395,7 @@ export default function SolisHousePowerFlow({
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
-                  {Math.abs(gridKw).toFixed(0)}
+                  {Math.abs(gridKw).toFixed(1)}
                 </span>
                 <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
@@ -434,7 +434,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyDischargeKwh.toFixed(0)}
+                  {dailyDischargeKwh.toFixed(1)}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
