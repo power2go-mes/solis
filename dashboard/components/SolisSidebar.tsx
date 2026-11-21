@@ -86,7 +86,7 @@ export default function SolisSidebar({
   onToggleCollapse,
 }: SolisSidebarProps) {
   // Flyout menu states for slim/collapsed mode - default to null (only shown on hover or click)
-  const [activeFlyout, setActiveFlyout] = useState<"overview" | "om" | "report" | "service" | null>(null);
+  const [activeFlyout, setActiveFlyout] = useState<"overview" | "om" | "report" | null>(null);
   const flyoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Accordion open states for expanded mode
@@ -107,7 +107,7 @@ export default function SolisSidebar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleMouseEnter = (menu: "overview" | "om" | "report" | "service") => {
+  const handleMouseEnter = (menu: "overview" | "om" | "report") => {
     if (!isCollapsed) return;
     if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
     setActiveFlyout(menu);
@@ -527,70 +527,6 @@ export default function SolisSidebar({
                 </div>
               )}
             </div>
-          )}
-
-          {/* =================================================================== */}
-          {/* 4. SERVICE MENU                                                     */}
-          {/* =================================================================== */}
-          {isCollapsed ? (
-            <div
-              className="relative w-full flex justify-center"
-              onMouseEnter={() => handleMouseEnter("service")}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                onClick={() => setActiveFlyout(activeFlyout === "service" ? null : "service")}
-                className="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent transition-all"
-                title="Service"
-              >
-                <Heart className="w-5 h-5" />
-              </button>
-
-              {/* Flyout Popover for Service */}
-              {activeFlyout === "service" && (
-                <div
-                  className="absolute left-[58px] top-0 w-52 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100 p-2.5 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
-                  onMouseEnter={() => {
-                    if (flyoutTimeoutRef.current) clearTimeout(flyoutTimeoutRef.current);
-                    setActiveFlyout("service");
-                  }}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div className="text-[13px] font-medium text-slate-400 px-3 pt-1 pb-2">
-                    Service
-                  </div>
-                  <button
-                    onClick={() => {
-                      alert("Solis Customer Support Hotline: +92 21 111-POWER2GO");
-                      setActiveFlyout(null);
-                    }}
-                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal transition-all mb-1"
-                  >
-                    Service Hotline
-                  </button>
-                  <button
-                    onClick={() => {
-                      alert("Online Warranty Service: All Solis inverters covered under 5-year replacement warranty.");
-                      setActiveFlyout(null);
-                    }}
-                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal transition-all"
-                  >
-                    Online Warranty
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              onClick={() => alert("Solis Customer Support Hotline: +92 21 111-POWER2GO")}
-              className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-gray-50 transition-all"
-            >
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 text-slate-500" />
-                <span>Service</span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            </button>
           )}
         </div>
 
