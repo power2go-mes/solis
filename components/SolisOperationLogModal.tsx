@@ -95,13 +95,13 @@ export default function SolisOperationLogModal({
         {/* Header */}
         <div className="p-5 flex items-center justify-between border-b border-gray-100 bg-[#fafbfc]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#f37021]">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#10b981]">
               <Terminal className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900">Operation Log</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-[#f37021] font-semibold border border-orange-200">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-[#10b981] font-semibold border border-emerald-200">
                   {plantName}
                 </span>
               </div>
@@ -125,7 +125,7 @@ export default function SolisOperationLogModal({
                 onClick={() => setFilterType(cat)}
                 className={`px-3 py-1 rounded-lg font-medium transition-all ${
                   filterType === cat
-                    ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                    ? "bg-emerald-50 text-[#10b981] border border-emerald-300 font-bold"
                     : "text-slate-600 hover:bg-gray-100"
                 }`}
               >

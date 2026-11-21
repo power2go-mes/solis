@@ -171,7 +171,7 @@ export default function SolisDevicesTab({
   if (isLoading || !devices) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-12 text-center">
-        <div className="w-8 h-8 border-2 border-[#f37021] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
         <p className="text-xs text-slate-500 font-medium">Fetching device details from SolisCloud...</p>
       </div>
     );
@@ -249,13 +249,13 @@ export default function SolisDevicesTab({
               }}
               className={`pb-2 relative whitespace-nowrap transition-colors ${
                 activeSubTab === tab
-                  ? "text-[#f37021] font-bold"
+                  ? "text-[#10b981] font-bold"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <span>{tab}</span>
               {activeSubTab === tab && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#f37021] rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-full" />
               )}
             </button>
           ))}
@@ -278,7 +278,7 @@ export default function SolisDevicesTab({
           onClick={() => setStatusFilter("Total")}
           className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
             statusFilter === "Total"
-              ? "bg-orange-50 border border-orange-300 text-[#f37021]"
+              ? "bg-emerald-50 border border-emerald-300 text-[#10b981]"
               : "border border-gray-200 text-slate-600 hover:bg-gray-50"
           }`}
         >
@@ -289,7 +289,7 @@ export default function SolisDevicesTab({
           onClick={() => setStatusFilter("Online")}
           className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
             statusFilter === "Online"
-              ? "bg-orange-50 border border-orange-300 text-[#f37021]"
+              ? "bg-emerald-50 border border-emerald-300 text-[#10b981]"
               : "border border-gray-200 text-slate-600 hover:bg-gray-50"
           }`}
         >
@@ -300,7 +300,7 @@ export default function SolisDevicesTab({
           onClick={() => setStatusFilter("Alarm")}
           className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
             statusFilter === "Alarm"
-              ? "bg-orange-50 border border-orange-300 text-[#f37021]"
+              ? "bg-emerald-50 border border-emerald-300 text-[#10b981]"
               : "border border-gray-200 text-slate-600 hover:bg-gray-50"
           }`}
         >
@@ -311,7 +311,7 @@ export default function SolisDevicesTab({
           onClick={() => setStatusFilter("Offline")}
           className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
             statusFilter === "Offline"
-              ? "bg-orange-50 border border-orange-300 text-[#f37021]"
+              ? "bg-emerald-50 border border-emerald-300 text-[#10b981]"
               : "border border-gray-200 text-slate-600 hover:bg-gray-50"
           }`}
         >
@@ -391,7 +391,7 @@ export default function SolisDevicesTab({
         <div className="flex items-center gap-2 justify-end">
           <button
             onClick={() => setCurrentPage(1)}
-            className="px-4 py-1.5 rounded-lg text-xs font-medium border border-orange-300 bg-white text-[#f37021] hover:bg-orange-50 transition-all shadow-2xs active:scale-95"
+            className="px-4 py-1.5 rounded-lg text-xs font-medium border border-emerald-300 bg-white text-[#10b981] hover:bg-emerald-50 transition-all shadow-2xs active:scale-95"
           >
             Search
           </button>
@@ -454,7 +454,7 @@ export default function SolisDevicesTab({
                 <tr
                   key={inv.sn || idx}
                   onClick={() => openInverterDetails(inv.sn)}
-                  className="hover:bg-orange-50/20 transition-colors cursor-pointer"
+                  className="hover:bg-emerald-50/20 transition-colors cursor-pointer"
                 >
                   {/* Status */}
                   <td className="py-3.5 px-3.5 whitespace-nowrap">
@@ -476,7 +476,7 @@ export default function SolisDevicesTab({
                         e.stopPropagation();
                         openInverterDetails(inv.sn);
                       }}
-                      className="text-[#f37021] font-medium hover:underline cursor-pointer"
+                      className="text-[#10b981] font-medium hover:underline cursor-pointer"
                     >
                       {inv.sn}
                     </span>
@@ -509,7 +509,7 @@ export default function SolisDevicesTab({
                         e.stopPropagation();
                         if (onSelectPlantByName) onSelectPlantByName(devices.plantName || "Menu Karachi Office");
                       }}
-                      className="text-[#f37021] font-medium hover:underline cursor-pointer"
+                      className="text-[#10b981] font-medium hover:underline cursor-pointer"
                     >
                       {devices.plantName || "Menu Karachi Office"}
                     </span>
@@ -537,7 +537,7 @@ export default function SolisDevicesTab({
                         e.stopPropagation();
                         openInverterDetails(inv.sn);
                       }}
-                      className="px-2.5 py-1 rounded border border-gray-200 bg-white text-xs font-normal text-slate-700 hover:bg-orange-50 hover:border-orange-300 hover:text-[#f37021] transition-all shadow-2xs"
+                      className="px-2.5 py-1 rounded border border-gray-200 bg-white text-xs font-normal text-slate-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-[#10b981] transition-all shadow-2xs"
                     >
                       Operation
                     </button>
@@ -572,7 +572,7 @@ export default function SolisDevicesTab({
                     setSelectedBatterySn(bat.sn);
                     setViewMode("battery-details");
                   }}
-                  className="hover:bg-orange-50/20 transition-colors cursor-pointer"
+                  className="hover:bg-emerald-50/20 transition-colors cursor-pointer"
                 >
                   <td className="py-3.5 px-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
@@ -583,7 +583,7 @@ export default function SolisDevicesTab({
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-slate-900">
                     {bat.name || "HV LiFePO4 Storage Unit"}
                   </td>
-                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] font-medium hover:underline">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#10b981] font-medium hover:underline">
                     {bat.sn}
                   </td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono">{bat.nominalCapacityAh || 100}Ah</td>
@@ -634,7 +634,7 @@ export default function SolisDevicesTab({
                       openInverterDetails(col.connectedInverterSn);
                     }
                   }}
-                  className="hover:bg-orange-50/20 transition-colors cursor-pointer"
+                  className="hover:bg-emerald-50/20 transition-colors cursor-pointer"
                   title="Click to view Connected Inverter details"
                 >
                   <td className="py-3.5 px-3.5 whitespace-nowrap">
@@ -644,10 +644,10 @@ export default function SolisDevicesTab({
                     </div>
                   </td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-slate-900">{col.name}</td>
-                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] font-medium">{col.sn}</td>
+                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#10b981] font-medium">{col.sn}</td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono">{col.model || "WL-WiFi"}</td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap text-emerald-600 font-medium">Excellent (100%)</td>
-                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#f37021] hover:underline font-medium">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[#10b981] hover:underline font-medium">
                     {col.connectedInverterSn}
                   </td>
                   <td className="py-3.5 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-500">20/11/2026 12:51:24 (UTC+05:00)</td>
@@ -674,7 +674,7 @@ export default function SolisDevicesTab({
             <button className="px-2 py-0.5 border border-gray-200 rounded text-slate-400 hover:text-slate-800 disabled:opacity-40" disabled>
               &lt;
             </button>
-            <span className="w-6 h-6 rounded border border-orange-300 bg-orange-50 text-[#f37021] font-semibold flex items-center justify-center">
+            <span className="w-6 h-6 rounded border border-emerald-300 bg-emerald-50 text-[#10b981] font-semibold flex items-center justify-center">
               1
             </span>
             <button className="px-2 py-0.5 border border-gray-200 rounded text-slate-400 hover:text-slate-800 disabled:opacity-40" disabled>

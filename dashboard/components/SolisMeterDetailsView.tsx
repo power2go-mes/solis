@@ -291,7 +291,7 @@ export default function SolisMeterDetailsView({
       <div className="w-full lg:w-64 bg-white rounded-xl border border-gray-100 shadow-2xs p-3.5 flex flex-col shrink-0">
         <button
           onClick={onBackToDevices}
-          className="text-xs font-bold text-slate-800 hover:text-[#f37021] flex items-center gap-1 mb-3 transition-colors"
+          className="text-xs font-bold text-slate-800 hover:text-[#10b981] flex items-center gap-1 mb-3 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Device Details</span>
@@ -309,8 +309,8 @@ export default function SolisMeterDetailsView({
         </div>
 
         {/* Tree item */}
-        <div className="p-2 rounded-lg bg-orange-50/40 border border-orange-200 text-xs text-[#f37021] font-medium flex items-center gap-1.5">
-          <ChevronRightIcon className="w-3.5 h-3.5 text-[#f37021]" />
+        <div className="p-2 rounded-lg bg-emerald-50/40 border border-emerald-200 text-xs text-[#10b981] font-medium flex items-center gap-1.5">
+          <ChevronRightIcon className="w-3.5 h-3.5 text-[#10b981]" />
           <div className="truncate">
             <span className="block font-semibold">Datalogger</span>
             <span className="font-mono text-[11px] opacity-80">{dataloggerSn.slice(0, 14)}...</span>
@@ -333,7 +333,7 @@ export default function SolisMeterDetailsView({
               <h2 className="text-sm font-bold text-slate-900">Meter</h2>
               <button
                 onClick={() => alert("Edit meter configuration")}
-                className="text-slate-400 hover:text-[#f37021] p-1"
+                className="text-slate-400 hover:text-[#10b981] p-1"
                 title="Edit Meter"
               >
                 <Edit className="w-3.5 h-3.5" />
@@ -381,7 +381,7 @@ export default function SolisMeterDetailsView({
               <span>SN: {meterSn}</span>
               <button
                 onClick={() => handleCopy(meterSn)}
-                className="text-slate-400 hover:text-[#f37021]"
+                className="text-slate-400 hover:text-[#10b981]"
                 title="Copy SN"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
@@ -395,18 +395,18 @@ export default function SolisMeterDetailsView({
               <span className="text-slate-500 text-[11px] block mb-1">Plant</span>
               <span
                 onClick={() => onSelectPlantByName && onSelectPlantByName(plantName)}
-                className="font-medium text-[#f37021] hover:underline cursor-pointer flex items-center gap-0.5"
+                className="font-medium text-[#10b981] hover:underline cursor-pointer flex items-center gap-0.5"
               >
                 <span>{plantName}</span>
-                <ChevronRightIcon className="w-3 h-3 text-[#f37021]" />
+                <ChevronRightIcon className="w-3 h-3 text-[#10b981]" />
               </span>
             </div>
 
             <div>
               <span className="text-slate-500 text-[11px] block mb-1">Associated Datalogger</span>
-              <span className="font-mono text-[#f37021] flex items-center gap-0.5 hover:underline cursor-pointer">
+              <span className="font-mono text-[#10b981] flex items-center gap-0.5 hover:underline cursor-pointer">
                 <span>{dataloggerSn.slice(0, 10)}...</span>
-                <ChevronRightIcon className="w-3 h-3 text-[#f37021]" />
+                <ChevronRightIcon className="w-3 h-3 text-[#10b981]" />
               </span>
             </div>
 
@@ -523,7 +523,7 @@ export default function SolisMeterDetailsView({
               <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1 bg-white">
                 <button
                   onClick={handlePrevDate}
-                  className="p-0.5 hover:text-[#f37021] text-slate-400"
+                  className="p-0.5 hover:text-[#10b981] text-slate-400"
                   title="Previous Date"
                 >
                   &lt;
@@ -531,7 +531,7 @@ export default function SolisMeterDetailsView({
                 <span className="font-mono text-slate-800 text-[11px] px-1 font-semibold">{currentDateStr}</span>
                 <button
                   onClick={handleNextDate}
-                  className="p-0.5 hover:text-[#f37021] text-slate-400"
+                  className="p-0.5 hover:text-[#10b981] text-slate-400"
                   title="Next Date"
                 >
                   &gt;
@@ -545,7 +545,7 @@ export default function SolisMeterDetailsView({
                     onClick={() => handleTabChange(tab)}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                       activeDateTab === tab
-                        ? "bg-orange-50 text-[#f37021] font-bold border border-orange-300"
+                        ? "bg-emerald-50 text-[#10b981] font-bold border border-emerald-300"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
@@ -604,7 +604,7 @@ export default function SolisMeterDetailsView({
               <div className="w-full lg:w-56 p-3 rounded-xl bg-gray-50/60 border border-gray-100 text-xs shrink-0 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800">Parameters(1)</span>
-                  <button className="text-slate-400 hover:text-[#f37021] p-0.5">
+                  <button className="text-slate-400 hover:text-[#10b981] p-0.5">
                     <RotateCw className="w-3 h-3" />
                   </button>
                 </div>
@@ -618,11 +618,11 @@ export default function SolisMeterDetailsView({
                     </div>
                     <div className="pl-3 space-y-1 text-slate-600">
                       <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" className="accent-[#f37021] w-3 h-3" />
+                        <input type="checkbox" className="accent-[#10b981] w-3 h-3" />
                         <span>Total Export</span>
                       </label>
                       <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" className="accent-[#f37021] w-3 h-3" />
+                        <input type="checkbox" className="accent-[#10b981] w-3 h-3" />
                         <span>Total Import</span>
                       </label>
                     </div>
@@ -635,12 +635,12 @@ export default function SolisMeterDetailsView({
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                     </div>
                     <div className="pl-3">
-                      <label className="flex items-center gap-1.5 cursor-pointer text-[#f37021] font-semibold">
+                      <label className="flex items-center gap-1.5 cursor-pointer text-[#10b981] font-semibold">
                         <input
                           type="checkbox"
                           checked={activePowerChecked}
                           onChange={(e) => setActivePowerChecked(e.target.checked)}
-                          className="accent-[#f37021] w-3 h-3"
+                          className="accent-[#10b981] w-3 h-3"
                         />
                         <span>Active Power</span>
                       </label>
@@ -688,7 +688,7 @@ export default function SolisMeterDetailsView({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#f37021]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
                     <span className="text-slate-700 font-medium">Active Power</span>
                   </div>
                 </div>

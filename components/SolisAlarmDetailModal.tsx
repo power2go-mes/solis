@@ -123,7 +123,7 @@ export default function SolisAlarmDetailModal({
             isResolved
               ? "bg-emerald-50/70 border-emerald-100"
               : isWarning
-              ? "bg-orange-50/70 border-orange-100"
+              ? "bg-emerald-50/70 border-orange-100"
               : "bg-gray-50 border-gray-200"
           }`}
         >
@@ -133,7 +133,7 @@ export default function SolisAlarmDetailModal({
                 isResolved
                   ? "bg-emerald-100 text-emerald-700"
                   : isWarning
-                  ? "bg-orange-100 text-[#f37021]"
+                  ? "bg-orange-100 text-[#10b981]"
                   : "bg-slate-200 text-slate-700"
               }`}
             >
@@ -152,7 +152,7 @@ export default function SolisAlarmDetailModal({
                   className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
                     isResolved
                       ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                      : "bg-orange-100 text-[#f37021] border-orange-300"
+                      : "bg-orange-100 text-[#10b981] border-emerald-300"
                   }`}
                 >
                   {isResolved ? "Recovered / Resolved" : "Active Alarm"}
@@ -186,7 +186,7 @@ export default function SolisAlarmDetailModal({
                 <button
                   onClick={handleCopySn}
                   title="Copy SN"
-                  className="text-slate-400 hover:text-[#f37021]"
+                  className="text-slate-400 hover:text-[#10b981]"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -200,7 +200,7 @@ export default function SolisAlarmDetailModal({
 
             <div>
               <span className="text-[11px] text-slate-600 block mb-0.5">Plant Name</span>
-              <span className="font-medium text-[#f37021]">{alarm.plantName || "Solis Station"}</span>
+              <span className="font-medium text-[#10b981]">{alarm.plantName || "Solis Station"}</span>
             </div>
 
             <div>
@@ -222,10 +222,10 @@ export default function SolisAlarmDetailModal({
           {/* Root Cause Analysis */}
           <div className="space-y-1.5">
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldAlert className="w-3.5 h-3.5 text-[#f37021]" />
+              <ShieldAlert className="w-3.5 h-3.5 text-[#10b981]" />
               <span>Root Cause Diagnosis</span>
             </h4>
-            <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/60 text-xs text-slate-700 leading-relaxed">
+            <div className="p-3.5 rounded-xl bg-emerald-50/40 border border-emerald-200/60 text-xs text-slate-700 leading-relaxed">
               {guide.rootCause}
             </div>
           </div>
@@ -265,7 +265,7 @@ export default function SolisAlarmDetailModal({
                   onViewDevice(alarm.deviceSn);
                   onClose();
                 }}
-                className="flex-1 sm:flex-none px-3.5 py-2 rounded-lg border border-orange-300 bg-white text-[#f37021] hover:bg-orange-50 font-medium transition-all shadow-2xs flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-none px-3.5 py-2 rounded-lg border border-emerald-300 bg-white text-[#10b981] hover:bg-emerald-50 font-medium transition-all shadow-2xs flex items-center justify-center gap-1.5"
               >
                 <span>View Device Details</span>
                 <ExternalLink className="w-3.5 h-3.5" />

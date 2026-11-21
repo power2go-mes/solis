@@ -1244,7 +1244,7 @@ export default function SolisClientDashboard({
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={onBackToOverview}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold text-slate-600 bg-gray-50 hover:bg-orange-50 hover:text-[#f37021] border border-gray-200 transition-colors shadow-2xs mr-1"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold text-slate-600 bg-gray-50 hover:bg-emerald-50 hover:text-[#10b981] border border-gray-200 transition-colors shadow-2xs mr-1"
               title="Return to Plant Overview Table"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -1260,7 +1260,7 @@ export default function SolisClientDashboard({
             <div className="relative">
               <button
                 onClick={() => setIsPlantDropdownOpen(!isPlantDropdownOpen)}
-                className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-slate-900 hover:text-[#f37021] transition-colors"
+                className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-slate-900 hover:text-[#10b981] transition-colors"
               >
                 <span>{plantMeta.name}</span>
                 {plantMeta.guestSuffix && (
@@ -1282,8 +1282,8 @@ export default function SolisClientDashboard({
                         onSelectPlant(p.id);
                         setIsPlantDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-orange-50 transition-colors ${p.id === selectedPlantId
-                          ? "text-[#f37021] font-bold bg-orange-50/50"
+                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-emerald-50 transition-colors ${p.id === selectedPlantId
+                          ? "text-[#10b981] font-bold bg-emerald-50/50"
                           : "text-slate-700 font-medium"
                         }`}
                     >
@@ -1302,10 +1302,10 @@ export default function SolisClientDashboard({
                 className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors"
                 title="Refresh Client Data"
               >
-                <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#f37021]" : ""}`} />
+                <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#10b981]" : ""}`} />
               </button>
               <button
-                className="w-7 h-7 rounded-full hover:text-[#f37021] hover:bg-orange-50 flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full hover:text-[#10b981] hover:bg-emerald-50 flex items-center justify-center transition-colors"
                 title="Add to Favorites"
               >
                 <Heart className="w-3.5 h-3.5" />
@@ -1355,7 +1355,7 @@ export default function SolisClientDashboard({
               activeSubnav === item
                 ? item === "Overview" || item === "Layout"
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
-                  : "bg-orange-50 text-[#f37021] border border-orange-300 font-semibold shadow-2xs"
+                  : "bg-emerald-50 text-[#10b981] border border-emerald-300 font-semibold shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-gray-100/70"
             }`}
           >
@@ -1785,8 +1785,8 @@ export default function SolisClientDashboard({
                 {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
                   <div key={idx} className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-500 font-medium mb-1">{day}</span>
-                    <div className="w-6 h-6 flex items-center justify-center text-[#f37021]">
-                      <Sun className="w-5 h-5 fill-orange-400 text-[#f37021]" />
+                    <div className="w-6 h-6 flex items-center justify-center text-[#10b981]">
+                      <Sun className="w-5 h-5 fill-orange-400 text-[#10b981]" />
                     </div>
                   </div>
                 ))}

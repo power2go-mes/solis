@@ -45,7 +45,7 @@ export default function SolisMobileDeviceSettingsModal({
         {/* Header */}
         <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-[#fafbfc]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-[#f37021]">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#10b981]">
               <Settings className="w-4 h-4" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export default function SolisMobileDeviceSettingsModal({
               <span className="text-[11px] text-slate-500">Serial Number</span>
               <div className="flex items-center gap-1.5 font-mono font-bold text-slate-900">
                 <span>{device.sn}</span>
-                <button onClick={handleCopy} className="text-slate-400 hover:text-[#f37021]">
+                <button onClick={handleCopy} className="text-slate-400 hover:text-[#10b981]">
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               </div>
@@ -105,19 +105,19 @@ export default function SolisMobileDeviceSettingsModal({
                   onClick={() => setWorkMode(mode.id)}
                   className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
                     workMode === mode.id
-                      ? "border-[#f37021] bg-orange-50/50"
+                      ? "border-[#10b981] bg-emerald-50/50"
                       : "border-gray-200 bg-white hover:bg-gray-50"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`font-semibold ${workMode === mode.id ? "text-[#f37021]" : "text-slate-800"}`}>
+                    <span className={`font-semibold ${workMode === mode.id ? "text-[#10b981]" : "text-slate-800"}`}>
                       {mode.label}
                     </span>
                     <input
                       type="radio"
                       checked={workMode === mode.id}
                       onChange={() => setWorkMode(mode.id)}
-                      className="accent-[#f37021]"
+                      className="accent-[#10b981]"
                     />
                   </div>
                   <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{mode.desc}</p>
@@ -130,7 +130,7 @@ export default function SolisMobileDeviceSettingsModal({
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center justify-between text-slate-700">
               <span className="font-bold text-[11px] uppercase tracking-wider">Maximum Charge Power</span>
-              <span className="font-mono font-bold text-[#f37021]">{maxChargePower} kW</span>
+              <span className="font-mono font-bold text-[#10b981]">{maxChargePower} kW</span>
             </div>
             <input
               type="range"
@@ -139,7 +139,7 @@ export default function SolisMobileDeviceSettingsModal({
               step="1"
               value={maxChargePower}
               onChange={(e) => setMaxChargePower(e.target.value)}
-              className="w-full accent-[#f37021]"
+              className="w-full accent-[#10b981]"
             />
           </div>
 
@@ -153,7 +153,7 @@ export default function SolisMobileDeviceSettingsModal({
               type="button"
               onClick={() => setGridFeedInEnabled(!gridFeedInEnabled)}
               className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                gridFeedInEnabled ? "bg-[#f37021]" : "bg-gray-300"
+                gridFeedInEnabled ? "bg-[#10b981]" : "bg-gray-300"
               }`}
             >
               <div
@@ -176,7 +176,7 @@ export default function SolisMobileDeviceSettingsModal({
           <button
             onClick={handleSave}
             className={`flex-1 py-2 rounded-xl text-white font-medium transition-all ${
-              saved ? "bg-emerald-600" : "bg-[#f37021] hover:bg-[#e06014]"
+              saved ? "bg-emerald-600" : "bg-[#10b981] hover:bg-[#e06014]"
             }`}
           >
             {saved ? "Updated!" : "Save Settings"}

@@ -94,7 +94,7 @@ export default function SolisMobileAlarmsView({
             onClick={() => setActiveTab("Current")}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "Current"
-                ? "border border-orange-300 bg-white text-[#f37021] shadow-2xs"
+                ? "border border-emerald-300 bg-white text-[#10b981] shadow-2xs"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -104,7 +104,7 @@ export default function SolisMobileAlarmsView({
             onClick={() => setActiveTab("History")}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "History"
-                ? "border border-orange-300 bg-white text-[#f37021] shadow-2xs"
+                ? "border border-emerald-300 bg-white text-[#10b981] shadow-2xs"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -141,7 +141,7 @@ export default function SolisMobileAlarmsView({
               <div
                 key={item.id || item.alarmCode}
                 onClick={() => handleAlarmCardClick(item)}
-                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 space-y-1.5 transition-all w-full box-border cursor-pointer hover:border-orange-300 active:scale-[0.99]"
+                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 space-y-1.5 transition-all w-full box-border cursor-pointer hover:border-emerald-300 active:scale-[0.99]"
               >
                 {/* Row 1: Badge + Alarm Code & Name + Red Indicator Dot */}
                 <div className="flex items-center justify-between w-full">
@@ -149,7 +149,7 @@ export default function SolisMobileAlarmsView({
                     <span
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                         isWarning
-                          ? "bg-orange-50 text-[#f37021] border border-orange-200"
+                          ? "bg-emerald-50 text-[#10b981] border border-emerald-200"
                           : "bg-emerald-50 text-emerald-600 border border-emerald-200"
                       }`}
                     >

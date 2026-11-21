@@ -83,8 +83,8 @@ export default function SolisAlarmsTab({ alarmsData, isLoading, onViewDevice }: 
     const l = (level || "").toLowerCase();
     if (l.includes("warn") || l.includes("crit") || l.includes("major")) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-50 text-[#f37021] border border-orange-200 text-[10px] font-bold">
-          <AlertTriangle className="w-3 h-3 text-[#f37021]" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#10b981] border border-emerald-200 text-[10px] font-bold">
+          <AlertTriangle className="w-3 h-3 text-[#10b981]" />
           <span>Warning</span>
         </span>
       );
@@ -141,11 +141,11 @@ export default function SolisAlarmsTab({ alarmsData, isLoading, onViewDevice }: 
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
               Active Alarms
             </span>
-            <p className="text-2xl font-black text-[#f37021] font-mono mt-1">
+            <p className="text-2xl font-black text-[#10b981] font-mono mt-1">
               {activeCount}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#f37021]">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#10b981]">
             <AlertCircle className="w-5 h-5" />
           </div>
         </div>
@@ -232,7 +232,7 @@ export default function SolisAlarmsTab({ alarmsData, isLoading, onViewDevice }: 
                     <React.Fragment key={alarm.id}>
                       <tr
                         onClick={() => handleRowClick(alarm)}
-                        className="hover:bg-orange-50/20 cursor-pointer transition-colors"
+                        className="hover:bg-emerald-50/20 cursor-pointer transition-colors"
                       >
                         <td className="py-3 px-4 whitespace-nowrap">
                           {getSeverityBadge(alarm.severity)}
@@ -262,8 +262,8 @@ export default function SolisAlarmsTab({ alarmsData, isLoading, onViewDevice }: 
                               <span>{alarm.status}</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-[#f37021] border border-orange-200 text-[10px] font-semibold animate-pulse">
-                              <AlertCircle className="w-3 h-3 text-[#f37021]" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-[#10b981] border border-emerald-200 text-[10px] font-semibold animate-pulse">
+                              <AlertCircle className="w-3 h-3 text-[#10b981]" />
                               <span>{alarm.status}</span>
                             </span>
                           )}
@@ -274,7 +274,7 @@ export default function SolisAlarmsTab({ alarmsData, isLoading, onViewDevice }: 
                               e.stopPropagation();
                               handleRowClick(alarm);
                             }}
-                            className="px-2.5 py-1 rounded-md border border-gray-200 bg-white hover:bg-orange-50 hover:border-orange-300 text-[#f37021] text-xs font-medium transition-all shadow-2xs inline-flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-md border border-gray-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-[#10b981] text-xs font-medium transition-all shadow-2xs inline-flex items-center gap-1"
                           >
                             <span>Details</span>
                             <ExternalLink className="w-3 h-3" />

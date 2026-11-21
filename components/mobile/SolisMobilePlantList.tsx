@@ -28,213 +28,11 @@ const PLANT_IMAGES: Record<string, string> = {
   "1298491919450958553": "/solis/STATION_default_normal.png", // OPL Residence
 };
 
-const DEFAULT_MOBILE_PLANTS: SolisPlantOverviewItem[] = [
-  {
-    id: "1298491919451014032",
-    name: "Towfiq chinoy",
-    address: "Karachi, Sindh, Pakistan",
-    status: "Online",
-    dailyYieldKwh: 45.2,
-    powerKw: 12.4,
-    capacityKwp: 29.67,
-    dailyChargeKwh: 14.5,
-    dailyDischargeKwh: 6.2,
-    totalYieldKwh: 3450,
-    totalYieldStr: "3.450MWh",
-    totalChargeKwh: 1250,
-    totalChargeStr: "1.250MWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 1,
-    installer: "Sunhancee",
-    installerContact: "support@sunhancee.com",
-    owner: "Towfiq chinoy",
-    ownerContact: "qasim.moosvi@gmail.com",
-    weather: "Clear",
-    temperature: "31℃",
-    latestTime: "20/11/2026 12:49:51",
-  },
-  {
-    id: "1298491919450851319",
-    name: "P2G 20kw",
-    address: "Ahbab Street, Korangi Industrial Area, Karachi, Sindh",
-    status: "Offline",
-    dailyYieldKwh: 0,
-    powerKw: 0,
-    capacityKwp: 18,
-    dailyChargeKwh: 0,
-    dailyDischargeKwh: 0,
-    totalYieldKwh: 0,
-    totalYieldStr: "0kWh",
-    totalChargeKwh: 0,
-    totalChargeStr: "0kWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 0,
-    installer: "Powerup Solution",
-    installerContact: "sheralahore@hotmail.com",
-    owner: "Qasim Moosvi",
-    ownerContact: "qasim.moosvi@gmail.com",
-    weather: "Clear",
-    temperature: "31℃",
-    latestTime: "25/08/2026 11:04:03",
-  },
-  {
-    id: "1298491919450840394",
-    name: "P2G 1ST 6kw",
-    address: "Ahbab Street, Korangi Industrial Area, Karachi, Sindh",
-    status: "Online",
-    dailyYieldKwh: 0,
-    powerKw: 0,
-    capacityKwp: 20,
-    dailyChargeKwh: 0.7,
-    dailyDischargeKwh: 0,
-    totalYieldKwh: 0,
-    totalYieldStr: "0kWh",
-    totalChargeKwh: 88,
-    totalChargeStr: "88kWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 1,
-    installer: "--",
-    installerContact: "--",
-    owner: "Qasim Moosvi",
-    ownerContact: "qasim.moosvi@gmail.com",
-    weather: "Clear",
-    temperature: "32℃",
-    latestTime: "19/11/2026 15:00:00",
-  },
-  {
-    id: "1298491919450797504",
-    name: "Menu Karachi Office",
-    address: "Menu karachi DC office, Napier Quarter, Karachi, Sindh",
-    status: "Online",
-    dailyYieldKwh: 170.6,
-    powerKw: 9.5,
-    capacityKwp: 80,
-    dailyChargeKwh: 109,
-    dailyDischargeKwh: 27.8,
-    totalYieldKwh: 25183,
-    totalYieldStr: "25.183MWh",
-    totalChargeKwh: 13003,
-    totalChargeStr: "13.003MWh",
-    inverterCount: 2,
-    inverterTotal: 2,
-    inverterOnline: 2,
-    installer: "Sunhancee",
-    installerContact: "support@sunhancee.com",
-    owner: "Qasim Moosvi",
-    ownerContact: "qasim.moosvi@gmail.com",
-    weather: "Clear",
-    temperature: "32℃",
-    latestTime: "19/11/2026 15:00:00",
-  },
-  {
-    id: "1298491919450740581",
-    name: "P2G 50KW",
-    address: "Ahbab Street, Korangi Industrial Area, Karachi, Sindh",
-    status: "Online",
-    dailyYieldKwh: 105,
-    powerKw: 12.3,
-    capacityKwp: 32,
-    dailyChargeKwh: 36.2,
-    dailyDischargeKwh: 14.6,
-    totalYieldKwh: 9175,
-    totalYieldStr: "9.175MWh",
-    totalChargeKwh: 4351,
-    totalChargeStr: "4.351MWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 1,
-    installer: "Powerup Solution",
-    installerContact: "sheralahore@hotmail.com",
-    owner: "Qasim Moosvi",
-    ownerContact: "qasim.moosvi@gmail.com",
-    weather: "Clear",
-    temperature: "29℃",
-    latestTime: "19/11/2026 15:00:00",
-  },
-  {
-    id: "1298491919450734544",
-    name: "P2G 15KW",
-    address: "1D-203, Ahbab Street, Korangi Industrial Area, Karachi",
-    status: "Offline",
-    dailyYieldKwh: 0,
-    powerKw: 0,
-    capacityKwp: 15,
-    dailyChargeKwh: 0,
-    dailyDischargeKwh: 0,
-    totalYieldKwh: 0,
-    totalYieldStr: "0kWh",
-    totalChargeKwh: 571,
-    totalChargeStr: "571kWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 0,
-    installer: "--",
-    installerContact: "--",
-    owner: "Qasim Moosvi",
-    ownerContact: "qasim.moosvi@gmail.com",
-    weather: "Clear",
-    temperature: "31℃",
-    latestTime: "25/08/2026 11:04:03",
-  },
-  {
-    id: "1298491919450873747",
-    name: "36 Chenab",
-    address: "Plot 36, Green Forts 2, Canal Road, Lahore, Punjab",
-    status: "Online",
-    dailyYieldKwh: 100.2,
-    powerKw: 7.6,
-    capacityKwp: 25.155,
-    dailyChargeKwh: 17.8,
-    dailyDischargeKwh: 2.4,
-    totalYieldKwh: 5705,
-    totalYieldStr: "5.705MWh",
-    totalChargeKwh: 1582,
-    totalChargeStr: "1.582MWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 1,
-    installer: "Powerup Solution",
-    installerContact: "sheralahore@hotmail.com",
-    owner: "--",
-    ownerContact: "--",
-    weather: "Clear",
-    temperature: "26℃",
-    latestTime: "19/11/2026 15:00:00",
-  },
-  {
-    id: "1298491919450958553",
-    name: "OPL Residence",
-    address: "5.6 KM, Sindh Coastal Highway, Gharo, Thatta, Sindh",
-    status: "Online",
-    dailyYieldKwh: 213.8,
-    powerKw: 21.4,
-    capacityKwp: 55.5,
-    dailyChargeKwh: 0,
-    dailyDischargeKwh: 0,
-    totalYieldKwh: 7203,
-    totalYieldStr: "7.203MWh",
-    totalChargeKwh: 1461,
-    totalChargeStr: "1.461MWh",
-    inverterCount: 1,
-    inverterTotal: 1,
-    inverterOnline: 1,
-    installer: "Powerup Solution",
-    installerContact: "sheralahore@hotmail.com",
-    owner: "O&M Supervisor",
-    ownerContact: "onmsuperviser@opl.com",
-    weather: "Clear",
-    temperature: "31℃",
-    latestTime: "19/11/2026 15:00:00",
-  },
-];
-
 interface SolisMobilePlantListProps {
   plants: SolisPlantOverviewItem[];
   onSelectPlant: (plantId: string) => void;
   onCreatePlant?: () => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 type TabCategory = "All" | "Online" | "Alarm" | "Offline";
@@ -243,6 +41,7 @@ export default function SolisMobilePlantList({
   plants,
   onSelectPlant,
   onCreatePlant,
+  onNavigateTab,
 }: SolisMobilePlantListProps) {
   // Top category tabs: Plant | Inverter | Battery | Data
   const [activeTopTab, setActiveTopTab] = useState<string>("Plant");
@@ -257,14 +56,13 @@ export default function SolisMobilePlantList({
   // Bottom navigation tab
   const [activeBottomNav, setActiveBottomNav] = useState<string>("Plant");
 
-  // Use real plants or default reference list so mobile feed is immediately rendered
-  const effectivePlants = plants && plants.length > 0 ? plants : DEFAULT_MOBILE_PLANTS;
+  const effectivePlants = plants || [];
 
   // Summary counts
-  const totalCount = effectivePlants.length || 7;
-  const onlineCount = effectivePlants.filter((p) => p.status === "Online").length || 5;
-  const alarmCount = effectivePlants.filter((p) => p.status === "Alarm").length || 0;
-  const offlineCount = effectivePlants.filter((p) => p.status === "Offline").length || 2;
+  const totalCount = effectivePlants.length;
+  const onlineCount = effectivePlants.filter((p) => p.status === "Online").length;
+  const alarmCount = effectivePlants.filter((p) => p.status === "Alarm").length;
+  const offlineCount = effectivePlants.filter((p) => p.status === "Offline").length;
 
   // Filter plants based on tab and search
   const filteredPlants = effectivePlants.filter((p) => {
@@ -360,7 +158,7 @@ export default function SolisMobilePlantList({
             placeholder="Search for Plant / Address / ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-[#f37021] bg-gray-50/50"
+            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-[#10b981] bg-gray-50/50"
             autoFocus
           />
         </div>
@@ -428,9 +226,9 @@ export default function SolisMobilePlantList({
         {/* 3. FILTER PILLS ROW: Default, Parameter Selection...      */}
         {/* ======================================================== */}
         <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-0.5">
-          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-orange-200/90 bg-orange-50/50 text-[#f37021] font-semibold whitespace-nowrap">
+          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50/50 text-[#10b981] font-semibold whitespace-nowrap">
             <span>Default</span>
-            <ChevronDown className="w-3 h-3 text-[#f37021]" />
+            <ChevronDown className="w-3 h-3 text-[#10b981]" />
           </button>
 
           <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap">
@@ -452,6 +250,7 @@ export default function SolisMobilePlantList({
         {/* 4. PLANT CARDS FEED (VERTICAL FEED)                      */}
         {/* ======================================================== */}
         <div className="space-y-3">
+          {sortedPlants.length === 0 && <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-slate-500">No plant data is available for this view.</div>}
           {sortedPlants.map((plant) => {
             const isOnline = plant.status === "Online";
 
@@ -459,7 +258,7 @@ export default function SolisMobilePlantList({
               <div
                 key={plant.id}
                 onClick={() => onSelectPlant(plant.id)}
-                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 cursor-pointer active:scale-[0.99] transition-all hover:border-orange-200"
+                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 cursor-pointer active:scale-[0.99] transition-all hover:border-emerald-200"
               >
                 {/* Row 1: Status Pill & Plant Name */}
                 <div className="flex items-center gap-2 mb-1">
@@ -542,12 +341,12 @@ export default function SolisMobilePlantList({
                     <RotateCw className="w-3 h-3 text-slate-400" />
                     <span className="text-[10px]">
                       {isOnline
-                        ? `Live Sync: ${plant.latestTime || "19/11/2026 (UTC+05:00)"}`
-                        : `Offline Time: 25/08/2026 11:04:03 (UTC+05:00)`}
+                        ? `Live Sync: ${plant.latestTime || "—"}`
+                        : `Offline${plant.latestTime ? ` since ${plant.latestTime}` : " - no recent telemetry"}`}
                     </span>
                   </div>
 
-                  <span className="text-[#f37021] font-semibold text-xs hover:underline">
+                  <span className="text-[#10b981] font-semibold text-xs hover:underline">
                     More
                   </span>
                 </div>
@@ -576,25 +375,34 @@ export default function SolisMobilePlantList({
         <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between w-full max-w-sm pointer-events-auto">
           {/* Plant (Active Green Gradient Pill) */}
           <button
-            onClick={() => setActiveBottomNav("Plant")}
+            onClick={() => {
+              setActiveBottomNav("Plant");
+              if (onNavigateTab) onNavigateTab("plant_overview");
+            }}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
           >
             <Home className="w-3.5 h-3.5 fill-white" />
             <span>Plant</span>
           </button>
 
-          {/* Events */}
+          {/* Events -> Navigates to O&M Alarms */}
           <button
-            onClick={() => setActiveBottomNav("Events")}
+            onClick={() => {
+              setActiveBottomNav("Events");
+              if (onNavigateTab) onNavigateTab("om_alarms");
+            }}
             className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
           >
             <Activity className="w-4 h-4 mb-0.5" />
             <span>Events</span>
           </button>
 
-          {/* Overview */}
+          {/* Overview -> Navigates to Device Overview */}
           <button
-            onClick={() => setActiveBottomNav("Overview")}
+            onClick={() => {
+              setActiveBottomNav("Overview");
+              if (onNavigateTab) onNavigateTab("device_overview");
+            }}
             className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
           >
             <LayoutGrid className="w-4 h-4 mb-0.5" />
@@ -603,7 +411,10 @@ export default function SolisMobilePlantList({
 
           {/* Service */}
           <button
-            onClick={() => setActiveBottomNav("Service")}
+            onClick={() => {
+              setActiveBottomNav("Service");
+              alert("Solis Customer Support Hotline: +92 21 111-POWER2GO");
+            }}
             className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
           >
             <Wrench className="w-4 h-4 mb-0.5" />
@@ -612,7 +423,10 @@ export default function SolisMobilePlantList({
 
           {/* Me */}
           <button
-            onClick={() => setActiveBottomNav("Me")}
+            onClick={() => {
+              setActiveBottomNav("Me");
+              alert("Logged in as Qasim Moosvi (Owner)");
+            }}
             className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
           >
             <User className="w-4 h-4 mb-0.5" />

@@ -34,7 +34,7 @@ interface SolisSidebarProps {
  * SolisCloud 4-Square Overview Icon with Bottom-Left Checkmark
  * Exactly matching SolisCloud reference UI (media_1795175182642_da25cbfa.png)
  */
-function SolisOverviewIcon({ className = "w-5 h-5 text-[#f37021]" }: { className?: string }) {
+function SolisOverviewIcon({ className = "w-5 h-5 text-[#10b981]" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
       <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
@@ -154,7 +154,7 @@ export default function SolisSidebar({
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold text-slate-900 leading-tight truncate">
-                Power<span className="text-[#f37021]">2</span>Go
+                Power<span className="text-[#10b981]">2</span>Go
               </span>
               <span className="text-[10px] text-slate-400 font-medium">SolisCloud</span>
             </div>
@@ -176,13 +176,13 @@ export default function SolisSidebar({
                 onClick={() => setActiveFlyout(activeFlyout === "overview" ? null : "overview")}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
                   isOverviewActive
-                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#f37021] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
+                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#10b981] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
                     : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
                 }`}
                 title="Overview"
               >
                 <SolisOverviewIcon
-                  className={`w-5 h-5 ${isOverviewActive ? "text-[#f37021]" : "text-slate-400"}`}
+                  className={`w-5 h-5 ${isOverviewActive ? "text-[#10b981]" : "text-slate-400"}`}
                 />
               </button>
 
@@ -206,7 +206,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "plant_overview"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -219,7 +219,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                       activeView === "device_overview"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -240,7 +240,7 @@ export default function SolisSidebar({
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <SolisOverviewIcon className="w-4 h-4 text-[#f37021]" />
+                  <SolisOverviewIcon className="w-4 h-4 text-[#10b981]" />
                   <span>Overview</span>
                 </div>
                 {isOverviewExpanded ? (
@@ -256,7 +256,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("plant_overview")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
                       activeView === "plant_overview"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -266,7 +266,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("device_overview")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
                       activeView === "device_overview"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -290,7 +290,7 @@ export default function SolisSidebar({
                 onClick={() => setActiveFlyout(activeFlyout === "om" ? null : "om")}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all relative ${
                   isOMActive
-                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#f37021] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
+                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#10b981] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
                     : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
                 }`}
                 title="O&M"
@@ -322,7 +322,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 flex items-center justify-between ${
                       activeView === "om_alarms"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -337,7 +337,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "om_alerts"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -386,7 +386,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("om_alarms")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium flex items-center justify-between ${
                       activeView === "om_alarms"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -398,7 +398,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("om_alerts")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
                       activeView === "om_alerts"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -432,7 +432,7 @@ export default function SolisSidebar({
                 onClick={() => setActiveFlyout(activeFlyout === "report" ? null : "report")}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
                   isReportActive
-                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#f37021] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
+                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#10b981] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
                     : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
                 }`}
                 title="Report"
@@ -460,7 +460,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "report_plant"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -473,7 +473,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
                       activeView === "report_inverter"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -486,7 +486,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                       activeView === "report_battery"
-                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#f37021] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
+                        ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
                     }`}
                   >
@@ -523,7 +523,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("report_plant")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
                       activeView === "report_plant"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -533,7 +533,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("report_inverter")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
                       activeView === "report_inverter"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -543,7 +543,7 @@ export default function SolisSidebar({
                     onClick={() => onSelectView("report_battery")}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium ${
                       activeView === "report_battery"
-                        ? "border border-orange-200 bg-orange-50 text-[#f37021] font-bold shadow-2xs"
+                        ? "border border-orange-200 bg-orange-50 text-[#10b981] font-bold shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
                     }`}
                   >
@@ -649,11 +649,11 @@ export default function SolisSidebar({
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center">
-                    <Sun className="w-4 h-4 text-[#f37021]" />
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                    <Sun className="w-4 h-4 text-[#10b981]" />
                   </div>
                   <span className="text-sm font-bold text-slate-800">
-                    Power<span className="text-[#f37021]">2</span>Go
+                    Power<span className="text-[#10b981]">2</span>Go
                   </span>
                 </div>
                 <button
@@ -678,7 +678,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeView === "plant_overview"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -691,7 +691,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeView === "device_overview"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -712,7 +712,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between ${
                       activeView === "om_alarms"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -726,7 +726,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeView === "om_alerts"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -746,7 +746,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeView === "report_plant"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -759,7 +759,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeView === "report_inverter"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -772,7 +772,7 @@ export default function SolisSidebar({
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeView === "report_battery"
-                        ? "bg-orange-50 text-[#f37021] border border-orange-300 font-bold"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >

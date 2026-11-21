@@ -3,8 +3,7 @@ import https from "https";
 import { Pool } from "pg";
 
 let connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+  process.env.DATABASE_URL || "postgresql://localhost/postgres";
 
 if (connectionString.includes("pooler.supabase.com:6543")) {
   connectionString = connectionString.replace("pooler.supabase.com:6543", "pooler.supabase.com:5432");
@@ -17,8 +16,8 @@ const pool = new Pool({
 });
 
 const SOLIS_API_BASE = "https://www.soliscloud.com";
-const SOLIS_HMAC_SECRET = "5704383536604a8bb94c83ebc059aa8c";
-const SOLIS_KEY_ID = "2424";
+const SOLIS_HMAC_SECRET = process.env.SOLIS_HMAC_SECRET || "";
+const SOLIS_KEY_ID = process.env.SOLIS_KEY_ID || "";
 
 let sessionCookie: string | null = null;
 

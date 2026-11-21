@@ -14,7 +14,7 @@ import {
   SolisOverviewResponse,
 } from "./types";
 
-let connectionString = process.env.DATABASE_URL || "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+let connectionString = process.env.DATABASE_URL || "postgresql://localhost/postgres";
 
 // If using port 6543 which can hang on some firewalls/ISPs, fall back to standard session port 5432
 if (connectionString.includes("pooler.supabase.com:6543")) {

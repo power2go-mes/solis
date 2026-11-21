@@ -221,7 +221,7 @@ export default function SolisMobileDevicesView({
               onClick={() => setFilterType(tab)}
               className={`px-3 py-1 rounded-full text-xs transition-all ${
                 filterType === tab
-                  ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-bold shadow-2xs"
+                  ? "border border-emerald-300 bg-emerald-50/70 text-[#10b981] font-bold shadow-2xs"
                   : "border border-gray-100 bg-white text-slate-500 hover:bg-gray-50"
               }`}
             >
@@ -245,7 +245,7 @@ export default function SolisMobileDevicesView({
           <div
             key={item.id}
             onClick={() => handleDeviceClick(item)}
-            className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3 flex flex-col justify-between relative hover:border-orange-300 transition-all cursor-pointer group active:scale-[0.99]"
+            className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3 flex flex-col justify-between relative hover:border-emerald-300 transition-all cursor-pointer group active:scale-[0.99]"
           >
             {/* Top Right Settings Hexagon */}
             <div className="flex justify-end">
@@ -254,7 +254,7 @@ export default function SolisMobileDevicesView({
                   e.stopPropagation();
                   setSelectedDeviceForSettings(item);
                 }}
-                className="text-slate-300 group-hover:text-[#f37021] p-0.5 transition-colors"
+                className="text-slate-300 group-hover:text-[#10b981] p-0.5 transition-colors"
                 title="Settings"
               >
                 <Settings className="w-3.5 h-3.5" />
@@ -280,7 +280,7 @@ export default function SolisMobileDevicesView({
                 <span
                   className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                     item.status === "Warning"
-                      ? "bg-orange-50 text-[#f37021] border border-orange-200"
+                      ? "bg-emerald-50 text-[#10b981] border border-emerald-200"
                       : "bg-emerald-50 text-emerald-600 border border-emerald-200"
                   }`}
                 >

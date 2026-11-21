@@ -710,7 +710,7 @@ export default function SolisDeviceOverviewPage({
           className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           title="Refresh Device Overview"
         >
-          <RotateCcw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#f37021]" : ""}`} />
+          <RotateCcw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#10b981]" : ""}`} />
         </button>
       </div>
 
@@ -920,13 +920,13 @@ export default function SolisDeviceOverviewPage({
                 }}
                 className={`text-sm whitespace-nowrap transition-all relative py-1 ${
                   isActive
-                    ? "text-[#f37021] font-semibold"
+                    ? "text-[#10b981] font-semibold"
                     : "text-slate-600 hover:text-slate-900 font-normal"
                 }`}
               >
                 {tab}
                 {isActive && (
-                  <span className="absolute bottom-[-13px] left-0 right-0 h-[2.5px] bg-[#f37021] rounded-full" />
+                  <span className="absolute bottom-[-13px] left-0 right-0 h-[2.5px] bg-[#10b981] rounded-full" />
                 )}
               </button>
             );
@@ -941,7 +941,7 @@ export default function SolisDeviceOverviewPage({
               onClick={() => setStatusFilter("Total")}
               className={`text-xs px-3.5 py-1.5 rounded-xl transition-all font-medium ${
                 statusFilter === "Total"
-                  ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-semibold shadow-2xs"
+                  ? "border border-orange-300 bg-orange-50/70 text-[#10b981] font-semibold shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
               }`}
             >
@@ -963,7 +963,7 @@ export default function SolisDeviceOverviewPage({
               onClick={() => setStatusFilter("Online")}
               className={`text-xs px-3.5 py-1.5 rounded-xl transition-all font-medium ${
                 statusFilter === "Online"
-                  ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-semibold shadow-2xs"
+                  ? "border border-orange-300 bg-orange-50/70 text-[#10b981] font-semibold shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
               }`}
             >
@@ -985,7 +985,7 @@ export default function SolisDeviceOverviewPage({
               onClick={() => setStatusFilter("Alarm")}
               className={`text-xs px-3.5 py-1.5 rounded-xl transition-all font-medium ${
                 statusFilter === "Alarm"
-                  ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-semibold shadow-2xs"
+                  ? "border border-orange-300 bg-orange-50/70 text-[#10b981] font-semibold shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
               }`}
             >
@@ -999,7 +999,7 @@ export default function SolisDeviceOverviewPage({
               onClick={() => setStatusFilter("Offline")}
               className={`text-xs px-3.5 py-1.5 rounded-xl transition-all font-medium flex items-center gap-1 ${
                 statusFilter === "Offline"
-                  ? "border border-orange-300 bg-orange-50/70 text-[#f37021] font-semibold shadow-2xs"
+                  ? "border border-orange-300 bg-orange-50/70 text-[#10b981] font-semibold shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
               }`}
             >
@@ -1039,7 +1039,7 @@ export default function SolisDeviceOverviewPage({
                 placeholder="Search SN"
                 value={searchSn}
                 onChange={(e) => setSearchSn(e.target.value)}
-                className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 w-40 sm:w-48 focus:outline-none focus:border-orange-400 transition-colors placeholder:text-slate-400"
+                className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 w-40 sm:w-48 focus:outline-none focus:border-emerald-400 transition-colors placeholder:text-slate-400"
               />
             </div>
 
@@ -1051,7 +1051,7 @@ export default function SolisDeviceOverviewPage({
                 placeholder="Please Input"
                 value={seriesFilter}
                 onChange={(e) => setSeriesFilter(e.target.value)}
-                className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 w-36 sm:w-44 focus:outline-none focus:border-orange-400 transition-colors placeholder:text-slate-400"
+                className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 w-36 sm:w-44 focus:outline-none focus:border-emerald-400 transition-colors placeholder:text-slate-400"
               />
             </div>
 
@@ -1063,7 +1063,7 @@ export default function SolisDeviceOverviewPage({
                 placeholder="Input Model"
                 value={modelFilter}
                 onChange={(e) => setModelFilter(e.target.value)}
-                className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 w-36 sm:w-44 focus:outline-none focus:border-orange-400 transition-colors placeholder:text-slate-400"
+                className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 w-36 sm:w-44 focus:outline-none focus:border-emerald-400 transition-colors placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -1072,7 +1072,7 @@ export default function SolisDeviceOverviewPage({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {}}
-              className="px-5 py-1.5 rounded-xl border border-orange-300 bg-[#fff8f2] text-[#f37021] font-medium text-xs hover:bg-orange-50 shadow-2xs transition-all"
+              className="px-5 py-1.5 rounded-xl border border-orange-300 bg-[#fff8f2] text-[#10b981] font-medium text-xs hover:bg-orange-50 shadow-2xs transition-all"
             >
               Search
             </button>
@@ -1140,7 +1140,7 @@ export default function SolisDeviceOverviewPage({
                     onClick={() => toggleSort("dailyYieldKwh")}
                   >
                     <div className="flex items-center gap-1">
-                      <span>Daily Yield ⓠ</span>
+                      <span>Daily Yield â“ </span>
                       <ArrowUpDown className="w-3 h-3 text-slate-400" />
                     </div>
                   </th>
@@ -1190,7 +1190,7 @@ export default function SolisDeviceOverviewPage({
                             inv.status === "Online"
                               ? "bg-emerald-500"
                               : inv.status === "Warning" || inv.status === "Alarm"
-                              ? "bg-[#f37021]"
+                              ? "bg-[#10b981]"
                               : "bg-slate-400"
                           }`}
                         />
@@ -1199,7 +1199,7 @@ export default function SolisDeviceOverviewPage({
                             inv.status === "Online"
                               ? "text-slate-700"
                               : inv.status === "Warning" || inv.status === "Alarm"
-                              ? "text-[#f37021] font-semibold"
+                              ? "text-[#10b981] font-semibold"
                               : "text-slate-500"
                           }`}
                         >
@@ -1221,7 +1221,7 @@ export default function SolisDeviceOverviewPage({
                           setDetailMode("inverter");
                           if (onSelectInverter) onSelectInverter(inv.sn);
                         }}
-                        className="text-[#f37021] hover:underline font-mono font-medium flex items-center gap-1 group-hover:text-orange-600 transition-colors"
+                        className="text-[#10b981] hover:underline font-mono font-medium flex items-center gap-1 group-hover:text-orange-600 transition-colors"
                         title="Click to view full Inverter Telemetry & Charts"
                       >
                         <span>{inv.sn}</span>
@@ -1256,7 +1256,7 @@ export default function SolisDeviceOverviewPage({
                           if (onSelectPlant) onSelectPlant(inv.plantId);
                           else if (onSelectPlantByName) onSelectPlantByName(inv.plantName);
                         }}
-                        className="text-[#f37021] hover:underline font-medium transition-colors"
+                        className="text-[#10b981] hover:underline font-medium transition-colors"
                         title="Navigate to Plant Overview"
                       >
                         {inv.plantName}
@@ -1286,7 +1286,7 @@ export default function SolisDeviceOverviewPage({
                           setDetailMode("inverter");
                           if (onSelectInverter) onSelectInverter(inv.sn);
                         }}
-                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#f37021] shadow-2xs transition-all"
+                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#10b981] shadow-2xs transition-all"
                       >
                         Operation
                       </button>
@@ -1311,7 +1311,7 @@ export default function SolisDeviceOverviewPage({
                   <th className="py-3 px-3">SOC (%)</th>
                   <th className="py-3 px-3">Power (kW)</th>
                   <th className="py-3 px-3">Voltage (V)</th>
-                  <th className="py-3 px-3">Temp (°C)</th>
+                  <th className="py-3 px-3">Temp (Â°C)</th>
                   <th className="py-3 px-3">Plant</th>
                   <th className="py-3 px-3">Warranty Expiry</th>
                   <th className="py-3 px-3 text-center">Operation</th>
@@ -1338,7 +1338,7 @@ export default function SolisDeviceOverviewPage({
                           setDetailMode("battery");
                           if (onSelectBattery) onSelectBattery(bat.sn);
                         }}
-                        className="text-[#f37021] hover:underline font-mono font-medium flex items-center gap-1"
+                        className="text-[#10b981] hover:underline font-mono font-medium flex items-center gap-1"
                       >
                         <span>{bat.sn}</span>
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100" />
@@ -1353,14 +1353,14 @@ export default function SolisDeviceOverviewPage({
                     </td>
                     <td className="py-3.5 px-3 whitespace-nowrap font-medium">{bat.powerKw}kW</td>
                     <td className="py-3.5 px-3 whitespace-nowrap font-mono">{bat.voltageV}V</td>
-                    <td className="py-3.5 px-3 whitespace-nowrap">{bat.temperatureC > 0 ? `${bat.temperatureC}°C` : "--"}</td>
+                    <td className="py-3.5 px-3 whitespace-nowrap">{bat.temperatureC > 0 ? `${bat.temperatureC}Â°C` : "--"}</td>
                     <td className="py-3.5 px-3 whitespace-nowrap">
                       <button
                         onClick={() => {
                           if (onSelectPlant) onSelectPlant(bat.plantId);
                           else if (onSelectPlantByName) onSelectPlantByName(bat.plantName);
                         }}
-                        className="text-[#f37021] hover:underline font-medium"
+                        className="text-[#10b981] hover:underline font-medium"
                       >
                         {bat.plantName}
                       </button>
@@ -1374,7 +1374,7 @@ export default function SolisDeviceOverviewPage({
                           setDetailMode("battery");
                           if (onSelectBattery) onSelectBattery(bat.sn);
                         }}
-                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#f37021] shadow-2xs transition-all"
+                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#10b981] shadow-2xs transition-all"
                       >
                         Operation
                       </button>
@@ -1427,7 +1427,7 @@ export default function SolisDeviceOverviewPage({
                           if (onSelectPlant) onSelectPlant(d.plantId);
                           else if (onSelectPlantByName) onSelectPlantByName(d.plantName);
                         }}
-                        className="text-[#f37021] hover:underline font-medium"
+                        className="text-[#10b981] hover:underline font-medium"
                       >
                         {d.plantName}
                       </button>
@@ -1436,7 +1436,7 @@ export default function SolisDeviceOverviewPage({
                     <td className="py-3.5 px-3 text-center">
                       <button
                         onClick={() => alert(`Datalogger ${d.sn} diagnostics: All telemetry packets normal.`)}
-                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#f37021] shadow-2xs transition-all"
+                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#10b981] shadow-2xs transition-all"
                       >
                         Operation
                       </button>
@@ -1482,7 +1482,7 @@ export default function SolisDeviceOverviewPage({
                           setDetailMode("meter");
                           if (onSelectMeter) onSelectMeter(m.sn);
                         }}
-                        className="text-[#f37021] hover:underline"
+                        className="text-[#10b981] hover:underline"
                       >
                         {m.sn}
                       </button>
@@ -1498,7 +1498,7 @@ export default function SolisDeviceOverviewPage({
                           if (onSelectPlant) onSelectPlant(m.plantId);
                           else if (onSelectPlantByName) onSelectPlantByName(m.plantName);
                         }}
-                        className="text-[#f37021] hover:underline font-medium"
+                        className="text-[#10b981] hover:underline font-medium"
                       >
                         {m.plantName}
                       </button>
@@ -1511,7 +1511,7 @@ export default function SolisDeviceOverviewPage({
                           setDetailMode("meter");
                           if (onSelectMeter) onSelectMeter(m.sn);
                         }}
-                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#f37021] shadow-2xs transition-all"
+                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#10b981] shadow-2xs transition-all"
                       >
                         Operation
                       </button>
@@ -1549,7 +1549,7 @@ export default function SolisDeviceOverviewPage({
               >
                 &lt;
               </button>
-              <span className="w-7 h-7 rounded-lg border border-orange-300 bg-[#fff8f2] text-[#f37021] font-semibold flex items-center justify-center">
+              <span className="w-7 h-7 rounded-lg border border-orange-300 bg-[#fff8f2] text-[#10b981] font-semibold flex items-center justify-center">
                 1
               </span>
               <button

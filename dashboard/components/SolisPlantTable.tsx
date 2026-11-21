@@ -300,7 +300,7 @@ export default function SolisPlantTable({
         <div className="pb-3 flex items-center justify-end">
           <button
             onClick={exportCsv}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-[#f37021] hover:bg-orange-50 border border-gray-200/70 hover:border-orange-200 transition-colors flex items-center gap-1.5 text-xs font-normal shadow-2xs"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-[#10b981] hover:bg-emerald-50 border border-gray-200/70 hover:border-orange-200 transition-colors flex items-center gap-1.5 text-xs font-normal shadow-2xs"
             title="Export CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -400,7 +400,7 @@ export default function SolisPlantTable({
           <div className="sm:col-span-2 flex items-center gap-2 justify-end">
             <button
               onClick={() => setCurrentPage(1)}
-              className="px-5 py-2 rounded-lg text-xs font-normal border border-orange-300 bg-white text-[#f37021] hover:bg-orange-50 transition-all shadow-2xs active:scale-95"
+              className="px-5 py-2 rounded-lg text-xs font-normal border border-emerald-300 bg-white text-[#10b981] hover:bg-emerald-50 transition-all shadow-2xs active:scale-95"
             >
               Search
             </button>
@@ -468,9 +468,9 @@ export default function SolisPlantTable({
                   <span>Plant Name</span>
                   {sortField === "name" ? (
                     sortDirection === "asc" ? (
-                      <ArrowUp className="w-3 h-3 text-[#f37021]" />
+                      <ArrowUp className="w-3 h-3 text-[#10b981]" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-[#f37021]" />
+                      <ArrowDown className="w-3 h-3 text-[#10b981]" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
@@ -494,9 +494,9 @@ export default function SolisPlantTable({
                   </span>
                   {sortField === "dailyYieldKwh" ? (
                     sortDirection === "asc" ? (
-                      <ArrowUp className="w-3 h-3 text-[#f37021]" />
+                      <ArrowUp className="w-3 h-3 text-[#10b981]" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-[#f37021]" />
+                      <ArrowDown className="w-3 h-3 text-[#10b981]" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
@@ -511,9 +511,9 @@ export default function SolisPlantTable({
                   <span>Daily Charge</span>
                   {sortField === "dailyChargeKwh" ? (
                     sortDirection === "asc" ? (
-                      <ArrowUp className="w-3 h-3 text-[#f37021]" />
+                      <ArrowUp className="w-3 h-3 text-[#10b981]" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-[#f37021]" />
+                      <ArrowDown className="w-3 h-3 text-[#10b981]" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
@@ -528,9 +528,9 @@ export default function SolisPlantTable({
                   <span>Daily Discharge</span>
                   {sortField === "dailyDischargeKwh" ? (
                     sortDirection === "asc" ? (
-                      <ArrowUp className="w-3 h-3 text-[#f37021]" />
+                      <ArrowUp className="w-3 h-3 text-[#10b981]" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-[#f37021]" />
+                      <ArrowDown className="w-3 h-3 text-[#10b981]" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
@@ -545,9 +545,9 @@ export default function SolisPlantTable({
                   <span>Total Yield</span>
                   {sortField === "totalYieldKwh" ? (
                     sortDirection === "asc" ? (
-                      <ArrowUp className="w-3 h-3 text-[#f37021]" />
+                      <ArrowUp className="w-3 h-3 text-[#10b981]" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-[#f37021]" />
+                      <ArrowDown className="w-3 h-3 text-[#10b981]" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
@@ -562,9 +562,9 @@ export default function SolisPlantTable({
                   <span>Total Charge</span>
                   {sortField === "totalChargeKwh" ? (
                     sortDirection === "asc" ? (
-                      <ArrowUp className="w-3 h-3 text-[#f37021]" />
+                      <ArrowUp className="w-3 h-3 text-[#10b981]" />
                     ) : (
-                      <ArrowDown className="w-3 h-3 text-[#f37021]" />
+                      <ArrowDown className="w-3 h-3 text-[#10b981]" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
@@ -586,7 +586,7 @@ export default function SolisPlantTable({
               <tr>
                 <td colSpan={14} className="py-12 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="w-6 h-6 border-2 border-[#f37021] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
                     <span>Loading SolisCloud plant registry...</span>
                   </div>
                 </td>
@@ -604,7 +604,7 @@ export default function SolisPlantTable({
                   <tr
                     key={plant.id}
                     onClick={() => onSelectPlant(plant.id)}
-                    className="transition-colors cursor-pointer bg-white hover:bg-orange-50/30 group"
+                    className="transition-colors cursor-pointer bg-white hover:bg-emerald-50/30 group"
                     title="Click to view detailed 4-graph power & battery analytics"
                   >
                     {/* Plant Status */}
@@ -648,7 +648,7 @@ export default function SolisPlantTable({
                               }`}
                             />
                           </button>
-                          <span className="font-medium text-slate-800 group-hover:text-[#f37021] transition-colors truncate">
+                          <span className="font-medium text-slate-800 group-hover:text-[#10b981] transition-colors truncate">
                             {plant.name}
                           </span>
                         </div>
@@ -681,7 +681,7 @@ export default function SolisPlantTable({
 
                     {/* Inverter Online/Total (Distinctive Orange font) */}
                     <td className="py-3.5 px-3.5 whitespace-nowrap">
-                      <span className="font-semibold text-[#f37021]">
+                      <span className="font-semibold text-[#10b981]">
                         {plant.inverterOnline}/{plant.inverterTotal}
                       </span>
                     </td>
@@ -728,7 +728,7 @@ export default function SolisPlantTable({
                           e.stopPropagation();
                           onSelectPlant(plant.id);
                         }}
-                        className="px-3 py-1 bg-white border border-gray-200 rounded-md text-xs font-normal text-slate-700 hover:border-orange-300 hover:text-[#f37021] hover:bg-orange-50/40 shadow-2xs transition-colors"
+                        className="px-3 py-1 bg-white border border-gray-200 rounded-md text-xs font-normal text-slate-700 hover:border-emerald-300 hover:text-[#10b981] hover:bg-emerald-50/40 shadow-2xs transition-colors"
                       >
                         Operation
                       </button>
@@ -758,7 +758,7 @@ export default function SolisPlantTable({
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="appearance-none pl-2.5 pr-6 py-1 bg-white border border-gray-200 rounded-md text-xs text-slate-700 cursor-pointer focus:outline-none focus:border-[#f37021]"
+              className="appearance-none pl-2.5 pr-6 py-1 bg-white border border-gray-200 rounded-md text-xs text-slate-700 cursor-pointer focus:outline-none focus:border-[#10b981]"
             >
               <option value={10}>10/page</option>
               <option value={20}>20/page</option>
@@ -786,7 +786,7 @@ export default function SolisPlantTable({
                   onClick={() => setCurrentPage(p)}
                   className={`w-6 h-6 rounded flex items-center justify-center text-xs transition-all ${
                     isCurrent
-                      ? "bg-white border border-[#f37021] text-[#f37021] font-medium shadow-2xs"
+                      ? "bg-white border border-[#10b981] text-[#10b981] font-medium shadow-2xs"
                       : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 font-normal"
                   }`}
                 >
@@ -811,7 +811,7 @@ export default function SolisPlantTable({
               type="text"
               value={goToPageInput}
               onChange={(e) => setGoToPageInput(e.target.value)}
-              className="w-9 py-0.5 text-center bg-white border border-gray-200 rounded text-xs text-slate-800 focus:outline-none focus:border-[#f37021]"
+              className="w-9 py-0.5 text-center bg-white border border-gray-200 rounded text-xs text-slate-800 focus:outline-none focus:border-[#10b981]"
             />
           </form>
         </div>

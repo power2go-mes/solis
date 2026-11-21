@@ -40,7 +40,7 @@ export default function SolisAlertsTab({ alertsData, isLoading }: SolisAlertsTab
 
   const getCategoryIcon = (cat: string) => {
     const c = (cat || "").toLowerCase();
-    if (c === "generation") return <Zap className="w-4 h-4 text-[#f37021]" />;
+    if (c === "generation") return <Zap className="w-4 h-4 text-[#10b981]" />;
     if (c === "storage") return <BatteryCharging className="w-4 h-4 text-emerald-600" />;
     return <ShieldCheck className="w-4 h-4 text-slate-700" />;
   };
@@ -92,7 +92,7 @@ export default function SolisAlertsTab({ alertsData, isLoading }: SolisAlertsTab
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
                     {item.severity === "Notice" ? (
-                      <span className="px-2 py-0.5 rounded-full bg-orange-50 text-[#f37021] border border-orange-200 text-[10px] font-semibold">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#10b981] border border-emerald-200 text-[10px] font-semibold">
                         Notice
                       </span>
                     ) : (

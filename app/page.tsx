@@ -66,7 +66,7 @@ function SolisCloudDashboard() {
     monthlyDischargeMwh: 0,
     totalChargeMwh: 0,
     totalDischargeMwh: 0,
-    plantCounts: { total: 7, online: 5, alarm: 0, offline: 2 },
+    plantCounts: { total: 8, online: 6, alarm: 0, offline: 2 },
   });
   const [overviewPlants, setOverviewPlants] = useState<SolisPlantOverviewItem[]>([]);
   const [overviewLoading, setOverviewLoading] = useState<boolean>(true);
@@ -140,7 +140,7 @@ function SolisCloudDashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       loadOverviewData();
-      if (activeView === "device_overview" && selectedPlantId) {
+      if ((activeView === "device_overview" || activeView === "plant_detail") && selectedPlantId) {
         loadTelemetry(selectedPlantId);
       }
     }, 120_000);
@@ -307,6 +307,7 @@ function SolisCloudDashboard() {
                   if (match) {
                     setSelectedPlantId(match.id);
                     loadTelemetry(match.id);
+                    setActiveView("plant_detail");
                   }
                   setActiveView("plant_detail");
                 }}
@@ -389,6 +390,9 @@ function SolisCloudDashboard() {
               </button>
             </div>
             <SolisInverterReportView />
+            <SolisInverterReportView
+              onSelectInverter={() => setActiveView("device_overview")}
+            />
           </div>
         ) : activeView === "report_battery" ? (
           <div className="p-3 bg-[#f7f9fa] min-h-screen">
@@ -401,6 +405,9 @@ function SolisCloudDashboard() {
               </button>
             </div>
             <SolisBatteryReportView />
+            <SolisBatteryReportView
+              onSelectBattery={() => setActiveView("device_overview")}
+            />
           </div>
         ) : activeView === "device_overview" ? (
           <div className="p-3 bg-[#f7f9fa] min-h-screen">
@@ -423,6 +430,10 @@ function SolisCloudDashboard() {
                 );
                 if (match) setSelectedPlantId(match.id);
                 setActiveView("plant_detail");
+                if (match) {
+                  setSelectedPlantId(match.id);
+                  setActiveView("plant_detail");
+                }
               }}
             />
           </div>

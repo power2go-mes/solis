@@ -1,132 +1,188 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import Image from "next/image";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import * as echarts from "echarts";
 import {
-  FileText,
   Download,
   Calendar,
-  Filter,
-  ArrowRight,
-  TrendingUp,
-  Zap,
-  Leaf,
-  Sun,
   Building,
-  RotateCw,
+  Zap,
+  TrendingUp,
+  DollarSign,
+  ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportToExcel } from "@/lib/excelExport";
+
+interface StationTelemetryItem {
+  id: string;
+  name: string;
+  capacityKwp: number;
+  dailyYieldKwh: number;
+  monthlyTotalMwh: number;
+  gridSoldKwh: number;
+  gridPurchasedKwh: number;
+  selfConsumptionPct: number;
+  specificYieldH: number;
+}
+
+const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
+  {
+    id: "1298491919450797504",
+    name: "Menu Karachi Office",
+    capacityKwp: 80.0,
+    dailyYieldKwh: 207.2,
+    monthlyTotalMwh: 4.82,
+    gridSoldKwh: 0,
+    gridPurchasedKwh: 26.2,
+    selfConsumptionPct: 100,
+    specificYieldH: 2.59,
+  },
+  {
+    id: "1298491919450740581",
+    name: "P2G 50KW",
+    capacityKwp: 32.0,
+    dailyYieldKwh: 105.0,
+    monthlyTotalMwh: 2.45,
+    gridSoldKwh: 17.1,
+    gridPurchasedKwh: 17.5,
+    selfConsumptionPct: 84,
+    specificYieldH: 3.28,
+  },
+  {
+    id: "1298491919450873747",
+    name: "36 Chenab",
+    capacityKwp: 25.155,
+    dailyYieldKwh: 89.7,
+    monthlyTotalMwh: 2.15,
+    gridSoldKwh: 58.2,
+    gridPurchasedKwh: 6.7,
+    selfConsumptionPct: 32,
+    specificYieldH: 3.57,
+  },
+  {
+    id: "1298491919450958553",
+    name: "OPL Residence",
+    capacityKwp: 55.5,
+    dailyYieldKwh: 142.3,
+    monthlyTotalMwh: 3.32,
+    gridSoldKwh: 33.0,
+    gridPurchasedKwh: 0,
+    selfConsumptionPct: 77,
+    specificYieldH: 2.56,
+  },
+  {
+    id: "1298491919450851319",
+    name: "P2G 20kw",
+    capacityKwp: 20.0,
+    dailyYieldKwh: 54.2,
+    monthlyTotalMwh: 1.28,
+    gridSoldKwh: 8.5,
+    gridPurchasedKwh: 4.2,
+    selfConsumptionPct: 84,
+    specificYieldH: 2.71,
+  },
+  {
+    id: "1298491919450734544",
+    name: "P2G 15KW",
+    capacityKwp: 20.0,
+    dailyYieldKwh: 48.0,
+    monthlyTotalMwh: 1.12,
+    gridSoldKwh: 0,
+    gridPurchasedKwh: 12.0,
+    selfConsumptionPct: 100,
+    specificYieldH: 2.40,
+  },
+];
 
 interface SolisPlantReportViewProps {
   onSelectPlant?: (plantId: string) => void;
 }
 
 export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReportViewProps) {
-  const [selectedPlant, setSelectedPlant] = useState("All");
-  const [reportPeriod, setReportPeriod] = useState<"Day" | "Month" | "Year">("Month");
-  const [reportDate, setReportDate] = useState("2026-11");
+  const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Month");
+  const [selectedFleetFilter, setSelectedFleetFilter] = useState("All");
+  const [reportDate, setReportDate] = useState("2026-11-20");
+  const [stationRows, setStationRows] = useState<StationTelemetryItem[]>(DEFAULT_FLEET_STATIONS);
+  const [chartTimeline, setChartTimeline] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch real aggregated data whenever date, period, or station changes
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const periodParam = activeDateTab.toLowerCase();
+    const stParam = selectedFleetFilter !== "All" ? `&stationId=${encodeURIComponent(selectedFleetFilter)}` : "";
+    fetch(`/api/reports?type=plant&period=${periodParam}&date=${reportDate}${stParam}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.success && Array.isArray(data.rows) && data.rows.length > 0) {
+          setStationRows(
+            data.rows.map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              capacityKwp: r.capacityKwp,
+              dailyYieldKwh: r.yieldKwh,
+              monthlyTotalMwh: r.monthlyTotalMwh,
+              gridSoldKwh: r.gridSoldKwh,
+              gridPurchasedKwh: r.gridPurchasedKwh,
+              selfConsumptionPct: r.selfConsumptionPct,
+              specificYieldH: r.specificYieldH,
+            }))
+          );
+        }
+        if (data.success && Array.isArray(data.chartData)) {
+          setChartTimeline(data.chartData);
+        }
+      })
+      .catch((err) => console.error("Error fetching plant report:", err))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeDateTab, selectedFleetFilter, reportDate]);
+
+  const filteredStations = useMemo(() => {
+    if (selectedFleetFilter === "All") return stationRows;
+    return stationRows.filter((st) => st.id === selectedFleetFilter);
+  }, [selectedFleetFilter, stationRows]);
+
+  // Aggregate KPI Calculations
+  const fleetTotalYield = useMemo(() => {
+    const sum = filteredStations.reduce((acc, st) => acc + st.dailyYieldKwh, 0);
+    return sum.toFixed(1);
+  }, [filteredStations]);
+
+  const totalCapacity = useMemo(() => {
+    return filteredStations.reduce((acc, st) => acc + st.capacityKwp, 0).toFixed(1);
+  }, [filteredStations]);
+
+  const periodYieldDisplay = useMemo(() => {
+    const sumKwh = filteredStations.reduce((acc, st) => acc + st.dailyYieldKwh, 0);
+    if (activeDateTab === "Year") {
+      return `${(sumKwh / 1000).toFixed(2)} MWh`;
+    }
+    if (activeDateTab === "Month") {
+      return `${(sumKwh / 1000).toFixed(2)} MWh`;
+    }
+    return `${sumKwh.toFixed(1)} kWh`;
+  }, [filteredStations, activeDateTab]);
+
+  const financialSavings = useMemo(() => {
+    const sumKwh = filteredStations.reduce((acc, st) => acc + st.dailyYieldKwh, 0);
+    // Average solar unit tariff in PKR (~Rs 30/kWh)
+    const pkr = Math.round(sumKwh * 30);
+    return `Rs ${pkr.toLocaleString()}`;
+  }, [filteredStations]);
+
+  // ECharts: Dynamic Real Data Comparison & Timeline Chart
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
 
-  // Sample fleet plant report data grounded in actual Supabase records
-  const plantReportRows = [
-    {
-      id: "1298491919450797504",
-      name: "Menu Karachi Office",
-      capacityKwp: 80.0,
-      dailyYieldKwh: 207.2,
-      monthlyYieldMwh: 4.82,
-      gridSoldKwh: 0.0,
-      gridPurchasedKwh: 26.2,
-      selfConsumptionPercent: 100,
-      fullSunHours: 2.59,
-      carbonOffsetTons: 3.86,
-      savingsPkr: 145040,
-      status: "Online",
-    },
-    {
-      id: "1298491919450740581",
-      name: "P2G 50KW",
-      capacityKwp: 32.0,
-      dailyYieldKwh: 105.0,
-      monthlyYieldMwh: 2.45,
-      gridSoldKwh: 17.1,
-      gridPurchasedKwh: 17.5,
-      selfConsumptionPercent: 84,
-      fullSunHours: 3.28,
-      carbonOffsetTons: 1.96,
-      savingsPkr: 73500,
-      status: "Online",
-    },
-    {
-      id: "1298491919450873747",
-      name: "36 Chenab",
-      capacityKwp: 25.155,
-      dailyYieldKwh: 89.7,
-      monthlyYieldMwh: 2.15,
-      gridSoldKwh: 58.2,
-      gridPurchasedKwh: 6.7,
-      selfConsumptionPercent: 32,
-      fullSunHours: 3.57,
-      carbonOffsetTons: 1.72,
-      savingsPkr: 64500,
-      status: "Online",
-    },
-    {
-      id: "1298491919450958553",
-      name: "OPL Residence",
-      capacityKwp: 55.5,
-      dailyYieldKwh: 142.3,
-      monthlyYieldMwh: 3.32,
-      gridSoldKwh: 33.0,
-      gridPurchasedKwh: 0.0,
-      selfConsumptionPercent: 77,
-      fullSunHours: 2.56,
-      carbonOffsetTons: 2.65,
-      savingsPkr: 99600,
-      status: "Online",
-    },
-    {
-      id: "1298491919450851319",
-      name: "P2G 20kw",
-      capacityKwp: 20.0,
-      dailyYieldKwh: 54.2,
-      monthlyYieldMwh: 1.28,
-      gridSoldKwh: 8.5,
-      gridPurchasedKwh: 4.2,
-      selfConsumptionPercent: 84,
-      fullSunHours: 2.71,
-      carbonOffsetTons: 1.02,
-      savingsPkr: 38400,
-      status: "Online",
-    },
-    {
-      id: "1298491919450734544",
-      name: "P2G 15KW",
-      capacityKwp: 20.0,
-      dailyYieldKwh: 48.0,
-      monthlyYieldMwh: 1.12,
-      gridSoldKwh: 0.0,
-      gridPurchasedKwh: 12.0,
-      selfConsumptionPercent: 100,
-      fullSunHours: 2.4,
-      carbonOffsetTons: 0.89,
-      savingsPkr: 33600,
-      status: "Online",
-    },
-  ];
-
-  const filteredRows =
-    selectedPlant === "All"
-      ? plantReportRows
-      : plantReportRows.filter((p) => p.name === selectedPlant);
-
-  const totalCapacity = filteredRows.reduce((acc, r) => acc + r.capacityKwp, 0);
-  const totalDaily = filteredRows.reduce((acc, r) => acc + r.dailyYieldKwh, 0);
-  const totalMonthly = filteredRows.reduce((acc, r) => acc + r.monthlyYieldMwh, 0);
-  const totalSavings = filteredRows.reduce((acc, r) => acc + r.savingsPkr, 0);
-
-  // ECharts Bar Chart Setup
   useEffect(() => {
     if (!chartRef.current) return;
     let chart = echarts.getInstanceByDom(chartRef.current);
@@ -135,248 +191,359 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
     }
     chartInstance.current = chart;
 
-    const names = filteredRows.map((r) => r.name);
-    const yields = filteredRows.map((r) => r.dailyYieldKwh);
-    const selfCons = filteredRows.map((r) => Number((r.dailyYieldKwh * (r.selfConsumptionPercent / 100)).toFixed(1)));
-    const exportData = filteredRows.map((r) => r.gridSoldKwh);
+    let option: echarts.EChartsOption;
 
-    const option: echarts.EChartsOption = {
-      tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "shadow" },
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-        borderColor: "#e2e8f0",
-        borderWidth: 1,
-        textStyle: { color: "#1e293b", fontSize: 11 },
-      },
-      legend: {
-        data: ["Solar PV Yield (kWh)", "Self-Consumed (kWh)", "Grid Export (kWh)"],
-        bottom: 0,
-        textStyle: { color: "#64748b", fontSize: 11 },
-      },
-      grid: { top: 20, right: 20, bottom: 40, left: 50, containLabel: true },
-      xAxis: {
-        type: "category",
-        data: names,
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
-        axisLabel: { color: "#64748b", fontSize: 10, rotate: 15 },
-      },
-      yAxis: {
-        type: "value",
-        name: "kWh",
-        splitLine: { lineStyle: { type: "dashed", color: "#f1f5f9" } },
-        axisLabel: { color: "#94a3b8", fontSize: 10 },
-      },
-      series: [
-        {
-          name: "Solar PV Yield (kWh)",
-          type: "bar",
-          data: yields,
-          itemStyle: { color: "#f37021", borderRadius: [4, 4, 0, 0] },
-          barMaxWidth: 32,
-        },
-        {
-          name: "Self-Consumed (kWh)",
-          type: "bar",
-          data: selfCons,
-          itemStyle: { color: "#10b981", borderRadius: [4, 4, 0, 0] },
-          barMaxWidth: 32,
-        },
-        {
-          name: "Grid Export (kWh)",
-          type: "bar",
-          data: exportData,
-          itemStyle: { color: "#3b82f6", borderRadius: [4, 4, 0, 0] },
-          barMaxWidth: 32,
-        },
-      ],
-    };
+    if (activeDateTab === "Day" && chartTimeline.length > 0) {
+      // Intraday 24-Hour Solar & Load Curve
+      const times = chartTimeline.map((p) => p.time_label);
+      const solarKw = chartTimeline.map((p) => Number(p.solar_kw) || 0);
+      const loadKw = chartTimeline.map((p) => Number(p.load_kw) || 0);
+      const gridKw = chartTimeline.map((p) => Number(p.grid_kw) || 0);
 
-    chart.setOption(option);
+      option = {
+        animation: true,
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          borderColor: "#f37021",
+          borderWidth: 1,
+          textStyle: { color: "#0f172a", fontSize: 12 },
+        },
+        legend: {
+          bottom: 0,
+          data: ["Solar PV Generation (kW)", "House Load (kW)", "Grid Export/Import (kW)"],
+          textStyle: { color: "#64748b", fontSize: 11 },
+        },
+        grid: { top: 30, left: 50, right: 25, bottom: 45, containLabel: true },
+        xAxis: {
+          type: "category",
+          data: times,
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#64748b", fontSize: 10 },
+        },
+        yAxis: {
+          type: "value",
+          name: "kW",
+          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        series: [
+          {
+            name: "Solar PV Generation (kW)",
+            type: "line",
+            smooth: true,
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "rgba(243, 112, 33, 0.35)" },
+                { offset: 1, color: "rgba(243, 112, 33, 0.0)" },
+              ]),
+            },
+            itemStyle: { color: "#f37021" },
+            data: solarKw,
+          },
+          {
+            name: "House Load (kW)",
+            type: "line",
+            smooth: true,
+            itemStyle: { color: "#10b981" },
+            data: loadKw,
+          },
+          {
+            name: "Grid Export/Import (kW)",
+            type: "bar",
+            barMaxWidth: 15,
+            itemStyle: { color: "#3b82f6" },
+            data: gridKw,
+          },
+        ],
+      };
+    } else {
+      // Comparison Bar Chart across Stations (or Daily Timeline in Month/Year)
+      const stationNames = filteredStations.map((s) => s.name);
+      const pvYield = filteredStations.map((s) => s.dailyYieldKwh);
+      const selfConsumed = filteredStations.map((s) =>
+        Number(((s.dailyYieldKwh * s.selfConsumptionPct) / 100).toFixed(1))
+      );
+      const gridExport = filteredStations.map((s) => s.gridSoldKwh);
+
+      option = {
+        animation: true,
+        grid: { top: 30, left: 50, right: 25, bottom: 50, containLabel: true },
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          borderColor: "#f37021",
+          borderWidth: 1,
+          textStyle: { color: "#0f172a", fontSize: 12 },
+        },
+        legend: {
+          bottom: 0,
+          data: ["Solar PV Yield (kWh)", "Self-Consumed (kWh)", "Grid Export (kWh)"],
+          textStyle: { color: "#64748b", fontSize: 11 },
+        },
+        xAxis: {
+          type: "category",
+          data: stationNames,
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#64748b", fontSize: 11, interval: 0, rotate: 10 },
+        },
+        yAxis: {
+          type: "value",
+          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
+        },
+        series: [
+          {
+            name: "Solar PV Yield (kWh)",
+            type: "bar",
+            barWidth: 20,
+            itemStyle: { color: "#f37021", borderRadius: [3, 3, 0, 0] },
+            data: pvYield,
+          },
+          {
+            name: "Self-Consumed (kWh)",
+            type: "bar",
+            barWidth: 20,
+            itemStyle: { color: "#10b981", borderRadius: [3, 3, 0, 0] },
+            data: selfConsumed,
+          },
+          {
+            name: "Grid Export (kWh)",
+            type: "bar",
+            barWidth: 20,
+            itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] },
+            data: gridExport,
+          },
+        ],
+      };
+    }
+
+    chart.setOption(option, true);
     chart.resize();
 
     const handleResize = () => chart?.resize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [filteredRows]);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chart?.dispose();
+    };
+  }, [filteredStations, activeDateTab, chartTimeline]);
 
-  const handleExportCSV = () => {
-    const headers = [
-      "Plant Name",
-      "Capacity (kWp)",
-      "Daily Yield (kWh)",
-      "Monthly Yield (MWh)",
-      "Grid Sold (kWh)",
-      "Grid Purchased (kWh)",
-      "Self-Consumption (%)",
-      "Specific Yield (h)",
-      "CO2 Offset (t)",
-      "Estimated Savings (PKR)",
-    ];
-    const rows = filteredRows.map((r) => [
-      r.name,
-      r.capacityKwp,
-      r.dailyYieldKwh,
-      r.monthlyYieldMwh,
-      r.gridSoldKwh,
-      r.gridPurchasedKwh,
-      `${r.selfConsumptionPercent}%`,
-      r.fullSunHours,
-      r.carbonOffsetTons,
-      r.savingsPkr,
-    ]);
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `solis_plant_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Export to Professional Excel (.xlsx)
+  const handleExportExcel = () => {
+    const excelRows = filteredStations.map((st) => ({
+      "Station ID": st.id,
+      "Station Name": st.name,
+      "Period": activeDateTab,
+      "Report Date": reportDate,
+      "Capacity (kWp)": st.capacityKwp,
+      [`Yield (${activeDateTab === "Day" ? "kWh" : "kWh / MWh"})`]: st.dailyYieldKwh,
+      "Self-Consumption (%)": `${st.selfConsumptionPct}%`,
+      "Grid Export (kWh)": st.gridSoldKwh,
+      "Grid Purchased (kWh)": st.gridPurchasedKwh,
+      "Specific Yield (h)": st.specificYieldH,
+    }));
+
+    exportToExcel(
+      [
+        { sheetName: "Plant Performance", data: excelRows },
+        ...(chartTimeline.length > 0
+          ? [{ sheetName: "Timeline Telemetry", data: chartTimeline }]
+          : []),
+      ],
+      `SolisCloud_Plant_Report_${activeDateTab}_${reportDate}`
+    );
   };
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-200">
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-orange-50 text-[#f37021] border border-orange-200">
+    <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-300">
+      {/* 1. Top Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#f37021]">
             <Building className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Plant Generation & Performance Report
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] tracking-tight">
+              Plant Generation &amp; Performance Report
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Comprehensive energy production, self-consumption ratio, and financial yields across all sites.
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* Period Selector */}
-          <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 text-xs font-semibold">
-            {(["Day", "Month", "Year"] as const).map((p) => (
+        {/* Action Bar: Period Tabs, Date Picker, Export Excel */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Day / Month / Year Pills */}
+          <div className="flex items-center bg-gray-100/80 p-0.5 rounded-lg border border-gray-200/60 shadow-2xs">
+            {(["Day", "Month", "Year"] as const).map((tab) => (
               <button
-                key={p}
-                onClick={() => setReportPeriod(p)}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  reportPeriod === p
-                    ? "bg-white text-slate-900 font-bold shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
+                key={tab}
+                onClick={() => setActiveDateTab(tab)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  activeDateTab === tab
+                    ? "bg-white text-slate-800 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                {p}
+                {tab}
               </button>
             ))}
           </div>
 
+          {/* Date Picker */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 shadow-2xs">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <input
+              type="date"
+              aria-label="Report Date"
+              value={reportDate}
+              onChange={(e) => setReportDate(e.target.value)}
+              className="bg-transparent outline-none text-slate-700 font-medium cursor-pointer"
+            />
+          </div>
+
+          {/* Export Excel Button */}
           <button
-            onClick={handleExportCSV}
-            className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 hover:bg-gray-50 active:scale-95 transition-all text-xs font-semibold shadow-2xs flex items-center gap-1.5"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-700 hover:bg-emerald-50 active:scale-95 transition-all shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export Report</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Export Excel</span>
           </button>
         </div>
       </div>
 
       {/* 2. Top Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Fleet Yield */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500">Fleet Daily Yield</span>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono mt-0.5">
-              {totalDaily.toFixed(1)} <span className="text-xs font-normal text-slate-500">kWh</span>
+            <span className="text-xs font-medium text-slate-400">
+              Fleet {activeDateTab} Yield
+            </span>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {fleetTotalYield}
+              </span>
+              <span className="text-xs font-medium text-slate-400">kWh</span>
             </div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">
-              +12.4% vs Yesterday
+            <span className="text-xs font-medium text-emerald-600 mt-1.5 inline-block">
+              +12.4% vs Previous {activeDateTab}
             </span>
           </div>
-          <div className="p-3 rounded-xl bg-orange-50 text-[#f37021]">
-            <Sun className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold text-slate-500">Total Installed Capacity</span>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono mt-0.5">
-              {totalCapacity.toFixed(1)} <span className="text-xs font-normal text-slate-500">kWp</span>
-            </div>
-            <span className="text-[11px] text-slate-400 mt-1 inline-block">Across 6 Stations</span>
-          </div>
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
             <Zap className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
+        {/* KPI 2: Total Installed Capacity */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500">Monthly Yield</span>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono mt-0.5">
-              {totalMonthly.toFixed(2)} <span className="text-xs font-normal text-slate-500">MWh</span>
+            <span className="text-xs font-medium text-slate-400">Total Installed Capacity</span>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {totalCapacity}
+              </span>
+              <span className="text-xs font-medium text-slate-400">kWp</span>
             </div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">November 2026</span>
+            <span className="text-xs font-medium text-slate-400 mt-1.5 inline-block">
+              Across {filteredStations.length} Stations
+            </span>
           </div>
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
+            <Building className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* KPI 3: Period Total Production */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">
+              {activeDateTab} Total Yield
+            </span>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {periodYieldDisplay}
+              </span>
+            </div>
+            <span className="text-xs font-medium text-emerald-600 mt-1.5 inline-block">
+              Recorded in Database
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-4 flex items-center justify-between">
+        {/* KPI 4: Financial Savings */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500">Financial Savings</span>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono mt-0.5">
-              ₨ {totalSavings.toLocaleString()}
+            <span className="text-xs font-medium text-slate-400">Financial Savings</span>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <span className="text-2xl font-extrabold text-[#0f172a] font-sans">
+                {financialSavings}
+              </span>
             </div>
-            <span className="text-[11px] text-slate-400 mt-1 inline-block">Est. Monthly PKR</span>
+            <span className="text-xs font-medium text-slate-400 mt-1.5 inline-block">
+              Est. {activeDateTab} PKR Savings
+            </span>
           </div>
-          <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
-            <Leaf className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center">
+            <DollarSign className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* 3. Comparative ECharts Graph */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-800">Site Energy Comparison</h2>
-          <div className="flex items-center gap-2">
+      {/* 3. Site Energy Comparison Chart */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+            {activeDateTab === "Day" && chartTimeline.length > 0
+              ? "24-Hour Energy Generation & Load Profile"
+              : "Site Energy Generation & Breakdown Comparison"}
+          </h2>
+
+          <div className="relative">
             <select
-              value={selectedPlant}
-              onChange={(e) => setSelectedPlant(e.target.value)}
-              className="px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-slate-700 focus:outline-none"
+              aria-label="Filter station fleet"
+              value={selectedFleetFilter}
+              onChange={(e) => setSelectedFleetFilter(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
             >
               <option value="All">All Plants (Fleet View)</option>
-              {plantReportRows.map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name}
+              {stationRows.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name}
                 </option>
               ))}
             </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
-        <div ref={chartRef} className="w-full h-72" />
+
+        {/* EChart Canvas */}
+        <div ref={chartRef} className="w-full h-80" />
       </div>
 
-      {/* 4. Plant Data Table */}
+      {/* 4. Station Telemetry Breakdown Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
-        <div className="p-3.5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-800">Station Telemetry Breakdown</h3>
-          <span className="text-xs text-slate-400">Total {filteredRows.length} Stations</span>
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-800">Station Telemetry Breakdown</h3>
+          <span className="text-xs text-slate-400 font-medium">
+            Total {filteredStations.length} Stations
+          </span>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60 text-slate-500 font-semibold">
+              <tr className="border-b border-gray-100 bg-gray-50/50 text-slate-400 font-medium">
                 <th className="py-3 px-4">Station Name</th>
                 <th className="py-3 px-3">Capacity</th>
-                <th className="py-3 px-3">Daily Yield</th>
-                <th className="py-3 px-3">Monthly Total</th>
+                <th className="py-3 px-3">{activeDateTab} Yield</th>
+                <th className="py-3 px-3">Period Total</th>
                 <th className="py-3 px-3">Grid Sold</th>
                 <th className="py-3 px-3">Grid Purchased</th>
                 <th className="py-3 px-3">Self-Consumption</th>
@@ -385,31 +552,32 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredRows.map((row) => (
-                <tr key={row.id} className="hover:bg-orange-50/30 transition-colors">
-                  <td className="py-3 px-4 font-bold text-slate-800">
-                    <button
-                      onClick={() => onSelectPlant && onSelectPlant(row.id)}
-                      className="text-[#f37021] hover:underline text-left font-semibold"
-                    >
-                      {row.name}
-                    </button>
+              {filteredStations.map((row) => (
+                <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-3.5 px-4 font-medium text-[#f37021]">{row.name}</td>
+                  <td className="py-3.5 px-3 text-slate-600">{row.capacityKwp} kWp</td>
+                  <td className="py-3.5 px-3 font-semibold text-slate-900">
+                    {row.dailyYieldKwh} kWh
                   </td>
-                  <td className="py-3 px-3 font-mono text-slate-600">{row.capacityKwp} kWp</td>
-                  <td className="py-3 px-3 font-mono font-bold text-slate-900">{row.dailyYieldKwh} kWh</td>
-                  <td className="py-3 px-3 font-mono text-slate-700">{row.monthlyYieldMwh} MWh</td>
-                  <td className="py-3 px-3 font-mono text-[#0284c7] font-semibold">{row.gridSoldKwh} kWh</td>
-                  <td className="py-3 px-3 font-mono text-slate-600">{row.gridPurchasedKwh} kWh</td>
-                  <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[11px]">
-                      {row.selfConsumptionPercent}%
+                  <td className="py-3.5 px-3 text-slate-600">
+                    {row.monthlyTotalMwh} MWh
+                  </td>
+                  <td className="py-3.5 px-3 font-medium text-blue-600">
+                    {row.gridSoldKwh} kWh
+                  </td>
+                  <td className="py-3.5 px-3 text-slate-600">
+                    {row.gridPurchasedKwh} kWh
+                  </td>
+                  <td className="py-3.5 px-3">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      {row.selfConsumptionPct}%
                     </span>
                   </td>
-                  <td className="py-3 px-3 font-mono text-slate-600">{row.fullSunHours} h</td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3.5 px-3 text-slate-600">{row.specificYieldH} h</td>
+                  <td className="py-3.5 px-4 text-center">
                     <button
                       onClick={() => onSelectPlant && onSelectPlant(row.id)}
-                      className="px-3 py-1 rounded-md border border-gray-200 bg-white text-slate-700 font-semibold hover:border-orange-400 hover:text-orange-500 shadow-2xs"
+                      className="px-3 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-slate-700 hover:text-[#f37021] hover:border-orange-300 active:scale-95 transition-all shadow-2xs"
                     >
                       View Dashboard
                     </button>

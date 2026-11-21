@@ -26,13 +26,13 @@ export default function SolisLayoutTab({ plantName, capacityKwp }: SolisLayoutTa
       {/* Interactive Topology Diagram (Strictly White, Orange, Green, Black) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
         {/* Stage 1: Solar Strings (Orange Theme) */}
-        <div className="bg-orange-50/30 border border-orange-200/80 rounded-xl p-4 flex flex-col items-center justify-between space-y-3">
-          <div className="w-12 h-12 rounded-xl bg-orange-100/70 text-[#f37021] flex items-center justify-center">
+        <div className="bg-emerald-50/30 border border-emerald-200/80 rounded-xl p-4 flex flex-col items-center justify-between space-y-3">
+          <div className="w-12 h-12 rounded-xl bg-orange-100/70 text-[#10b981] flex items-center justify-center">
             <Sun className="w-6 h-6" />
           </div>
           <div>
             <h4 className="text-sm font-bold text-slate-900">Roof PV Strings</h4>
-            <p className="text-[11px] text-[#f37021] font-bold mt-0.5 font-mono">4 x MPPT Inputs</p>
+            <p className="text-[11px] text-[#10b981] font-bold mt-0.5 font-mono">4 x MPPT Inputs</p>
           </div>
           <div className="w-full bg-white rounded-lg p-2.5 text-xs text-slate-600 space-y-1 font-mono text-left border border-orange-100">
             <div className="flex justify-between"><span>PV1:</span> <strong className="text-slate-900">780V / 11.4A</strong></div>
@@ -77,19 +77,19 @@ export default function SolisLayoutTab({ plantName, capacityKwp }: SolisLayoutTa
         </div>
 
         {/* Stage 4: AC Load & Grid (Orange Theme) */}
-        <div className="bg-orange-50/30 border border-orange-200/80 rounded-xl p-4 flex flex-col items-center justify-between space-y-3">
-          <div className="w-12 h-12 rounded-xl bg-orange-100/70 text-[#f37021] flex items-center justify-center">
+        <div className="bg-emerald-50/30 border border-emerald-200/80 rounded-xl p-4 flex flex-col items-center justify-between space-y-3">
+          <div className="w-12 h-12 rounded-xl bg-orange-100/70 text-[#10b981] flex items-center justify-center">
             <Home className="w-6 h-6" />
           </div>
           <div>
             <h4 className="text-sm font-bold text-slate-900">AC Home & Grid</h4>
-            <p className="text-[11px] text-[#f37021] font-bold mt-0.5 font-mono">Smart Load & Bypass</p>
+            <p className="text-[11px] text-[#10b981] font-bold mt-0.5 font-mono">Smart Load & Bypass</p>
           </div>
           <div className="w-full bg-white rounded-lg p-2.5 text-xs text-slate-600 space-y-1 font-mono text-left border border-orange-100">
             <div className="flex justify-between"><span>Grid Freq:</span> <strong className="text-slate-900">49.92 Hz</strong></div>
             <div className="flex justify-between"><span>Power Factor:</span> <strong className="text-slate-900">1.00</strong></div>
             <div className="flex justify-between"><span>Meter:</span> <strong className="text-slate-900">Bi-Directional</strong></div>
-            <div className="flex justify-between"><span>EPS Transfer:</span> <strong className="text-[#f37021]">&lt; 10 ms</strong></div>
+            <div className="flex justify-between"><span>EPS Transfer:</span> <strong className="text-[#10b981]">&lt; 10 ms</strong></div>
           </div>
         </div>
       </div>

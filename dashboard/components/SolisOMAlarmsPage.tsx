@@ -26,12 +26,14 @@ interface SolisOMAlarmsPageProps {
   initialCategory?: "All" | "Alarm" | "Alert";
   onSelectPlant?: (plantId: string) => void;
   onSelectDevice?: (sn: string, deviceType: string) => void;
+  onViewAlarmDetail?: (alarm: any) => void;
 }
 
 export default function SolisOMAlarmsPage({
   initialCategory = "All",
   onSelectPlant,
   onSelectDevice,
+  onViewAlarmDetail,
 }: SolisOMAlarmsPageProps) {
   // Category view filter: All | Alarm | Alert
   const [selectedCategory, setSelectedCategory] = useState<"All" | "Alarm" | "Alert">(initialCategory);
@@ -39,7 +41,7 @@ export default function SolisOMAlarmsPage({
   // Filter form states
   const [searchSn, setSearchSn] = useState("");
   const [deviceType, setDeviceType] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("Active"); // "Active" | "Recovered" | "All"
+  const [statusFilter, setStatusFilter] = useState("All"); // "Active" | "Recovered" | "All"
   const [alarmLevel, setAlarmLevel] = useState("All"); // "All" | "Critical" | "Warning" | "Info"
   const [isExpanded, setIsExpanded] = useState(false);
   const [plantFilter, setPlantFilter] = useState("All");
@@ -60,7 +62,6 @@ export default function SolisOMAlarmsPage({
   const [isAlarmPushOpen, setIsAlarmPushOpen] = useState(false);
   const [pushEmail, setPushEmail] = useState("");
   const [pushPhone, setPushPhone] = useState("");
-  const [isPushSaved, setIsPushSaved] = useState(false);
 
   // Fetch alarms from API
   const fetchAlarms = useCallback(async () => {
@@ -108,7 +109,7 @@ export default function SolisOMAlarmsPage({
   const handleReset = () => {
     setSearchSn("");
     setDeviceType("All");
-    setStatusFilter("Active");
+    setStatusFilter("All");
     setAlarmLevel("All");
     setPlantFilter("All");
     setCurrentPage(1);
@@ -196,7 +197,7 @@ export default function SolisOMAlarmsPage({
               onClick={() => setSelectedCategory("Alarm")}
               className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
                 selectedCategory === "Alarm"
-                  ? "bg-white text-[#f37021] shadow-2xs font-bold"
+                  ? "bg-white text-[#10b981] shadow-2xs font-bold"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -249,7 +250,7 @@ export default function SolisOMAlarmsPage({
                 placeholder="SN"
                 value={searchSn}
                 onChange={(e) => setSearchSn(e.target.value)}
-                className="w-full pl-3 pr-8 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#f37021] focus:bg-white transition-all"
+                className="w-full pl-3 pr-8 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#10b981] focus:bg-white transition-all"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
             </div>
@@ -261,7 +262,7 @@ export default function SolisOMAlarmsPage({
             <select
               value={deviceType}
               onChange={(e) => setDeviceType(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#f37021] focus:bg-white transition-all"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#10b981] focus:bg-white transition-all"
             >
               <option value="All">Please Select</option>
               <option value="Inverter">Inverter</option>
@@ -277,7 +278,7 @@ export default function SolisOMAlarmsPage({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#f37021] focus:bg-white transition-all font-medium"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#10b981] focus:bg-white transition-all font-medium"
             >
               <option value="Active">Active</option>
               <option value="Recovered">Recovered</option>
@@ -291,7 +292,7 @@ export default function SolisOMAlarmsPage({
             <select
               value={alarmLevel}
               onChange={(e) => setAlarmLevel(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#f37021] focus:bg-white transition-all"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#10b981] focus:bg-white transition-all"
             >
               <option value="All">Please Select</option>
               <option value="Critical">Critical</option>
@@ -304,7 +305,7 @@ export default function SolisOMAlarmsPage({
           <div className="lg:col-span-3 flex items-center justify-end gap-2 pt-1 sm:pt-0">
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-[#f37021] text-white text-xs font-semibold hover:bg-orange-600 active:scale-95 transition-all shadow-xs"
+              className="px-4 py-2 rounded-lg bg-[#10b981] text-white text-xs font-semibold hover:bg-emerald-600 active:scale-95 transition-all shadow-xs"
             >
               Search
             </button>
@@ -333,7 +334,7 @@ export default function SolisOMAlarmsPage({
                 <select
                   value={plantFilter}
                   onChange={(e) => setPlantFilter(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#f37021]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50/50 text-xs text-slate-700 focus:outline-none focus:border-[#10b981]"
                 >
                   <option value="All">All Plants</option>
                   <option value="Towfiq chinoy">Towfiq chinoy</option>
@@ -355,9 +356,11 @@ export default function SolisOMAlarmsPage({
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
         {isLoading ? (
           <div className="p-16 text-center">
-            <div className="w-8 h-8 border-2 border-[#f37021] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-xs text-slate-500 font-medium">Loading SolisCloud Alarm Records...</p>
           </div>
+        ) : loadError ? (
+          <div className="p-16 text-center text-sm text-rose-600">{loadError}</div>
         ) : records.length === 0 ? (
           <div className="p-16 text-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2 opacity-80" />
@@ -418,7 +421,7 @@ export default function SolisOMAlarmsPage({
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <button
                         onClick={() => onSelectPlant && onSelectPlant(row.plantId)}
-                        className="text-[#f37021] hover:underline font-semibold text-left transition-colors"
+                        className="text-[#10b981] hover:underline font-semibold text-left transition-colors"
                         title={`Go to ${row.plantName}`}
                       >
                         {row.plantName}
@@ -429,16 +432,55 @@ export default function SolisOMAlarmsPage({
                     <td className="py-3.5 px-4 whitespace-nowrap font-mono">
                       <button
                         onClick={() => onSelectDevice && onSelectDevice(row.sn, row.deviceType)}
-                        className="text-[#f37021] hover:underline font-semibold transition-colors"
+                        className="text-[#10b981] hover:underline font-semibold transition-colors"
                         title={`View ${row.sn} details`}
                       >
                         {row.sn}
                       </button>
                     </td>
 
-                    {/* Alarm Content */}
+                    {/* Alarm Content - Clicking navigates to Alarm Details Page */}
                     <td className="py-3.5 px-4 whitespace-nowrap font-medium text-slate-900">
-                      {row.alarmContent}
+                      <button
+                        onClick={() => {
+                          const item = {
+                            id: row.id,
+                            alarmCode: row.alarmCode,
+                            alarmContent: row.alarmContent,
+                            deviceType: row.deviceType || "Inverter",
+                            deviceSn: row.sn,
+                            plantName: row.plantName,
+                            plantId: row.plantId,
+                            alarmLevel: row.level,
+                            alarmStatus: row.status,
+                            alarmDuration: row.alarmDuration,
+                            startTime: row.beginTimeStr || "",
+                            recoveryTime: row.status === "Recovered" ? "Recovered" : "--",
+                            handlingMethod: row.suggestedTreatment,
+                          };
+                          if (onViewAlarmDetail) {
+                            onViewAlarmDetail(item);
+                          } else {
+                            setSelectedAlarmForModal({
+                              id: row.id,
+                              alarmCode: row.alarmCode,
+                              alarmName: row.alarmContent,
+                              severity: row.level,
+                              deviceSn: row.sn,
+                              plantName: row.plantName,
+                              beginTime: row.beginTimeStr || "",
+                              endTime: undefined,
+                              duration: row.alarmDuration,
+                              status: row.status,
+                              advice: row.suggestedTreatment,
+                            });
+                          }
+                        }}
+                        className="text-left font-semibold text-slate-900 hover:text-[#10b981] hover:underline cursor-pointer"
+                        title="View Full Alarm Details"
+                      >
+                        {row.alarmContent}
+                      </button>
                     </td>
 
                     {/* Alarm Code */}
@@ -459,22 +501,41 @@ export default function SolisOMAlarmsPage({
                     {/* Operation Button */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <button
-                        onClick={() =>
-                          setSelectedAlarmForModal({
+                        onClick={() => {
+                          const item = {
                             id: row.id,
                             alarmCode: row.alarmCode,
-                            alarmName: row.alarmContent,
-                            severity: row.level,
+                            alarmContent: row.alarmContent,
+                            deviceType: row.deviceType || "Inverter",
                             deviceSn: row.sn,
                             plantName: row.plantName,
-                            beginTime: row.beginTimeStr || "20/11/2026 11:15 (UTC+05:00)",
-                            endTime: row.status === "Recovered" ? "20/11/2026 12:00 (UTC+05:00)" : undefined,
-                            duration: row.alarmDuration,
-                            status: row.status,
-                            advice: row.suggestedTreatment,
-                          })
-                        }
-                        className="px-3.5 py-1 rounded-lg border border-gray-200 bg-white text-slate-700 text-xs font-semibold hover:border-[#f37021] hover:text-[#f37021] active:scale-95 transition-all shadow-2xs"
+                            plantId: row.plantId,
+                            alarmLevel: row.level,
+                            alarmStatus: row.status,
+                            alarmDuration: row.alarmDuration,
+                            startTime: row.beginTimeStr || "",
+                            recoveryTime: row.status === "Recovered" ? "Recovered" : "--",
+                            handlingMethod: row.suggestedTreatment,
+                          };
+                          if (onViewAlarmDetail) {
+                            onViewAlarmDetail(item);
+                          } else {
+                            setSelectedAlarmForModal({
+                              id: row.id,
+                              alarmCode: row.alarmCode,
+                              alarmName: row.alarmContent,
+                              severity: row.level,
+                              deviceSn: row.sn,
+                              plantName: row.plantName,
+                              beginTime: row.beginTimeStr || "",
+                              endTime: undefined,
+                              duration: row.alarmDuration,
+                              status: row.status,
+                              advice: row.suggestedTreatment,
+                            });
+                          }
+                        }}
+                        className="px-3.5 py-1 rounded-lg border border-gray-200 bg-white text-slate-700 text-xs font-semibold hover:border-[#f37021] hover:text-[#10b981] active:scale-95 transition-all shadow-2xs"
                       >
                         Operation
                       </button>
@@ -519,7 +580,7 @@ export default function SolisOMAlarmsPage({
             </button>
 
             {/* Current Page Pill */}
-            <span className="px-2.5 py-1 rounded bg-[#f37021] text-white font-bold text-xs shadow-2xs">
+            <span className="px-2.5 py-1 rounded bg-[#10b981] text-white font-bold text-xs shadow-2xs">
               {currentPage}
             </span>
 
@@ -539,7 +600,7 @@ export default function SolisOMAlarmsPage({
                 type="text"
                 value={goToPageInput}
                 onChange={(e) => setGoToPageInput(e.target.value)}
-                className="w-10 px-1.5 py-1 rounded border border-gray-200 bg-white text-center font-mono focus:outline-none focus:border-[#f37021]"
+                className="w-10 px-1.5 py-1 rounded border border-gray-200 bg-white text-center font-mono focus:outline-none focus:border-[#10b981]"
               />
             </form>
           </div>
@@ -588,7 +649,7 @@ export default function SolisOMAlarmsPage({
                   type="email"
                   value={pushEmail}
                   onChange={(e) => setPushEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:border-[#f37021] focus:outline-none"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:border-[#10b981] focus:outline-none"
                 />
               </div>
 
@@ -598,32 +659,29 @@ export default function SolisOMAlarmsPage({
                   type="text"
                   value={pushPhone}
                   onChange={(e) => setPushPhone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:border-[#f37021] focus:outline-none"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:border-[#10b981] focus:outline-none"
                 />
               </div>
 
               <div className="space-y-2 pt-1">
                 <label className="block font-semibold text-slate-700">Notification Channels</label>
                 <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
-                  <input type="checkbox" defaultChecked className="accent-[#f37021]" />
+                  <input type="checkbox" defaultChecked className="accent-[#10b981]" />
                   <span>Critical Faults (Inverter trip, Grid blackout, Battery failure)</span>
                 </label>
                 <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
-                  <input type="checkbox" defaultChecked className="accent-[#f37021]" />
+                  <input type="checkbox" defaultChecked className="accent-[#10b981]" />
                   <span>Warning Thresholds (High ambient temp, Cell delta imbalance)</span>
                 </label>
                 <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
-                  <input type="checkbox" className="accent-[#f37021]" />
+                  <input type="checkbox" className="accent-[#10b981]" />
                   <span>Daily Health & Generation Digest at 20:00 PKT</span>
                 </label>
               </div>
 
-              {isPushSaved && (
-                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Alarm push notification preferences updated successfully!</span>
-                </div>
-              )}
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
+                Notification preferences are not connected to a notification service yet. Changes cannot be saved.
+              </div>
             </div>
 
             <div className="p-3.5 bg-gray-50/60 border-t border-gray-100 flex justify-end gap-2">
@@ -633,18 +691,7 @@ export default function SolisOMAlarmsPage({
               >
                 Close
               </button>
-              <button
-                onClick={() => {
-                  setIsPushSaved(true);
-                  setTimeout(() => {
-                    setIsAlarmPushOpen(false);
-                    setIsPushSaved(false);
-                  }, 1200);
-                }}
-                className="px-4 py-1.5 rounded-lg bg-[#f37021] text-white text-xs font-semibold hover:bg-orange-600"
-              >
-                Save Settings
-              </button>
+              <button disabled className="px-4 py-1.5 rounded-lg bg-slate-300 text-white text-xs font-semibold cursor-not-allowed">Save unavailable</button>
             </div>
           </div>
         </div>
