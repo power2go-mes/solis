@@ -16,6 +16,7 @@ import SolisClientDashboard from "@/components/SolisClientDashboard";
 // SolisCloud Mobile Replicated Components (100% Mobile Parity)
 import SolisMobilePlantList from "@/components/mobile/SolisMobilePlantList";
 import SolisMobilePlantDetail from "@/components/mobile/SolisMobilePlantDetail";
+import SolisMobileBottomNav from "@/components/mobile/SolisMobileBottomNav";
 
 // SolisCloud O&M & Reports Components
 import SolisOMAlarmsPage from "@/components/SolisOMAlarmsPage";
@@ -491,6 +492,12 @@ function SolisCloudDashboard() {
             onBack={() => navigateToView("plant_overview")}
           />
         )}
+
+        {/* Global Floating Bottom Navbar for ALL Mobile Pages */}
+        <SolisMobileBottomNav
+          activeView={activeView}
+          onNavigateTab={(tab) => navigateToView(tab as any)}
+        />
       </div>
 
       {/* Create Plant Information Modal */}
