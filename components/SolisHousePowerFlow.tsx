@@ -79,9 +79,9 @@ export default function SolisHousePowerFlow({
         {/* ======================================================== */}
         {/* 3D VILLA HOUSE & SVG ANIMATIONS (approx 8-9 cols)        */}
         {/* ======================================================== */}
-        <div className="lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center min-h-[340px] sm:min-h-[440px] md:min-h-[480px]">
+        <div className="lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center min-h-[380px] sm:min-h-[480px] md:min-h-[540px]">
           {/* Base Container maintaining aspect ratio 1024 x 576 */}
-          <div className="relative w-full max-w-[960px] aspect-[1024/576] rounded-2xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
+          <div className="relative w-full max-w-[1080px] aspect-[1024/576] rounded-2xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
             {/* High-Resolution 3D Modern Villa Image */}
             <img
               src="/solis_villa_hd.jpg"
@@ -237,76 +237,67 @@ export default function SolisHousePowerFlow({
               )}
 
               {/* ---------------------------------------------------- */}
-              {/* 4. ANIMATED GLOWING PULSE PARTICLES (Moving Dots)   */}
-              {/* Relaxed, elegant flow cadence (3.0s - 4.2s durations)*/}
+              {/* 4. ANIMATED GLOWING PULSE PARTICLES (Clean 1-2 Dots)  */}
+              {/* Relaxed, elegant flow cadence (3.2s - 4.2s durations)*/}
               {/* ---------------------------------------------------- */}
-              {/* PV -> Inverter Moving Energy Dots (from roof panels down to inverter) */}
+              {/* PV -> Inverter Moving Energy Dots (Clean 1-2 dots) */}
               {isPvActive && (
                 <>
-                  {[0, 1.2, 2.4].map((delay, idx) => (
-                    <circle key={`pv-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
-                      <animateMotion
-                        dur="3.4s"
-                        repeatCount="indefinite"
-                        begin={`${delay}s`}
-                        keyPoints="0;1"
-                        keyTimes="0;1"
-                      >
-                        <mpath href="#wire-pv" />
-                      </animateMotion>
-                    </circle>
-                  ))}
+                  <circle r="4.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                    <animateMotion
+                      dur="3.4s"
+                      repeatCount="indefinite"
+                      keyPoints="0;1"
+                      keyTimes="0;1"
+                    >
+                      <mpath href="#wire-pv" />
+                    </animateMotion>
+                  </circle>
                 </>
               )}
 
-              {/* Inverter -> Load Moving Energy Dots (power consumed by the house) */}
+              {/* Inverter -> Load Moving Energy Dots (Clean 1 dot) */}
               {isLoadActive && (
                 <>
-                  {[0, 1.2, 2.4].map((delay, idx) => (
-                    <circle key={`load-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
-                      <animateMotion
-                        dur="3.4s"
-                        repeatCount="indefinite"
-                        begin={`${delay}s`}
-                        keyPoints="0;1"
-                        keyTimes="0;1"
-                      >
-                        <mpath href="#wire-load" />
-                      </animateMotion>
-                    </circle>
-                  ))}
+                  <circle r="4.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                    <animateMotion
+                      dur="3.4s"
+                      repeatCount="indefinite"
+                      keyPoints="0;1"
+                      keyTimes="0;1"
+                    >
+                      <mpath href="#wire-load" />
+                    </animateMotion>
+                  </circle>
                 </>
               )}
 
-              {/* Battery Moving Energy Dots (Directional Logic) */}
+              {/* Battery Moving Energy Dots (Directional Logic - Clean 1 dot) */}
               {/* Charging: from Inverter to Battery (0 -> 1)    */}
               {/* Discharging: from Battery to Inverter (1 -> 0)  */}
               {isBatteryActive && (
                 <>
-                  {[0, 1.5].map((delay, idx) => (
-                    <circle key={`bat-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
-                      <animateMotion
-                        dur="3.2s"
-                        repeatCount="indefinite"
-                        begin={`${delay}s`}
-                        keyPoints={isBatteryCharging ? "0;1" : "1;0"}
-                        keyTimes="0;1"
-                      >
-                        <mpath href="#wire-battery" />
-                      </animateMotion>
-                    </circle>
-                  ))}
+                  <circle r="4.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                    <animateMotion
+                      dur="3.2s"
+                      repeatCount="indefinite"
+                      keyPoints={isBatteryCharging ? "0;1" : "1;0"}
+                      keyTimes="0;1"
+                    >
+                      <mpath href="#wire-battery" />
+                    </animateMotion>
+                  </circle>
                 </>
               )}
 
-              {/* Grid Moving Energy Dots (Directional Logic) */}
+              {/* Grid Moving Energy Dots (Directional Logic - 2 spaced dots) */}
               {/* wire-grid starts at Tower (0) and ends at Inverter (1) */}
               {/* Exporting: house sends power TO grid (1 -> 0) */}
               {/* Importing: house receives power FROM grid (0 -> 1) */}
               {isGridActive && (
                 <>
-                  {[0, 1.5, 3.0].map((delay, idx) => (
-                    <circle key={`grid-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                  {[0, 2.1].map((delay, idx) => (
+                    <circle key={`grid-dot-${idx}`} r="4.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
                         dur="4.2s"
                         repeatCount="indefinite"
