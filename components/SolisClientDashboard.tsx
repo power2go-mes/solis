@@ -1237,13 +1237,49 @@ export default function SolisClientDashboard({
     return "Lifetime";
   };
 
-  // Live telemetry metrics for the 3D House
-  const liveSolar = Number(telemetry?.solar_power_kw || 11.5);
-  const liveLoad = Number(telemetry?.load_power_kw || 1.4);
-  const liveBatterySoc = Number(telemetry?.battery_soc || 100);
-  const liveBatteryKw = Number(telemetry?.battery_power_kw || 0.0);
-  const liveBatteryState = telemetry?.battery_direction || "Idle";
-  const liveGridKw = Number(telemetry?.grid_power_kw || 9.8);
+  // Determine the latest real curve data point if available (matches the graph's latest point)
+  const latestCurveIdx = (() => {
+    if (!dayCurveData || !dayCurveData.timeLabels || dayCurveData.timeLabels.length === 0) return -1;
+    if (dayCurveData.currentNowIndex !== undefined && dayCurveData.currentNowIndex >= 0) {
+      return dayCurveData.currentNowIndex;
+    }
+    const pvs = dayCurveData.pvData || [];
+    for (let i = pvs.length - 1; i >= 0; i--) {
+      if (pvs[i] !== null && pvs[i] !== undefined) return i;
+    }
+    return -1;
+  })();
+
+  const curvePv = latestCurveIdx >= 0 && dayCurveData?.pvData ? Number(dayCurveData.pvData[latestCurveIdx] || 0) : null;
+  const curveLoad = latestCurveIdx >= 0 && dayCurveData?.loadData ? Number(dayCurveData.loadData[latestCurveIdx] || 0) : null;
+  const curveBat = latestCurveIdx >= 0 && dayCurveData?.batteryData ? Number(dayCurveData.batteryData[latestCurveIdx] || 0) : null;
+  const curveGrid = latestCurveIdx >= 0 && dayCurveData?.gridData ? Number(dayCurveData.gridData[latestCurveIdx] || 0) : null;
+  const curveSoc = latestCurveIdx >= 0 && dayCurveData?.socData ? Number(dayCurveData.socData[latestCurveIdx] || 0) : null;
+
+  // Live telemetry metrics for the 3D House - seamlessly synchronized with live curve graph data
+  const liveSolar = telemetry && telemetry.solar_power_kw !== undefined && telemetry.solar_power_kw !== null
+    ? Number(telemetry.solar_power_kw)
+    : (curvePv !== null ? curvePv : 0);
+
+  const liveLoad = telemetry && telemetry.load_power_kw !== undefined && telemetry.load_power_kw !== null
+    ? Number(telemetry.load_power_kw)
+    : (curveLoad !== null ? curveLoad : 0);
+
+  const liveBatterySoc = telemetry && telemetry.battery_soc !== undefined && telemetry.battery_soc !== null
+    ? Number(telemetry.battery_soc)
+    : (curveSoc !== null ? curveSoc : 100);
+
+  const liveBatteryKw = telemetry && telemetry.battery_power_kw !== undefined && telemetry.battery_power_kw !== null
+    ? Number(telemetry.battery_power_kw)
+    : (curveBat !== null ? curveBat : 0);
+
+  const liveBatteryState = telemetry?.battery_direction
+    ? telemetry.battery_direction
+    : (liveBatteryKw > 0 ? "Charging" : liveBatteryKw < 0 ? "Discharging" : "Idle");
+
+  const liveGridKw = telemetry && telemetry.grid_power_kw !== undefined && telemetry.grid_power_kw !== null
+    ? Number(telemetry.grid_power_kw)
+    : (curveGrid !== null ? curveGrid : 0);
 
   const subnavItems = ["Overview", "Layout", "Info", "Device", "Alarm", "Alert"];
 
