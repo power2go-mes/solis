@@ -259,10 +259,14 @@ export async function executeLiveSync() {
         const gKw = gW / 1000;
         let lKw = lW / 1000;
 
+        let bState = "Idle";
+        if (bKw > 0.05) bState = "Charging";
+        else if (bKw < -0.05) bState = "Discharging";
+
         const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
 
         if (lKw <= 0) {
-          const calculatedLoadKw = sKw + bKw - gKw;
+          const calculatedLoadKw = sKw - bKw - gKw;
           if (calculatedLoadKw > 0) {
             lKw = calculatedLoadKw;
             lW = calculatedLoadKw * 1000;
@@ -271,10 +275,6 @@ export async function executeLiveSync() {
             lW = mixLoadKw * 1000;
           }
         }
-
-        let bState = "Idle";
-        if (bKw > 0.05) bState = "Discharging";
-        else if (bKw < -0.05) bState = "Charging";
 
         curveRows.push({
           stationId: p.id,
@@ -309,7 +309,8 @@ export async function executeLiveSync() {
       const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
       const liveSoc = latestCurvePoint ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
       const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
-      const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
+      const solisBatDir = mix.batteryDirection === 1 ? "Charging" : mix.batteryDirection === 2 ? "Discharging" : (mix.batteryDirection === 3 ? "Idle" : null);
+      const liveBatState = solisBatDir || (latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle"));
       const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
       const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
       const liveLoadKw = mixLoadKw > 0

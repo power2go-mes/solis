@@ -39,8 +39,8 @@ export default function ClientTiles({
             plant.liveBatteryState ||
             (rawBatKw > 0.05 ? "Charging" : rawBatKw < -0.05 ? "Discharging" : "Idle");
 
-          const isCharging = batState === "Charging" || rawBatKw > 0.05;
-          const isDischarging = batState === "Discharging" || rawBatKw < -0.05;
+          const isCharging = batState === "Charging";
+          const isDischarging = batState === "Discharging";
           const batKwDisplay = Math.abs(rawBatKw);
 
           // Status determinations

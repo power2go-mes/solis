@@ -303,25 +303,29 @@ async function run() {
           let lW = Number(loadPowerArray[idx] || 0);
           const sc = Number(socArray[idx] || 0);
 
-          const sKw = Number((sW / 1000).toFixed(2));
-          const bKw = Number((bW / 1000).toFixed(2));
-          const gKw = Number((gW / 1000).toFixed(2));
-          let lKw = Number((lW / 1000).toFixed(2));
-
-          // If load array is empty or 0, calculate from power balance:
-          // Inverter Power Balance: Load = Solar + Battery (Discharging/positive) - Grid (Export/positive)
-          // or if detailMix reports totalLoadPower, use proportional calculation
-          if (lKw <= 0) {
-            const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
-            if (calculatedLoadKw > 0) {
-              lKw = calculatedLoadKw;
-              lW = Math.round(calculatedLoadKw * 1000);
-            }
-          }
+          const sKw = sW / 1000;
+          const bKw = bW / 1000;
+          const gKw = gW / 1000;
+          let lKw = lW / 1000;
 
           let bState = "Idle";
-          if (bKw > 0.05) bState = "Discharging";
-          else if (bKw < -0.05) bState = "Charging";
+          if (bKw > 0.05) bState = "Charging";
+          else if (bKw < -0.05) bState = "Discharging";
+
+          const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
+
+          // If load array is empty or 0, calculate from power balance or mix snapshot without truncation:
+          // Power Balance: Load = Solar + Battery Discharging (or - Battery Charging) - Grid Export (or + Grid Import)
+          if (lKw <= 0) {
+            const calculatedLoadKw = sKw - bKw - gKw;
+            if (calculatedLoadKw > 0) {
+              lKw = calculatedLoadKw;
+              lW = calculatedLoadKw * 1000;
+            } else if (idx === timeArray.length - 1 && mixLoadKw > 0) {
+              lKw = mixLoadKw;
+              lW = mixLoadKw * 1000;
+            }
+          }
 
           curveRows.push({
             stationId: p.id,
@@ -359,14 +363,16 @@ async function run() {
         const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
         const liveSoc = latestCurvePoint ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
         const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
-        const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
+        // Solis API: mix.batteryDirection (1 = Charging, 2 = Discharging, 3 = Idle)
+        const solisBatDir = mix.batteryDirection === 1 ? "Charging" : mix.batteryDirection === 2 ? "Discharging" : (mix.batteryDirection === 3 ? "Idle" : null);
+        const liveBatState = solisBatDir || (latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle"));
         const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
         
         // Resolve true live load power from mix (totalLoadPower, familyLoadPower, or power balance)
         const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
         const liveLoadKw = mixLoadKw > 0 
           ? mixLoadKw 
-          : (latestCurvePoint && latestCurvePoint.loadKw > 0 ? latestCurvePoint.loadKw : Math.max(0, Number((liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw).toFixed(2))));
+          : (latestCurvePoint && latestCurvePoint.loadKw > 0 ? latestCurvePoint.loadKw : Math.max(0, liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw));
 
         const telemetryLatestUpsertSql = `
           INSERT INTO solis_telemetry_latest (

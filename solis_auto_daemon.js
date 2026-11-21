@@ -298,9 +298,13 @@ function parseCurveRows(stationId, dateStr, curveData, mixData = {}) {
     const gKw = gW / 1000;
     let lKw = lW / 1000;
 
+    let bState = "Idle";
+    if (bKw > 0.05) bState = "Charging";
+    else if (bKw < -0.05) bState = "Discharging";
+
     // Calculate load from inverter power balance or mix totalLoadPower if 0
     if (lKw <= 0) {
-      const calculatedLoadKw = sKw + bKw - gKw;
+      const calculatedLoadKw = sKw - bKw - gKw;
       if (calculatedLoadKw > 0) {
         lKw = calculatedLoadKw;
         lW = calculatedLoadKw * 1000;
@@ -309,10 +313,6 @@ function parseCurveRows(stationId, dateStr, curveData, mixData = {}) {
         lW = mixLoadKw * 1000;
       }
     }
-
-    let bState = "Idle";
-    if (bKw > 0.05) bState = "Discharging";
-    else if (bKw < -0.05) bState = "Charging";
 
     rows.push({
       stationId,
@@ -413,7 +413,9 @@ async function runLiveSync() {
       const liveSolarKw = isOnline ? latestCurvePoint.solarKw : Number(mix.power || 0);
       const liveSoc = isOnline && latestCurvePoint.soc > 0 ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
       const liveBatKw = isOnline ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
-      const liveBatState = isOnline ? latestCurvePoint.batState : (mix.batteryState || "Idle");
+      // Solis API: mix.batteryDirection (1 = Charging, 2 = Discharging, 3 = Idle)
+      const solisBatDir = mix.batteryDirection === 1 ? "Charging" : mix.batteryDirection === 2 ? "Discharging" : (mix.batteryDirection === 3 ? "Idle" : null);
+      const liveBatState = solisBatDir || (isOnline ? latestCurvePoint.batState : (mix.batteryState || "Idle"));
       const liveGridKw = isOnline ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
       const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
       const liveLoadKw = mixLoadKw > 0
