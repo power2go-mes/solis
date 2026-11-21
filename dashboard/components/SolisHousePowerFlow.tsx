@@ -74,9 +74,9 @@ export default function SolisHousePowerFlow({
         {/* ======================================================== */}
         {/* 3D VILLA HOUSE & SVG ANIMATIONS (approx 8-9 cols)        */}
         {/* ======================================================== */}
-        <div className="lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center min-h-[300px] sm:min-h-[380px] md:min-h-[420px]">
+        <div className="lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center min-h-[340px] sm:min-h-[440px] md:min-h-[480px]">
           {/* Base Container maintaining aspect ratio 1024 x 576 */}
-          <div className="relative w-full max-w-[820px] aspect-[1024/576] rounded-xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
+          <div className="relative w-full max-w-[960px] aspect-[1024/576] rounded-2xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
             {/* High-Resolution 3D Modern Villa Image */}
             <img
               src="/solis_villa_hd.jpg"
@@ -332,7 +332,7 @@ export default function SolisHousePowerFlow({
               style={{ left: "10%", top: "10%" }}
             >
               <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
-                | PV
+                PV
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
@@ -348,7 +348,7 @@ export default function SolisHousePowerFlow({
               style={{ left: "24%", top: "10%" }}
             >
               <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
-                | Load
+                Load
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
@@ -364,7 +364,7 @@ export default function SolisHousePowerFlow({
               style={{ left: "22%", top: "76%" }}
             >
               <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
-                | Battery <strong className="text-emerald-600 font-bold ml-0.5">{batterySoc}%</strong>
+                Battery <strong className="text-emerald-600 font-bold ml-0.5">{batterySoc}%</strong>
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
@@ -391,7 +391,7 @@ export default function SolisHousePowerFlow({
               style={{ left: "38%", top: "76%" }}
             >
               <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
-                | Grid
+                Grid
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
