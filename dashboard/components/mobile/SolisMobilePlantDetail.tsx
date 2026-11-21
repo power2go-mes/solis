@@ -330,6 +330,13 @@ export default function SolisMobilePlantDetail({
     loadTelemetry();
     loadCurve();
     loadPlantDetails();
+    // Auto-update live telemetry from database every 15 seconds
+    const interval = setInterval(() => {
+      loadTelemetry();
+      loadCurve();
+      loadPlantDetails();
+    }, 15_000);
+    return () => clearInterval(interval);
   }, [loadTelemetry, loadCurve, loadPlantDetails]);
 
   // Date formatted for display: "19/11/2026"

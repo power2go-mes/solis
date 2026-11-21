@@ -663,7 +663,14 @@ export default function SolisClientDashboard({
 
   useEffect(() => {
     fetchAllData();
-  }, [fetchAllData]);
+    // Auto-refresh telemetry and plant curves from database every 15 seconds
+    const interval = setInterval(() => {
+      loadTelemetry();
+      loadDayCurve();
+      loadPlantDetails();
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [fetchAllData, loadTelemetry, loadDayCurve, loadPlantDetails]);
 
   // Manual refresh handler
   const handleManualRefresh = async () => {

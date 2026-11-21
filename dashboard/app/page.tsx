@@ -161,14 +161,14 @@ function SolisCloudDashboard() {
     }
   }, [loadOverviewData, loadPlantsList, loadTelemetry, selectedPlantId]);
 
-  // Periodic silent background refresh every 30 seconds for live data
+  // Periodic silent background refresh every 15 seconds to fetch latest live values from database
   useEffect(() => {
     const interval = setInterval(() => {
       loadOverviewData();
       if ((activeView === "device_overview" || activeView === "plant_detail") && selectedPlantId) {
         loadTelemetry(selectedPlantId);
       }
-    }, 30_000);
+    }, 15_000);
     return () => clearInterval(interval);
   }, [loadOverviewData, loadTelemetry, activeView, selectedPlantId]);
 
