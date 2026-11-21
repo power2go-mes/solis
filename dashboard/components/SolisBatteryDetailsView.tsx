@@ -123,7 +123,7 @@ export default function SolisBatteryDetailsView({
         if (totalMinutes <= 615) {
           // BMS Voltage ~549V baseline with slight ripple
           const volt = 545 + Math.sin(totalMinutes / 120) * 12 + ((totalMinutes % 23) * 0.15);
-          bmsVoltage.push(Number(volt.toFixed(1)));
+          bmsVoltage.push(Number(volt.toFixed(2)));
 
           // Max currents at 90A baseline
           maxChargeCurrent.push(90);
@@ -136,19 +136,19 @@ export default function SolisBatteryDetailsView({
           const chargeProg = Math.min(1, Math.max(0, (totalMinutes - 360) / 250));
           const dChg = Math.floor(chargeProg * 48);
           dailyCharge.push(dChg);
-          totalCharge.push(Number((2450 + dChg).toFixed(1)));
+          totalCharge.push(Number((2450 + dChg).toFixed(2)));
 
           // Daily discharge steppy curve
           const dDis = Math.floor(Math.min(1, totalMinutes / 400) * 12);
           dailyDischarge.push(dDis);
-          totalDischarge.push(Number((1890 + dDis).toFixed(1)));
+          totalDischarge.push(Number((1890 + dDis).toFixed(2)));
 
           // Power and Current spikes (especially around 07:00 - 10:15)
           if (totalMinutes >= 360) {
             const spike = Math.abs(Math.sin((totalMinutes - 360) / 18)) * 4.2 + (Math.sin(totalMinutes / 5) * 1.5);
             const pwr = Math.max(0, spike);
             bmsPower.push(Number(pwr.toFixed(2)));
-            bmsCurrent.push(Number((pwr * 1000 / volt).toFixed(1)));
+            bmsCurrent.push(Number((pwr * 1000 / volt).toFixed(2)));
             batterySoc.push(Math.round(20 + chargeProg * 65));
           } else {
             bmsPower.push(0.2);

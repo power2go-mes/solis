@@ -642,7 +642,7 @@ export default function SolisMobilePlantDetail({
           const yieldVal = dayDailyEnergy
             ? Number(dayDailyEnergy.solar_pv_kwh || 0)
             : pvPoints.length > 0
-            ? Number(pvPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(1))
+            ? Number(pvPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(2))
             : 0;
           const chargeVal = dayDailyEnergy
             ? Number(dayDailyEnergy.battery_charge_kwh || 0)
@@ -1011,7 +1011,7 @@ export default function SolisMobilePlantDetail({
                 <span className="text-[10px] text-slate-400 font-medium">To Consumption</span>
                 <div className="text-xs font-bold text-[#8b5cf6] font-mono mt-0.5">
                   {dayDailyEnergy
-                    ? `${Number(dayDailyEnergy.self_consumption_kwh || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))).toFixed(1)}kWh·${Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100)}%`
+                    ? `${Number(dayDailyEnergy.self_consumption_kwh || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))).toFixed(2)}kWh·${Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100)}%`
                     : `${meta.toConsumptionKwh}kWh·${meta.toConsumptionPercent}%`}
                 </div>
               </div>
@@ -1021,7 +1021,7 @@ export default function SolisMobilePlantDetail({
                 <span className="text-[10px] text-slate-400 font-medium">To Grid</span>
                 <div className="text-xs font-bold text-[#0284c7] font-mono mt-0.5">
                   {dayDailyEnergy
-                    ? `${Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(1)}kWh·${Math.max(0, 100 - Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100))}%`
+                    ? `${Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(2)}kWh·${Math.max(0, 100 - Math.round(((Number(dayDailyEnergy.self_consumption_kwh || 0) || (Number(dayDailyEnergy.solar_pv_kwh || 0) - Number(dayDailyEnergy.grid_sold_kwh || 0))) / Math.max(1, Number(dayDailyEnergy.solar_pv_kwh || 1))) * 100))}%`
                     : `${meta.toGridKwh}kWh·${meta.toGridPercent}%`}
                 </div>
               </div>

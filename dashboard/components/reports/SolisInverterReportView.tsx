@@ -166,11 +166,11 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
     const avgTemp = (
       filteredInverters.reduce((acc, inv) => acc + inv.temperatureC, 0) /
       Math.max(filteredInverters.length, 1)
-    ).toFixed(1);
+    ).toFixed(2);
 
     return {
-      activeYield: totalYield.toFixed(1),
-      maxAcPower: maxPower.toFixed(1),
+      activeYield: totalYield.toFixed(2),
+      maxAcPower: maxPower.toFixed(2),
       avgEfficiency: "98.2%",
       peakThermal: `${avgTemp}°C`,
     };

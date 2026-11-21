@@ -186,7 +186,7 @@ export default function DualPowerSOCCharts({
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${item.color};"></span>
                 <span style="color:#475569;">${label}</span>
               </span>
-              <span style="font-weight:700;font-family:monospace;color:#0f172a;">${Math.abs(val).toFixed(1)} ${unit}</span>
+              <span style="font-weight:700;font-family:monospace;color:#0f172a;">${Math.abs(val).toFixed(2)} ${unit}</span>
             </div>`;
           });
           return html;
@@ -339,7 +339,7 @@ export default function DualPowerSOCCharts({
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${item.color};"></span>
                 <span style="color:#475569;">${item.seriesName}</span>
               </span>
-              <span style="font-weight:700;font-family:monospace;color:#0f172a;">${val.toFixed(1)} ${unitSuffix}</span>
+              <span style="font-weight:700;font-family:monospace;color:#0f172a;">${val.toFixed(2)} ${unitSuffix}</span>
             </div>`;
           });
           return html;

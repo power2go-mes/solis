@@ -151,14 +151,14 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
   const kpiData = useMemo(() => {
     const totalCharge = filteredRecords.reduce((acc, b) => acc + b.dailyChargeKwh, 0);
     const totalDischarge = filteredRecords.reduce((acc, b) => acc + b.dailyDischargeKwh, 0);
-    const eff = totalCharge > 0 ? ((totalDischarge / totalCharge) * 100).toFixed(1) : "92.8";
+    const eff = totalCharge > 0 ? ((totalDischarge / totalCharge) * 100).toFixed(2) : "92.8";
     const avgSoc = Math.round(
       filteredRecords.reduce((acc, b) => acc + b.socPct, 0) / Math.max(filteredRecords.length, 1)
     );
 
     return {
-      dailyCharge: totalCharge.toFixed(1),
-      dailyDischarge: totalDischarge.toFixed(1),
+      dailyCharge: totalCharge.toFixed(2),
+      dailyDischarge: totalDischarge.toFixed(2),
       efficiency: `${eff}%`,
       socSoh: `${avgSoc}% / 100% SOH`,
       chargeSubtitle: `${filteredRecords.length} Packs Active`,
@@ -211,7 +211,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           params.forEach((item) => {
             if (item.seriesName.includes("Battery Power")) {
               const val = Number(item.value);
-              const label = val >= 0 ? `Charge: +${val.toFixed(1)} kW` : `Discharge: ${val.toFixed(1)} kW`;
+              const label = val >= 0 ? `Charge: +${val.toFixed(2)} kW` : `Discharge: ${val.toFixed(2)} kW`;
               res += `<div class="flex items-center gap-1.5 text-xs"><span style="color:${val >= 0 ? '#10b981' : '#0284c7'}">●</span> ${label}</div>`;
             } else if (item.seriesName.includes("State of Charge")) {
               res += `<div class="flex items-center gap-1.5 text-xs"><span style="color:#f37021">●</span> SOC: ${item.value}%</div>`;

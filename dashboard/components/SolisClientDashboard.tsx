@@ -408,12 +408,12 @@ export default function SolisClientDashboard({
         labels.push(dStr);
         tooltipDates.push(`${dStr}/${String(m).padStart(2, "0")}/${y}`);
         if (d <= 19) {
-          pvData.push(Number((45 + ((d * 7) % 25)).toFixed(1)));
-          importData.push(Number((5 + ((d * 3) % 10)).toFixed(1)));
-          exportData.push(Number((15 + ((d * 4) % 15)).toFixed(1)));
-          chargeData.push(Number((12 + ((d * 2) % 8)).toFixed(1)));
-          dischargeData.push(Number((10 + ((d * 3) % 7)).toFixed(1)));
-          consumptionData.push(Number((24 + ((d * 5) % 12)).toFixed(1)));
+          pvData.push(Number((45 + ((d * 7) % 25)).toFixed(2)));
+          importData.push(Number((5 + ((d * 3) % 10)).toFixed(2)));
+          exportData.push(Number((15 + ((d * 4) % 15)).toFixed(2)));
+          chargeData.push(Number((12 + ((d * 2) % 8)).toFixed(2)));
+          dischargeData.push(Number((10 + ((d * 3) % 7)).toFixed(2)));
+          consumptionData.push(Number((24 + ((d * 5) % 12)).toFixed(2)));
         } else {
           pvData.push(null);
           importData.push(null);
@@ -876,7 +876,7 @@ export default function SolisClientDashboard({
           let s = `<div style="font-weight:600;margin-bottom:4px;color:#334155">${params[0].axisValue}</div>`;
           params.forEach((p: any) => {
             const unit = p.seriesName === "SOC" ? "%" : "PKR/kWh";
-            const val = p.value !== null && p.value !== undefined ? Number(p.value).toFixed(1) : "--";
+            const val = p.value !== null && p.value !== undefined ? Number(p.value).toFixed(2) : "--";
             s += `<div style="display:flex;justify-content:space-between;gap:12px;margin:2px 0;">
                     <span style="color:${p.color};font-weight:500;">● ${p.seriesName}</span>
                     <span style="font-weight:600;font-family:monospace;">${val} ${unit}</span>
@@ -1158,15 +1158,15 @@ export default function SolisClientDashboard({
         dayDailyEnergy.backup_load_kwh || (consVal > gridLoadVal ? consVal - gridLoadVal : 0)
       );
       return {
-        pv: Number(pvVal.toFixed(1)),
-        inverter: Number(pvVal.toFixed(1)),
+        pv: Number(pvVal.toFixed(2)),
+        inverter: Number(pvVal.toFixed(2)),
         acCoupled: 0,
-        consumption: Number(consVal.toFixed(1)),
-        gridLoadConsumption: Number(gridLoadVal.toFixed(1)),
-        backupLoad: Number(backupVal.toFixed(1)),
-        charge: Number(Number(dayDailyEnergy.battery_charge_kwh || 0).toFixed(1)),
-        discharge: Number(Number(dayDailyEnergy.battery_discharge_kwh || 0).toFixed(1)),
-        export: Number(Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(1)),
+        consumption: Number(consVal.toFixed(2)),
+        gridLoadConsumption: Number(gridLoadVal.toFixed(2)),
+        backupLoad: Number(backupVal.toFixed(2)),
+        charge: Number(Number(dayDailyEnergy.battery_charge_kwh || 0).toFixed(2)),
+        discharge: Number(Number(dayDailyEnergy.battery_discharge_kwh || 0).toFixed(2)),
+        export: Number(Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(2)),
       };
     }
 
@@ -1187,16 +1187,16 @@ export default function SolisClientDashboard({
         },
         0
       );
-      const pvRound = Number(pvSum.toFixed(1));
-      const loadRound = Number(loadSum.toFixed(1));
-      const gridRound = Number(gridSum.toFixed(1));
+      const pvRound = Number(pvSum.toFixed(2));
+      const loadRound = Number(loadSum.toFixed(2));
+      const gridRound = Number(gridSum.toFixed(2));
       return {
         pv: pvRound,
         inverter: pvRound,
         acCoupled: 0,
         consumption: loadRound,
         gridLoadConsumption: gridRound,
-        backupLoad: Number(Math.max(0, loadRound - gridRound).toFixed(1)),
+        backupLoad: Number(Math.max(0, loadRound - gridRound).toFixed(2)),
         charge: 0,
         discharge: 0,
         export: 0,

@@ -154,11 +154,11 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
   // Aggregate KPI Calculations
   const fleetTotalYield = useMemo(() => {
     const sum = filteredStations.reduce((acc, st) => acc + st.dailyYieldKwh, 0);
-    return sum.toFixed(1);
+    return sum.toFixed(2);
   }, [filteredStations]);
 
   const totalCapacity = useMemo(() => {
-    return filteredStations.reduce((acc, st) => acc + st.capacityKwp, 0).toFixed(1);
+    return filteredStations.reduce((acc, st) => acc + st.capacityKwp, 0).toFixed(2);
   }, [filteredStations]);
 
   const periodYieldDisplay = useMemo(() => {
@@ -169,7 +169,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
     if (activeDateTab === "Month") {
       return `${(sumKwh / 1000).toFixed(2)} MWh`;
     }
-    return `${sumKwh.toFixed(1)} kWh`;
+    return `${sumKwh.toFixed(2)} kWh`;
   }, [filteredStations, activeDateTab]);
 
   const financialSavings = useMemo(() => {
@@ -262,7 +262,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
       const stationNames = filteredStations.map((s) => s.name);
       const pvYield = filteredStations.map((s) => s.dailyYieldKwh);
       const selfConsumed = filteredStations.map((s) =>
-        Number(((s.dailyYieldKwh * s.selfConsumptionPct) / 100).toFixed(1))
+        Number(((s.dailyYieldKwh * s.selfConsumptionPct) / 100).toFixed(2))
       );
       const gridExport = filteredStations.map((s) => s.gridSoldKwh);
 

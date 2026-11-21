@@ -427,23 +427,23 @@ export default function SolisInverterDetailsView({
             // Sun rising from 06:00
             const prog = (totalMinutes - 360) / 255;
             const vBase = 520 + Math.sin(prog * Math.PI) * 160;
-            dcV1.push(Number((vBase + Math.sin(totalMinutes / 8) * 8).toFixed(1)));
-            dcV2.push(Number((vBase - 35 + Math.sin(totalMinutes / 7) * 7).toFixed(1)));
-            dcV3.push(Number((vBase + 45 + Math.sin(totalMinutes / 6) * 10).toFixed(1)));
+            dcV1.push(Number((vBase + Math.sin(totalMinutes / 8) * 8).toFixed(2)));
+            dcV2.push(Number((vBase - 35 + Math.sin(totalMinutes / 7) * 7).toFixed(2)));
+            dcV3.push(Number((vBase + 45 + Math.sin(totalMinutes / 6) * 10).toFixed(2)));
 
             const current = Math.abs(Math.sin(prog * Math.PI)) * 4.8 + (Math.sin(totalMinutes / 12) * 0.4);
-            dcI1.push(Number(Math.max(0, current).toFixed(1)));
-            dcI2.push(Number(Math.max(0, current * 0.95).toFixed(1)));
-            dcI3.push(Number(Math.max(0, current * 1.15).toFixed(1)));
+            dcI1.push(Number(Math.max(0, current).toFixed(2)));
+            dcI2.push(Number(Math.max(0, current * 0.95).toFixed(2)));
+            dcI3.push(Number(Math.max(0, current * 1.15).toFixed(2)));
 
             pvPower.push(Number((((vBase * current * 3) / 1000)).toFixed(2)));
 
             acV1.push(230.5);
             acV2.push(238.6);
             acV3.push(231.0);
-            acI1.push(Number((current * 0.4).toFixed(1)));
-            acI2.push(Number((current * 0.38).toFixed(1)));
-            acI3.push(Number((current * 0.42).toFixed(1)));
+            acI1.push(Number((current * 0.4).toFixed(2)));
+            acI2.push(Number((current * 0.38).toFixed(2)));
+            acI3.push(Number((current * 0.42).toFixed(2)));
           } else {
             // Night
             dcV1.push(0);
