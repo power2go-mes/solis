@@ -531,12 +531,7 @@ export default function SolisMobilePlantList({
           {/* 1. Overview */}
           <button
             onClick={() => {
-              if (activeView === "plant_overview") {
-                setOpenSubmenu(openSubmenu === "Overview" ? null : "Overview");
-              } else {
-                if (onNavigateTab) onNavigateTab("plant_overview");
-                setOpenSubmenu(null);
-              }
+              setOpenSubmenu(openSubmenu === "Overview" ? null : "Overview");
             }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all ${
               isOverviewActive
@@ -546,18 +541,13 @@ export default function SolisMobilePlantList({
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>Overview</span>
-            {isOverviewActive && <ChevronUp className="w-3 h-3 opacity-80" />}
+            <ChevronUp className={`w-3 h-3 transition-transform ${openSubmenu === "Overview" ? "rotate-180" : ""}`} />
           </button>
 
           {/* 2. O&M */}
           <button
             onClick={() => {
-              if (isOMActive) {
-                setOpenSubmenu(openSubmenu === "OM" ? null : "OM");
-              } else {
-                if (onNavigateTab) onNavigateTab("om_alarms");
-                setOpenSubmenu(null);
-              }
+              setOpenSubmenu(openSubmenu === "OM" ? null : "OM");
             }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all relative ${
               isOMActive
@@ -570,18 +560,13 @@ export default function SolisMobilePlantList({
               <span className={`absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full ${isOMActive ? "bg-white" : "bg-red-500"}`} />
             </div>
             <span>O&M</span>
-            {isOMActive && <ChevronUp className="w-3 h-3 opacity-80" />}
+            <ChevronUp className={`w-3 h-3 transition-transform ${openSubmenu === "OM" ? "rotate-180" : ""}`} />
           </button>
 
           {/* 3. Report */}
           <button
             onClick={() => {
-              if (isReportActive) {
-                setOpenSubmenu(openSubmenu === "Report" ? null : "Report");
-              } else {
-                if (onNavigateTab) onNavigateTab("report_plant");
-                setOpenSubmenu(null);
-              }
+              setOpenSubmenu(openSubmenu === "Report" ? null : "Report");
             }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all ${
               isReportActive
@@ -591,7 +576,7 @@ export default function SolisMobilePlantList({
           >
             <BarChart3 className="w-3.5 h-3.5" />
             <span>Report</span>
-            {isReportActive && <ChevronUp className="w-3 h-3 opacity-80" />}
+            <ChevronUp className={`w-3 h-3 transition-transform ${openSubmenu === "Report" ? "rotate-180" : ""}`} />
           </button>
 
           {/* 4. Favorites */}
