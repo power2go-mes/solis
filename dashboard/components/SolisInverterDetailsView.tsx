@@ -648,11 +648,10 @@ export default function SolisInverterDetailsView({
                 <button
                   key={inv.sn}
                   onClick={() => setSelectedSn(inv.sn)}
-                  className={`w-full text-left p-2 rounded-xl transition-all ${
-                    isSelected
-                      ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] shadow-2xs font-semibold"
-                      : "text-slate-600 hover:bg-slate-50 border border-transparent font-normal"
-                  }`}
+                  className={`w-full text-left p-2 rounded-xl transition-all ${isSelected
+                    ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] shadow-2xs font-semibold"
+                    : "text-slate-600 hover:bg-slate-50 border border-transparent font-normal"
+                    }`}
                 >
                   <div className="text-[11px] truncate">{inv.plantName}</div>
                   <div className="text-[9px] font-mono opacity-70 truncate">{inv.sn}</div>
@@ -961,11 +960,10 @@ export default function SolisInverterDetailsView({
                   <button
                     key={tab}
                     onClick={() => setActiveDateTab(tab)}
-                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all ${
-                      activeDateTab === tab
-                        ? "bg-[#fffaf5] text-[#e8600c] font-bold border border-[#fca466]"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
+                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all ${activeDateTab === tab
+                      ? "bg-[#fffaf5] text-[#e8600c] font-bold border border-[#fca466]"
+                      : "text-slate-600 hover:text-slate-900"
+                      }`}
                   >
                     {tab}
                   </button>
@@ -1018,32 +1016,29 @@ export default function SolisInverterDetailsView({
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => applyPreset("DC")}
-                    className={`py-1.5 px-2 rounded-xl text-[11px] font-medium transition-all ${
-                      activeAnalysisTab === "DC"
-                        ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] font-semibold"
-                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                    className={`py-1.5 px-2 rounded-xl text-[11px] font-medium transition-all ${activeAnalysisTab === "DC"
+                      ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] font-semibold"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
                   >
                     DC Analysis
                   </button>
                   <button
                     onClick={() => applyPreset("AC")}
-                    className={`py-1.5 px-2 rounded-xl text-[11px] font-medium transition-all ${
-                      activeAnalysisTab === "AC"
-                        ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] font-semibold"
-                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                    className={`py-1.5 px-2 rounded-xl text-[11px] font-medium transition-all ${activeAnalysisTab === "AC"
+                      ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] font-semibold"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
                   >
                     AC Analysis
                   </button>
                 </div>
                 <button
                   onClick={() => applyPreset("Output")}
-                  className={`w-full py-1.5 px-2 rounded-xl text-[11px] font-medium transition-all ${
-                    activeAnalysisTab === "Output"
-                      ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] font-semibold"
-                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`w-full py-1.5 px-2 rounded-xl text-[11px] font-medium transition-all ${activeAnalysisTab === "Output"
+                    ? "border border-[#fca466] bg-[#fffaf5] text-[#e8600c] font-semibold"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   Output Analysis
                 </button>

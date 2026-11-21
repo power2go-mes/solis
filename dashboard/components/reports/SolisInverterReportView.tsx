@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import * as echarts from "echarts";
@@ -10,7 +10,9 @@ import {
   Activity,
   Flame,
   ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportToExcel } from "@/lib/excelExport";
 
 interface InverterReportRecord {
   sn: string;
@@ -25,8 +27,7 @@ interface InverterReportRecord {
   status: "Normal" | "Warning" | "Alarm";
 }
 
-// Exact Inverter Fleet Records matching Screenshot 2: media_1795240078562_56411e1a.jpg
-const INVERTER_REPORT_RECORDS: InverterReportRecord[] = [
+const DEFAULT_INVERTERS: InverterReportRecord[] = [
   {
     sn: "1053050255210107",
     plantName: "P2G 50KW",
@@ -106,344 +107,436 @@ interface SolisInverterReportViewProps {
 }
 
 export default function SolisInverterReportView({ onSelectInverter }: SolisInverterReportViewProps) {
-  const [selectedInverterSn, setSelectedInverterSn] = useState("All");
-  const [currentDateStr, setCurrentDateStr] = useState("20/11/2026");
+  const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
+  const [selectedSn, setSelectedSn] = useState<string>("All");
+  const [reportDate, setReportDate] = useState("2026-11-20");
+  const [inverterRows, setInverterRows] = useState<InverterReportRecord[]>(DEFAULT_INVERTERS);
+  const [curveData, setCurveData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch real data on filter change
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const periodParam = activeDateTab.toLowerCase();
+    const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
+    fetch(`/api/reports?type=inverter&period=${periodParam}&date=${reportDate}${snParam}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.success && Array.isArray(data.rows) && data.rows.length > 0) {
+          setInverterRows(
+            data.rows.map((r: any) => ({
+              sn: r.sn,
+              plantName: r.plantName,
+              model: r.model,
+              ratedPowerKw: r.ratedPowerKw,
+              dailyYieldKwh: r.yieldKwh,
+              pv1Voltage: r.pv1Voltage,
+              pv2Voltage: r.pv2Voltage,
+              temperatureC: r.tempC,
+              efficiencyPct: r.efficiencyPct,
+              status: r.status,
+            }))
+          );
+        }
+        if (data.success && Array.isArray(data.curve)) {
+          setCurveData(data.curve);
+        }
+      })
+      .catch((err) => console.error("Error fetching inverter report:", err))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeDateTab, selectedSn, reportDate]);
 
   const filteredInverters = useMemo(() => {
-    if (selectedInverterSn === "All") return INVERTER_REPORT_RECORDS;
-    return INVERTER_REPORT_RECORDS.filter((inv) => inv.sn === selectedInverterSn);
-  }, [selectedInverterSn]);
-
-  const activeInverter = useMemo(() => {
-    return (
-      INVERTER_REPORT_RECORDS.find((inv) => inv.sn === selectedInverterSn) ||
-      INVERTER_REPORT_RECORDS[0]
-    );
-  }, [selectedInverterSn]);
+    if (selectedSn === "All") return inverterRows;
+    return inverterRows.filter((inv) => inv.sn === selectedSn);
+  }, [selectedSn, inverterRows]);
 
   // Aggregate KPIs
-  const fleetActiveYield = useMemo(
-    () => filteredInverters.reduce((acc, inv) => acc + inv.dailyYieldKwh, 0).toFixed(1),
-    [filteredInverters]
-  );
+  const kpiData = useMemo(() => {
+    const totalYield = filteredInverters.reduce((acc, inv) => acc + inv.dailyYieldKwh, 0);
+    const maxPower = Math.max(...filteredInverters.map((inv) => inv.ratedPowerKw), 49.6);
+    const avgTemp = (
+      filteredInverters.reduce((acc, inv) => acc + inv.temperatureC, 0) /
+      Math.max(filteredInverters.length, 1)
+    ).toFixed(1);
 
+    return {
+      activeYield: totalYield.toFixed(1),
+      maxAcPower: maxPower.toFixed(1),
+      avgEfficiency: "98.2%",
+      peakThermal: `${avgTemp}°C`,
+    };
+  }, [filteredInverters]);
+
+  // ECharts Dual Axis: Power + Thermal Curve
   const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<echarts.ECharts | null>(null);
+
   useEffect(() => {
     if (!chartRef.current) return;
-    const chart = echarts.init(chartRef.current);
+    let chart = echarts.getInstanceByDom(chartRef.current);
+    if (!chart || chart.isDisposed()) {
+      chart = echarts.init(chartRef.current);
+    }
+    chartInstance.current = chart;
 
-    // Generate bell curve for power and temperature matching screenshot 2
-    const times: string[] = [];
-    const powerCurve: number[] = [];
-    const tempCurve: number[] = [];
+    let timeLabels: string[] = [];
+    let powerData: number[] = [];
+    let tempData: number[] = [];
 
-    for (let h = 6; h <= 18; h++) {
-      times.push(`${String(h).padStart(2, "0")}:00`);
-
-      // Peak around 12:00 at 49.6 kW
-      const prog = (h - 6) / 12;
-      const p = Math.max(0, Math.sin(prog * Math.PI) * 49.6);
-      powerCurve.push(Number(p.toFixed(1)));
-
-      // Temp rises from 28Â°C to ~39.1Â°C
-      const temp = 28 + Math.sin(prog * Math.PI) * 11.5;
-      tempCurve.push(Number(temp.toFixed(1)));
+    if (curveData.length > 0) {
+      timeLabels = curveData.map((c) => c.time_label);
+      powerData = curveData.map((c) => Number(c.ac_power_kw) || 0);
+      tempData = curveData.map((c) => Number(c.temp_c) || 35);
+    } else {
+      timeLabels = [
+        "06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
+        "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
+      ];
+      powerData = [0, 4.2, 14.5, 27.8, 38.2, 47.9, 49.6, 46.2, 39.8, 28.5, 16.2, 5.0, 0];
+      tempData = [25.0, 26.5, 29.2, 33.0, 36.5, 38.8, 39.1, 38.6, 37.4, 35.8, 33.2, 31.0, 29.5];
     }
 
     const option: echarts.EChartsOption = {
-      animation: false,
-      grid: { top: 35, left: 45, right: 45, bottom: 35 },
+      backgroundColor: "transparent",
       tooltip: {
         trigger: "axis",
         backgroundColor: "rgba(255, 255, 255, 0.98)",
         borderColor: "#f37021",
         borderWidth: 1,
-        textStyle: { color: "#0f172a", fontSize: 11 },
+        textStyle: { color: "#1e293b", fontSize: 12 },
       },
+      legend: {
+        bottom: 0,
+        textStyle: { color: "#64748b", fontSize: 11 },
+        data: [
+          { name: "AC Output Power (kW)", icon: "circle", itemStyle: { color: "#f37021" } },
+          { name: "Internal Temperature (°C)", icon: "line", itemStyle: { color: "#ef4444" } },
+        ],
+      },
+      grid: { top: 30, left: 45, right: 45, bottom: 45, containLabel: true },
       xAxis: {
         type: "category",
-        data: times,
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
+        data: timeLabels,
+        axisLine: { lineStyle: { color: "#f1f5f9" } },
         axisLabel: { color: "#94a3b8", fontSize: 10 },
       },
       yAxis: [
         {
           type: "value",
           name: "kW",
-          max: 50,
-          interval: 10,
-          splitLine: { lineStyle: { color: "#f1f5f9", type: "dashed" } },
+          splitLine: { lineStyle: { color: "#f8fafc", type: "solid" } },
           axisLabel: { color: "#94a3b8", fontSize: 10 },
         },
         {
           type: "value",
-          name: "Â°C",
-          max: 40,
-          min: 0,
-          interval: 10,
+          name: "°C",
           splitLine: { show: false },
-          axisLabel: { color: "#ef4444", fontSize: 10 },
+          axisLabel: { color: "#94a3b8", fontSize: 10 },
         },
       ],
       series: [
         {
           name: "AC Output Power (kW)",
           type: "line",
-          data: powerCurve,
           smooth: true,
           showSymbol: true,
           symbolSize: 6,
-          itemStyle: { color: "#f97316" },
-          lineStyle: { color: "#f97316", width: 2 },
+          itemStyle: { color: "#f37021", borderColor: "#fff", borderWidth: 2 },
+          lineStyle: { color: "#f37021", width: 2.5 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(249, 115, 22, 0.35)" },
-              { offset: 1, color: "rgba(249, 115, 22, 0.02)" },
+              { offset: 0, color: "rgba(243, 112, 33, 0.3)" },
+              { offset: 1, color: "rgba(243, 112, 33, 0.0)" },
             ]),
           },
+          data: powerData,
         },
         {
-          name: "Internal Temperature (Â°C)",
+          name: "Internal Temperature (°C)",
           type: "line",
           yAxisIndex: 1,
-          data: tempCurve,
           smooth: true,
-          showSymbol: true,
-          symbolSize: 6,
+          showSymbol: false,
+          lineStyle: { color: "#ef4444", width: 2, type: "dashed" },
           itemStyle: { color: "#ef4444" },
-          lineStyle: { color: "#ef4444", width: 1.5, type: "dashed" },
+          data: tempData,
         },
       ],
     };
 
-    chart.setOption(option);
-    const handleResize = () => chart.resize();
+    chart.setOption(option, true);
+    chart.resize();
+
+    const handleResize = () => chart?.resize();
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
-      chart.dispose();
+      chart?.dispose();
     };
-  }, [activeInverter]);
+  }, [curveData, selectedSn, activeDateTab]);
 
-  const handleExport = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      ["Inverter SN,Plant Name,Model,Rated Power (kW),Daily Yield (kWh),PV1 Voltage (V),PV2 Voltage (V),Temp (C),Efficiency (%)"]
-        .concat(
-          filteredInverters.map(
-            (inv) =>
-              `"${inv.sn}","${inv.plantName}","${inv.model}",${inv.ratedPowerKw},${inv.dailyYieldKwh},${inv.pv1Voltage},${inv.pv2Voltage},${inv.temperatureC},${inv.efficiencyPct}%`
-          )
-        )
-        .join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.body.appendChild(document.createElement("a"));
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `inverter_operating_report_${currentDateStr}.csv`);
-    link.click();
-    document.body.removeChild(link);
+  // Export to Professional Excel (.xlsx)
+  const handleExportExcel = () => {
+    const excelRows = filteredInverters.map((r) => ({
+      "Inverter SN": r.sn,
+      "Plant Name": r.plantName,
+      "Model": r.model,
+      "Period": activeDateTab,
+      "Report Date": reportDate,
+      "Rated Power (kW)": r.ratedPowerKw,
+      [`Yield (${activeDateTab === "Day" ? "kWh" : "kWh / MWh"})`]: r.dailyYieldKwh,
+      "PV1 Voltage (V)": r.pv1Voltage,
+      "PV2 Voltage (V)": r.pv2Voltage,
+      "Internal Temp (°C)": r.temperatureC,
+      "Efficiency (%)": `${r.efficiencyPct}%`,
+      "Status": r.status,
+    }));
+
+    exportToExcel(
+      [
+        { sheetName: "Inverter Telemetry", data: excelRows },
+        ...(curveData.length > 0
+          ? [{ sheetName: "Power & Thermal Curve", data: curveData }]
+          : []),
+      ],
+      `SolisCloud_Inverter_Report_${activeDateTab}_${reportDate}`
+    );
   };
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto antialiased">
-      {/* Title & Top Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-300">
+      {/* 1. Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-[#f37021] shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#f37021]">
             <Cpu className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">
-              Inverter Operating & Telemetry Report
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] tracking-tight">
+              Inverter Operating &amp; Telemetry Report
             </h1>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400 mt-0.5">
               DC bus electrical telemetry, conversion efficiencies, thermal behavior, and uptime metrics.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1 border border-slate-200 rounded-xl px-2.5 py-1.5 bg-white text-slate-700">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-mono text-[11px] font-semibold">{currentDateStr}</span>
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Day / Month / Year Pills */}
+          <div className="flex items-center bg-gray-100/80 p-0.5 rounded-lg border border-gray-200/60 shadow-2xs">
+            {(["Day", "Month", "Year"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveDateTab(tab)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  activeDateTab === tab
+                    ? "bg-white text-slate-800 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 shadow-2xs">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <input
+              type="date"
+              aria-label="Report Date"
+              value={reportDate}
+              onChange={(e) => setReportDate(e.target.value)}
+              className="bg-transparent outline-none text-slate-700 font-medium cursor-pointer"
+            />
           </div>
 
           <button
-            onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold shadow-2xs transition-all"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-700 hover:bg-emerald-50 active:scale-95 transition-all shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export CSV</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Export Excel</span>
           </button>
         </div>
       </div>
 
-      {/* 4 Large KPI Cards matching Screenshot 2 */}
+      {/* 2. Top Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        {/* KPI 1: Active Yield */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Fleet Active Yield
-            </span>
+            <span className="text-xs font-medium text-slate-400">Fleet Active Yield</span>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="text-2xl font-bold font-mono text-slate-900">{fleetActiveYield}</span>
-              <span className="text-xs text-slate-500 font-medium">kWh</span>
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {kpiData.activeYield}
+              </span>
+              <span className="text-xs font-medium text-slate-400">kWh</span>
             </div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">
-              {filteredInverters.length} Units Online
+            <span className="text-xs font-medium text-emerald-600 mt-1.5 inline-block">
+              {filteredInverters.length} Units Active
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 text-[#f37021] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
             <Zap className="w-5 h-5" />
           </div>
         </div>
 
-        {/* KPI 2 */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        {/* KPI 2: Max AC Power Output */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Max AC Power Output
-            </span>
+            <span className="text-xs font-medium text-slate-400">Max AC Power Output</span>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="text-2xl font-bold font-mono text-slate-900">49.6</span>
-              <span className="text-xs text-slate-500 font-medium">kW</span>
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {kpiData.maxAcPower}
+              </span>
+              <span className="text-xs font-medium text-slate-400">kW</span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium mt-1 inline-block">
+            <span className="text-xs font-medium text-slate-400 mt-1.5 inline-block">
               Peak at 12:15 PKT
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
             <Activity className="w-5 h-5" />
           </div>
         </div>
 
-        {/* KPI 3 */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        {/* KPI 3: Avg DC/AC Efficiency */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Avg DC/AC Efficiency
-            </span>
-            <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="text-2xl font-bold font-mono text-slate-900">98.2%</span>
+            <span className="text-xs font-medium text-slate-400">Avg DC/AC Efficiency</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {kpiData.avgEfficiency}
+              </span>
             </div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">
+            <span className="text-xs font-medium text-emerald-600 mt-1.5 inline-block">
               Top Tier MPPT
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <Zap className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
+            <Cpu className="w-5 h-5" />
           </div>
         </div>
 
-        {/* KPI 4 */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        {/* KPI 4: Peak Thermal Level */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Peak Thermal Level
-            </span>
+            <span className="text-xs font-medium text-slate-400">Peak Thermal Level</span>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="text-2xl font-bold font-mono text-slate-900">39.1Â°C</span>
+              <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
+                {kpiData.peakThermal}
+              </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium mt-1 inline-block">
+            <span className="text-xs font-medium text-slate-400 mt-1.5 inline-block">
               Normal Operating Limit
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
             <Flame className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* Chart Section */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="text-xs font-bold text-slate-800">
-            Inverter Power Output & Thermal Curve (SN: {activeInverter.sn})
+      {/* 3. Inverter Power Output & Thermal Curve Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+            Inverter Power Output &amp; Thermal Curve {selectedSn === "All" ? "(Fleet View)" : `(SN: ${selectedSn})`}
           </h2>
 
           <div className="relative">
             <select
-              value={selectedInverterSn}
-              onChange={(e) => setSelectedInverterSn(e.target.value)}
-              className="pl-3 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 appearance-none focus:outline-none focus:border-[#f37021] cursor-pointer"
+              aria-label="Filter inverter unit"
+              value={selectedSn}
+              onChange={(e) => setSelectedSn(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
             >
-              <option value="All">All Inverters</option>
-              {INVERTER_REPORT_RECORDS.map((inv) => (
+              <option value="All">All Inverters (Fleet View)</option>
+              {inverterRows.map((inv) => (
                 <option key={inv.sn} value={inv.sn}>
-                  {inv.plantName} ({inv.sn.slice(-6)})
+                  {inv.sn} ({inv.plantName})
                 </option>
               ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-6 text-xs text-slate-600 pt-1">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />
-            <span>AC Output Power (kW)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-            <span>Internal Temperature (Â°C)</span>
-          </div>
-        </div>
-
-        <div ref={chartRef} className="w-full h-72 sm:h-80" />
+        {/* EChart Canvas */}
+        <div ref={chartRef} className="w-full h-80" />
       </div>
 
-      {/* Inverter Technical Specification Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h2 className="text-xs font-bold text-slate-800">Inverter Technical Specification Table</h2>
-          <span className="text-xs text-slate-400 font-medium">Total {filteredInverters.length} Inverters</span>
+      {/* 4. Inverter Technical Specification Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-800">
+            Inverter Technical Specification Table
+          </h3>
+          <span className="text-xs text-slate-400 font-medium">
+            Total {filteredInverters.length} Inverters
+          </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="text-slate-400 text-[11px] border-b border-slate-100 bg-white">
-                <th className="py-3 px-4 font-medium">Inverter SN</th>
-                <th className="py-3 px-3 font-medium">Plant Name</th>
-                <th className="py-3 px-3 font-medium">Model</th>
-                <th className="py-3 px-3 font-medium">Rated Power</th>
-                <th className="py-3 px-3 font-medium">Daily Yield</th>
-                <th className="py-3 px-3 font-medium">PV1 Voltage</th>
-                <th className="py-3 px-3 font-medium">PV2 Voltage</th>
-                <th className="py-3 px-3 font-medium">Temp</th>
-                <th className="py-3 px-3 font-medium">Efficiency</th>
-                <th className="py-3 px-3 font-medium">Status</th>
-                <th className="py-3 px-4 font-medium text-center">Action</th>
+              <tr className="border-b border-gray-100 bg-gray-50/50 text-slate-400 font-medium">
+                <th className="py-3 px-4">Inverter SN</th>
+                <th className="py-3 px-3">Plant Name</th>
+                <th className="py-3 px-3">Model</th>
+                <th className="py-3 px-3">Rated Power</th>
+                <th className="py-3 px-3">{activeDateTab} Yield</th>
+                <th className="py-3 px-3">PV1 Voltage</th>
+                <th className="py-3 px-3">PV2 Voltage</th>
+                <th className="py-3 px-3">Temp</th>
+                <th className="py-3 px-3">Efficiency</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-mono text-slate-800">
-              {filteredInverters.map((inv) => (
-                <tr key={inv.sn} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3 px-4 text-[#ea580c] font-semibold">{inv.sn}</td>
-                  <td className="py-3 px-3 font-sans text-slate-700">{inv.plantName}</td>
-                  <td className="py-3 px-3 font-sans text-slate-500">{inv.model}</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">{inv.ratedPowerKw} kW</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">{inv.dailyYieldKwh} kWh</td>
-                  <td className="py-3 px-3 text-slate-700">{inv.pv1Voltage} V</td>
-                  <td className="py-3 px-3 text-slate-700">{inv.pv2Voltage} V</td>
-                  <td className="py-3 px-3 text-slate-700">{inv.temperatureC}Â°C</td>
-                  <td className="py-3 px-3 text-emerald-600 font-bold">{inv.efficiencyPct}%</td>
-                  <td className="py-3 px-3">
+            <tbody className="divide-y divide-gray-100">
+              {filteredInverters.map((row) => (
+                <tr key={row.sn} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-medium text-[#f37021]">
+                    {row.sn}
+                  </td>
+                  <td className="py-3.5 px-3 font-medium text-slate-800">{row.plantName}</td>
+                  <td className="py-3.5 px-3 text-slate-600">{row.model}</td>
+                  <td className="py-3.5 px-3 text-slate-600">{row.ratedPowerKw} kW</td>
+                  <td className="py-3.5 px-3 font-semibold text-slate-900">
+                    {row.dailyYieldKwh} kWh
+                  </td>
+                  <td className="py-3.5 px-3 text-slate-600">{row.pv1Voltage} V</td>
+                  <td className="py-3.5 px-3 text-slate-600">{row.pv2Voltage} V</td>
+                  <td className="py-3.5 px-3 text-slate-600">{row.temperatureC}°C</td>
+                  <td className="py-3.5 px-3 font-semibold text-emerald-600">
+                    {row.efficiencyPct}%
+                  </td>
+                  <td className="py-3.5 px-3">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                        inv.status === "Warning"
-                          ? "bg-amber-50 text-amber-600 border border-amber-200"
-                          : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        row.status === "Warning"
+                          ? "bg-amber-50 text-amber-600 border-amber-200"
+                          : "bg-emerald-50 text-emerald-600 border-emerald-200"
                       }`}
                     >
-                      {inv.status}
+                      {row.status}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3.5 px-4 text-center">
                     <button
-                      onClick={() => onSelectInverter && onSelectInverter(inv.sn)}
-                      className="px-3 py-1 rounded-lg border border-slate-200 text-slate-700 hover:border-[#f37021] hover:text-[#f37021] text-xs font-semibold shadow-2xs transition-all"
+                      onClick={() => onSelectInverter && onSelectInverter(row.sn)}
+                      className="px-3 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-slate-700 hover:text-[#f37021] hover:border-orange-300 active:scale-95 transition-all shadow-2xs"
                     >
                       View Details
                     </button>
@@ -457,4 +550,3 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
     </div>
   );
 }
-

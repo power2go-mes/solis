@@ -10,7 +10,9 @@ import {
   Gauge,
   Heart,
   ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportToExcel } from "@/lib/excelExport";
 
 interface BatteryReportRecord {
   sn: string;
@@ -25,8 +27,7 @@ interface BatteryReportRecord {
   sohPct: number;
 }
 
-// Exact Battery Fleet Records matching Screenshot 1: media_1795240078542_330a048f.jpg
-const BATTERY_REPORT_RECORDS: BatteryReportRecord[] = [
+const DEFAULT_BATTERIES: BatteryReportRecord[] = [
   {
     sn: "1053050255210107BAT01",
     plantName: "P2G 50KW",
@@ -94,45 +95,83 @@ interface SolisBatteryReportViewProps {
 }
 
 export default function SolisBatteryReportView({ onSelectBattery }: SolisBatteryReportViewProps) {
+  const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
   const [selectedSn, setSelectedSn] = useState<string>("All");
   const [reportDate, setReportDate] = useState("2026-11-20");
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstance = useRef<echarts.ECharts | null>(null);
+  const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>(DEFAULT_BATTERIES);
+  const [curveData, setCurveData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch real data on period, sn, or date change
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const periodParam = activeDateTab.toLowerCase();
+    const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
+    fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.success && Array.isArray(data.rows) && data.rows.length > 0) {
+          setBatteryRows(
+            data.rows.map((r: any) => ({
+              sn: r.sn,
+              plantName: r.plantName,
+              nominalCapacity: r.nominalCapacity,
+              dailyChargeKwh: r.dailyChargeKwh,
+              dailyDischargeKwh: r.dailyDischargeKwh,
+              socPct: r.socPct,
+              packVoltageV: r.packVoltageV,
+              cellDeltaMv: r.cellDeltaMv,
+              cycles: r.cycles,
+              sohPct: r.sohPct,
+            }))
+          );
+        }
+        if (data.success && Array.isArray(data.curve)) {
+          setCurveData(data.curve);
+        }
+      })
+      .catch((err) => console.error("Error fetching battery report:", err))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeDateTab, selectedSn, reportDate]);
 
   const filteredRecords = useMemo(() => {
-    if (selectedSn === "All") return BATTERY_REPORT_RECORDS;
-    return BATTERY_REPORT_RECORDS.filter((r) => r.sn === selectedSn);
-  }, [selectedSn]);
+    if (selectedSn === "All") return batteryRows;
+    return batteryRows.filter((r) => r.sn === selectedSn);
+  }, [selectedSn, batteryRows]);
 
-  // Compute KPIs according to Screenshot 1
+  // Compute KPIs
   const kpiData = useMemo(() => {
-    if (selectedSn === "All") {
-      return {
-        dailyCharge: "213.4",
-        dailyDischarge: "98.9",
-        efficiency: "92.8%",
-        socSoh: "78% / 100% SOH",
-        chargeSubtitle: "5 Packs Active",
-        dischargeSubtitle: "Offloaded during peak",
-        efficiencySubtitle: "High Coulombic Yield",
-        socSohSubtitle: "Healthy Cell Balancing",
-      };
-    }
-    const target = filteredRecords[0] || BATTERY_REPORT_RECORDS[0];
-    const eff = ((target.dailyDischargeKwh / Math.max(target.dailyChargeKwh, 1)) * 100).toFixed(1);
+    const totalCharge = filteredRecords.reduce((acc, b) => acc + b.dailyChargeKwh, 0);
+    const totalDischarge = filteredRecords.reduce((acc, b) => acc + b.dailyDischargeKwh, 0);
+    const eff = totalCharge > 0 ? ((totalDischarge / totalCharge) * 100).toFixed(1) : "92.8";
+    const avgSoc = Math.round(
+      filteredRecords.reduce((acc, b) => acc + b.socPct, 0) / Math.max(filteredRecords.length, 1)
+    );
+
     return {
-      dailyCharge: target.dailyChargeKwh.toFixed(1),
-      dailyDischarge: target.dailyDischargeKwh.toFixed(1),
+      dailyCharge: totalCharge.toFixed(1),
+      dailyDischarge: totalDischarge.toFixed(1),
       efficiency: `${eff}%`,
-      socSoh: `${target.socPct}% / ${target.sohPct}% SOH`,
-      chargeSubtitle: "1 Pack Active",
+      socSoh: `${avgSoc}% / 100% SOH`,
+      chargeSubtitle: `${filteredRecords.length} Packs Active`,
       dischargeSubtitle: "Offloaded during peak",
       efficiencySubtitle: "High Coulombic Yield",
       socSohSubtitle: "Healthy Cell Balancing",
     };
-  }, [selectedSn, filteredRecords]);
+  }, [filteredRecords]);
 
-  // Battery Charge/Discharge Profile & SOC % EChart
+  // ECharts Dual Axis: Battery Power Bar (Charge/Discharge) + SOC Line Curve
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<echarts.ECharts | null>(null);
+
   useEffect(() => {
     if (!chartRef.current) return;
     let chart = echarts.getInstanceByDom(chartRef.current);
@@ -141,51 +180,22 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     }
     chartInstance.current = chart;
 
-    // Time points matching the screenshot: 00:00, 02:00, 04:00, 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00
-    const timeLabels = [
-      "00:00",
-      "02:00",
-      "04:00",
-      "06:00",
-      "08:00",
-      "10:00",
-      "12:00",
-      "14:00",
-      "16:00",
-      "18:00",
-      "20:00",
-      "22:00",
-    ];
+    let timeLabels: string[] = [];
+    let powerData: number[] = [];
+    let socData: number[] = [];
 
-    // Profile in screenshot:
-    // 00:00 -> discharge -1.8 kW
-    // 02:00 -> discharge -1.8 kW
-    // 04:00 -> discharge -1.5 kW
-    // 06:00 -> 0 kW
-    // 08:00 -> charge +5.2 kW
-    // 10:00 -> charge +11.8 kW
-    // 12:00 -> charge +15.5 kW
-    // 14:00 -> charge +9.4 kW
-    // 16:00 -> charge +3.1 kW
-    // 18:00 -> discharge -2.0 kW
-    // 20:00 -> discharge -3.5 kW
-    // 22:00 -> discharge -2.2 kW
-    const batteryPowerValues = [-1.8, -1.8, -1.5, 0, 5.2, 11.8, 15.5, 9.4, 3.1, -2.0, -3.5, -2.2];
-
-    // SOC line curve in screenshot:
-    // 00:00: ~45%
-    // 02:00: ~42%
-    // 04:00: ~38%
-    // 06:00: ~35%
-    // 08:00: ~58%
-    // 10:00: ~84%
-    // 12:00: ~98%
-    // 14:00: ~100%
-    // 16:00: ~100%
-    // 18:00: ~92%
-    // 20:00: ~80%
-    // 22:00: ~68%
-    const socValues = [45, 42, 38, 35, 58, 84, 98, 100, 100, 92, 80, 68];
+    if (curveData.length > 0) {
+      timeLabels = curveData.map((c) => c.time_label);
+      powerData = curveData.map((c) => Number(c.power_kw) || 0);
+      socData = curveData.map((c) => Number(c.soc_pct) || 75);
+    } else {
+      timeLabels = [
+        "00:00", "02:00", "04:00", "06:00", "08:00", "10:00",
+        "12:00", "14:00", "16:00", "18:00", "20:00", "22:00",
+      ];
+      powerData = [-1.8, -1.8, -1.5, 0, 5.2, 11.8, 15.5, 9.4, 3.1, -2.0, -3.5, -2.2];
+      socData = [45, 42, 38, 35, 58, 84, 98, 100, 100, 92, 80, 68];
+    }
 
     const option: echarts.EChartsOption = {
       backgroundColor: "transparent",
@@ -202,9 +212,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             if (item.seriesName.includes("Battery Power")) {
               const val = Number(item.value);
               const label = val >= 0 ? `Charge: +${val.toFixed(1)} kW` : `Discharge: ${val.toFixed(1)} kW`;
-              res += `<div class="flex items-center gap-1.5 text-xs"><span style="color:${val >= 0 ? '#10b981' : '#0284c7'}">â—</span> ${label}</div>`;
+              res += `<div class="flex items-center gap-1.5 text-xs"><span style="color:${val >= 0 ? '#10b981' : '#0284c7'}">●</span> ${label}</div>`;
             } else if (item.seriesName.includes("State of Charge")) {
-              res += `<div class="flex items-center gap-1.5 text-xs"><span style="color:#f37021">â—</span> SOC: ${item.value}%</div>`;
+              res += `<div class="flex items-center gap-1.5 text-xs"><span style="color:#f37021">●</span> SOC: ${item.value}%</div>`;
             }
           });
           return res;
@@ -228,33 +238,19 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           },
         ],
       },
-      grid: {
-        top: 30,
-        left: "3%",
-        right: "3%",
-        bottom: 50,
-        containLabel: true,
-      },
+      grid: { top: 30, left: "3%", right: "3%", bottom: 50, containLabel: true },
       xAxis: {
         type: "category",
         data: timeLabels,
         boundaryGap: true,
         axisLine: { lineStyle: { color: "#f1f5f9" } },
-        axisTick: { show: false },
-        axisLabel: {
-          color: "#94a3b8",
-          fontSize: 11,
-        },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
       },
       yAxis: [
         {
           type: "value",
           name: "kW",
-          min: -6,
-          max: 18,
-          interval: 3,
           axisLine: { show: false },
-          axisTick: { show: false },
           splitLine: { lineStyle: { color: "#f8fafc", type: "solid" } },
           axisLabel: { color: "#94a3b8", fontSize: 11 },
         },
@@ -263,9 +259,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           name: "%",
           min: 0,
           max: 100,
-          interval: 20,
           axisLine: { show: false },
-          axisTick: { show: false },
           splitLine: { show: false },
           axisLabel: { color: "#94a3b8", fontSize: 11 },
         },
@@ -275,14 +269,12 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           name: "Battery Power (Charge + / Discharge - kW)",
           type: "bar",
           yAxisIndex: 0,
-          barWidth: 20,
+          barWidth: 18,
           itemStyle: {
-            color: (params: any) => {
-              return params.value >= 0 ? "#10b981" : "#0284c7";
-            },
+            color: (params: any) => (params.value >= 0 ? "#10b981" : "#0284c7"),
             borderRadius: [2, 2, 2, 2],
           },
-          data: batteryPowerValues,
+          data: powerData,
         },
         {
           name: "State of Charge (SOC %)",
@@ -297,16 +289,13 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             borderColor: "#ffffff",
             borderWidth: 2,
           },
-          lineStyle: {
-            color: "#f37021",
-            width: 2.5,
-          },
-          data: socValues,
+          lineStyle: { color: "#f37021", width: 2.5 },
+          data: socData,
         },
       ],
     };
 
-    chart.setOption(option);
+    chart.setOption(option, true);
     chart.resize();
 
     const handleResize = () => chart?.resize();
@@ -315,48 +304,39 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       window.removeEventListener("resize", handleResize);
       chart?.dispose();
     };
-  }, [selectedSn]);
+  }, [curveData, selectedSn, activeDateTab]);
 
-  const handleExportCSV = () => {
-    const headers = [
-      "Battery SN",
-      "Plant Name",
-      "Nominal Capacity",
-      "Daily Charge (kWh)",
-      "Daily Discharge (kWh)",
-      "SOC (%)",
-      "Pack Voltage (V)",
-      "Cell Delta (mV)",
-      "Cycles",
-      "SOH (%)",
-    ];
-    const rows = filteredRecords.map((r) => [
-      r.sn,
-      r.plantName,
-      r.nominalCapacity,
-      r.dailyChargeKwh,
-      r.dailyDischargeKwh,
-      r.socPct,
-      r.packVoltageV,
-      r.cellDeltaMv,
-      r.cycles,
-      r.sohPct,
-    ]);
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `solis_battery_report_${reportDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Export to Professional Excel (.xlsx)
+  const handleExportExcel = () => {
+    const excelRows = filteredRecords.map((r) => ({
+      "Battery SN": r.sn,
+      "Plant Name": r.plantName,
+      "Nominal Capacity": r.nominalCapacity,
+      "Period": activeDateTab,
+      "Report Date": reportDate,
+      [`Daily Charge (${activeDateTab === "Day" ? "kWh" : "kWh / MWh"})`]: r.dailyChargeKwh,
+      [`Daily Discharge (${activeDateTab === "Day" ? "kWh" : "kWh / MWh"})`]: r.dailyDischargeKwh,
+      "SOC (%)": `${r.socPct}%`,
+      "Pack Voltage (V)": r.packVoltageV,
+      "Cell Delta (mV)": r.cellDeltaMv,
+      "Cycles": r.cycles,
+      "SOH (%)": `${r.sohPct}%`,
+    }));
+
+    exportToExcel(
+      [
+        { sheetName: "Battery Health", data: excelRows },
+        ...(curveData.length > 0
+          ? [{ sheetName: "Charge & SOC Curve", data: curveData }]
+          : []),
+      ],
+      `SolisCloud_Battery_Report_${activeDateTab}_${reportDate}`
+    );
   };
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-300">
-      {/* 1. Header Bar matching Screenshot 1 */}
+      {/* 1. Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#f37021]">
@@ -372,8 +352,24 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           </div>
         </div>
 
-        {/* Date Selector & Export CSV */}
-        <div className="flex items-center gap-3">
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Day / Month / Year Pills */}
+          <div className="flex items-center bg-gray-100/80 p-0.5 rounded-lg border border-gray-200/60 shadow-2xs">
+            {(["Day", "Month", "Year"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveDateTab(tab)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeDateTab === tab
+                  ? "bg-white text-slate-800 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-700"
+                  }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 shadow-2xs">
             <Calendar className="w-4 h-4 text-slate-400" />
             <input
@@ -386,11 +382,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           </div>
 
           <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-gray-50 active:scale-95 transition-all shadow-2xs"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-700 hover:bg-emerald-50 active:scale-95 transition-all shadow-2xs"
           >
-            <Download className="w-4 h-4 text-slate-600" />
-            <span>Export CSV</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Export Excel</span>
           </button>
         </div>
       </div>
@@ -400,7 +396,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         {/* KPI 1: Fleet Daily Charge */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-slate-400">Fleet Daily Charge</span>
+            <span className="text-xs font-medium text-slate-400">
+              Fleet {activeDateTab} Charge
+            </span>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
                 {kpiData.dailyCharge}
@@ -419,7 +417,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         {/* KPI 2: Fleet Daily Discharge */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-slate-400">Fleet Daily Discharge</span>
+            <span className="text-xs font-medium text-slate-400">
+              Fleet {activeDateTab} Discharge
+            </span>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
                 {kpiData.dailyDischarge}
@@ -487,7 +487,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
               className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
             >
               <option value="All">All Batteries (Fleet View)</option>
-              {BATTERY_REPORT_RECORDS.map((b) => (
+              {batteryRows.map((b) => (
                 <option key={b.sn} value={b.sn}>
                   {b.sn} ({b.plantName})
                 </option>
@@ -497,7 +497,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           </div>
         </div>
 
-        {/* EChart Canvas Container */}
+        {/* EChart Canvas */}
         <div ref={chartRef} className="w-full h-80" />
       </div>
 
@@ -519,8 +519,8 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                 <th className="py-3 px-4">Battery SN</th>
                 <th className="py-3 px-3">Plant Name</th>
                 <th className="py-3 px-3">Nominal Capacity</th>
-                <th className="py-3 px-3">Daily Charge</th>
-                <th className="py-3 px-3">Daily Discharge</th>
+                <th className="py-3 px-3">{activeDateTab} Charge</th>
+                <th className="py-3 px-3">{activeDateTab} Discharge</th>
                 <th className="py-3 px-3">SOC</th>
                 <th className="py-3 px-3">Pack Voltage</th>
                 <th className="py-3 px-3">Cell Delta</th>
@@ -579,4 +579,3 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     </div>
   );
 }
-
