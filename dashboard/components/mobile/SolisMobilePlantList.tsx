@@ -152,7 +152,7 @@ export default function SolisMobilePlantList({
       {/* ======================================================== */}
       {/* 1. TOP BAR: Category Tabs & Search / Add Icons            */}
       {/* ======================================================== */}
-      <div className="bg-white px-4 pt-3 pb-2 flex items-center justify-between border-b border-gray-100 sticky top-0 z-40 shadow-2xs">
+      <div className="bg-white px-4 pt-3 pb-2 flex items-center justify-between border-b border-gray-100">
         {/* Category Tabs: Plant, Inverter, Battery, Data */}
         <div className="flex items-center gap-4 text-sm font-semibold">
           {["Plant", "Inverter", "Battery", "Data"].map((tab) => (

@@ -476,6 +476,10 @@ export default function SolisMobilePlantDetail({
         borderColor: "#e2e8f0",
         borderWidth: 1,
         textStyle: { color: "#1e293b", fontSize: 11 },
+        position: function (point, params, dom, rect, size) {
+          // Keep tooltip neatly in top area to prevent covering curve or overlapping bottom chart
+          return [point[0] < size.viewSize[0] / 2 ? point[0] + 15 : point[0] - size.contentSize[0] - 15, 10];
+        },
       },
       grid: {
         top: 26,
@@ -529,7 +533,17 @@ export default function SolisMobilePlantDetail({
     const socOption: echarts.EChartsOption = {
       animation: true,
       animationDuration: 400,
-      tooltip: { trigger: "axis", backgroundColor: "rgba(255, 255, 255, 0.95)", borderColor: "#e2e8f0", borderWidth: 1, textStyle: { color: "#1e293b", fontSize: 11 } },
+      tooltip: {
+        trigger: "axis",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        borderColor: "#e2e8f0",
+        borderWidth: 1,
+        textStyle: { color: "#1e293b", fontSize: 11 },
+        position: function (point, params, dom, rect, size) {
+          // Keep tooltip neatly in top area to prevent covering curve
+          return [point[0] < size.viewSize[0] / 2 ? point[0] + 15 : point[0] - size.contentSize[0] - 15, 10];
+        },
+      },
       grid: { top: 26, right: 42, bottom: 30, left: 38, containLabel: true },
       xAxis: {
         type: "category",
@@ -573,7 +587,7 @@ export default function SolisMobilePlantDetail({
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa] pb-24 text-slate-800 flex flex-col antialiased relative">
+    <div className="min-h-screen bg-[#f7f9fa] pb-32 text-slate-800 flex flex-col antialiased relative">
       {/* ======================================================== */}
       {/* 1. TOP MOBILE HEADER: < Back, Title, ID, More Menu        */}
       {/* ======================================================== */}

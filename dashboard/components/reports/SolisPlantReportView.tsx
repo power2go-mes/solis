@@ -204,6 +204,8 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
       const loadKw = chartTimeline.map((p) => Number(p.load_kw) || 0);
       const gridKw = chartTimeline.map((p) => Number(p.grid_kw) || 0);
 
+      const isMobile = window.innerWidth < 768;
+
       option = {
         animation: true,
         tooltip: {
@@ -216,14 +218,25 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
         legend: {
           bottom: 0,
           data: ["Solar PV Generation (kW)", "House Load (kW)", "Grid Export/Import (kW)"],
-          textStyle: { color: "#64748b", fontSize: 11 },
+          textStyle: { color: "#64748b", fontSize: isMobile ? 9 : 11 },
+          itemGap: isMobile ? 6 : 10,
         },
-        grid: { top: 30, left: 50, right: 25, bottom: 45, containLabel: true },
+        grid: {
+          top: 30,
+          left: isMobile ? 35 : 50,
+          right: isMobile ? 15 : 25,
+          bottom: isMobile ? 55 : 45,
+          containLabel: true,
+        },
         xAxis: {
           type: "category",
           data: times,
           axisLine: { lineStyle: { color: "#e2e8f0" } },
-          axisLabel: { color: "#64748b", fontSize: 10 },
+          axisLabel: {
+            color: "#64748b",
+            fontSize: isMobile ? 8 : 10,
+            interval: isMobile ? 3 : 0,
+          },
         },
         yAxis: {
           type: "value",
@@ -270,9 +283,17 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
       );
       const gridExport = filteredStations.map((s) => s.gridSoldKwh);
 
+      const isMobile = window.innerWidth < 768;
+
       option = {
         animation: true,
-        grid: { top: 30, left: 50, right: 25, bottom: 50, containLabel: true },
+        grid: {
+          top: 30,
+          left: isMobile ? 35 : 50,
+          right: isMobile ? 15 : 25,
+          bottom: isMobile ? 85 : 50,
+          containLabel: true,
+        },
         tooltip: {
           trigger: "axis",
           backgroundColor: "rgba(255, 255, 255, 0.98)",
@@ -283,13 +304,20 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
         legend: {
           bottom: 0,
           data: ["Solar PV Yield (kWh)", "Self-Consumed (kWh)", "Grid Export (kWh)"],
-          textStyle: { color: "#64748b", fontSize: 11 },
+          textStyle: { color: "#64748b", fontSize: isMobile ? 9 : 11 },
+          itemGap: isMobile ? 6 : 10,
         },
         xAxis: {
           type: "category",
           data: stationNames,
           axisLine: { lineStyle: { color: "#e2e8f0" } },
-          axisLabel: { color: "#64748b", fontSize: 11, interval: 0, rotate: 10 },
+          axisLabel: {
+            color: "#64748b",
+            fontSize: isMobile ? 9 : 11,
+            interval: 0,
+            rotate: isMobile ? 40 : 10,
+            formatter: (val: string) => (isMobile && val.length > 10 ? `${val.slice(0, 9)}…` : val),
+          },
         },
         yAxis: {
           type: "value",
@@ -300,21 +328,21 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
           {
             name: "Solar PV Yield (kWh)",
             type: "bar",
-            barWidth: 20,
+            barMaxWidth: isMobile ? 10 : 20,
             itemStyle: { color: "#f37021", borderRadius: [3, 3, 0, 0] },
             data: pvYield,
           },
           {
             name: "Self-Consumed (kWh)",
             type: "bar",
-            barWidth: 20,
+            barMaxWidth: isMobile ? 10 : 20,
             itemStyle: { color: "#10b981", borderRadius: [3, 3, 0, 0] },
             data: selfConsumed,
           },
           {
             name: "Grid Export (kWh)",
             type: "bar",
-            barWidth: 20,
+            barMaxWidth: isMobile ? 10 : 20,
             itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] },
             data: gridExport,
           },

@@ -29,3 +29,57 @@ body {
 nextjs-portal, [data-nextjs-toast], #__next-build-watcher {
   display: none !important;
 }
+
+/* ======================================================== */
+/* SMOOTH SYSTEM ANIMATIONS & PAGE TRANSITIONS              */
+/* ======================================================== */
+
+/* Smooth page fade & slight slide transition */
+@keyframes viewFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view-transition {
+  animation: viewFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth Interactive Card Hover & Lift */
+.card-hover-smooth {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
+}
+.card-hover-smooth:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Smooth Button Active Press Interaction */
+.btn-smooth {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-smooth:active {
+  transform: scale(0.96);
+}
+
+/* Smooth Tab Underline / Pill Transition */
+.tab-transition {
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Glassmorphism backdrop blur smoothness */
+.backdrop-blur-smooth {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: backdrop-filter 0.3s ease;
+}
+
+/* Custom smooth scrollbar */
+* {
+  scroll-behavior: smooth;
+}

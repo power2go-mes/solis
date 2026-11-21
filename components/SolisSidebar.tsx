@@ -136,33 +136,12 @@ export default function SolisSidebar({
       {/* ========================================================================= */}
       <aside
         ref={sidebarRef}
-        className={`hidden md:flex flex-col justify-between bg-white border-r border-slate-100 py-3.5 z-40 select-none relative transition-all duration-300 ${
-          isCollapsed ? "w-[58px] items-center" : "w-[210px] px-3"
+        className={`hidden md:flex flex-col justify-between bg-white/95 backdrop-blur-md border-r border-slate-200/80 py-4 z-40 select-none relative transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[1px_0_12px_rgba(0,0,0,0.03)] ${
+          isCollapsed ? "w-[62px] items-center" : "w-[220px] px-3.5"
         }`}
       >
-        {/* Top Header Logo in Expanded Mode */}
-        {!isCollapsed && (
-          <div className="flex items-center gap-2 px-2 pb-4 mb-2 border-b border-gray-100">
-            <div className="relative w-7 h-7 flex-shrink-0">
-              <Image
-                src="/images/power2go_logo.png"
-                alt="Power2Go"
-                fill
-                className="object-contain"
-                unoptimized
-              />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold text-slate-900 leading-tight truncate">
-                Power<span className="text-[#10b981]">2</span>Go
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">SolisCloud</span>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Items List */}
-        <div className={`flex flex-col w-full ${isCollapsed ? "items-center space-y-4 pt-1" : "space-y-1.5"}`}>
+        {/* Navigation Items List - Aligned at top whether collapsed or expanded */}
+        <div className={`flex flex-col w-full ${isCollapsed ? "items-center space-y-4 pt-1" : "space-y-2 pt-1"}`}>
           {/* =================================================================== */}
           {/* 1. OVERVIEW MENU (4-Square Grid Icon with Checkmark)                 */}
           {/* =================================================================== */}
@@ -174,15 +153,15 @@ export default function SolisSidebar({
             >
               <button
                 onClick={() => setActiveFlyout(activeFlyout === "overview" ? null : "overview")}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                   isOverviewActive
-                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#10b981] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
-                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
+                    ? "bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] border border-emerald-300 text-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.22)]"
+                    : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/60 border border-transparent hover:border-emerald-100"
                 }`}
                 title="Overview"
               >
                 <SolisOverviewIcon
-                  className={`w-5 h-5 ${isOverviewActive ? "text-[#10b981]" : "text-slate-400"}`}
+                  className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isOverviewActive ? "text-emerald-600" : "text-slate-400"}`}
                 />
               </button>
 
@@ -233,20 +212,20 @@ export default function SolisSidebar({
             <div className="space-y-1">
               <button
                 onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group ${
                   isOverviewActive
-                    ? "text-slate-900 font-bold bg-gray-50/80"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
+                    ? "text-emerald-800 font-bold bg-emerald-50/80 border border-emerald-200/60 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:translate-x-0.5"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <SolisOverviewIcon className="w-4 h-4 text-[#10b981]" />
+                <div className="flex items-center gap-2.5">
+                  <SolisOverviewIcon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isOverviewActive ? "text-emerald-600" : "text-slate-500"}`} />
                   <span>Overview</span>
                 </div>
                 {isOverviewExpanded ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" />
                 )}
               </button>
 
@@ -288,14 +267,17 @@ export default function SolisSidebar({
             >
               <button
                 onClick={() => setActiveFlyout(activeFlyout === "om" ? null : "om")}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all relative ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95 relative ${
                   isOMActive
-                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#10b981] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
-                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
+                    ? "bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] border border-emerald-300 text-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.22)]"
+                    : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/60 border border-transparent hover:border-emerald-100"
                 }`}
                 title="O&M"
               >
-                <Wrench className="w-5 h-5" />
+                <div className="relative">
+                  <Wrench className={`w-5 h-5 transition-transform duration-200 ${isOMActive ? "text-emerald-600" : "text-slate-400"}`} />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#ef4444] animate-pulse" />
+                </div>
               </button>
 
               {/* Flyout Popover */}
@@ -348,20 +330,20 @@ export default function SolisSidebar({
             <div className="space-y-1">
               <button
                 onClick={() => setIsOMExpanded(!isOMExpanded)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group ${
                   isOMActive
-                    ? "text-slate-900 font-bold bg-gray-50/80"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
+                    ? "text-emerald-800 font-bold bg-emerald-50/80 border border-emerald-200/60 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:translate-x-0.5"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-slate-600" />
+                <div className="flex items-center gap-2.5">
+                  <Wrench className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isOMActive ? "text-emerald-600" : "text-slate-500"}`} />
                   <span>O&M</span>
                 </div>
                 {isOMExpanded ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" />
                 )}
               </button>
 
@@ -405,14 +387,14 @@ export default function SolisSidebar({
             >
               <button
                 onClick={() => setActiveFlyout(activeFlyout === "report" ? null : "report")}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                   isReportActive
-                    ? "bg-gradient-to-b from-[#fff6ed] to-[#ffeed9] border border-[#ff9e58] text-[#10b981] shadow-[0_4px_14px_rgba(243,112,33,0.22)]"
-                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50 border border-transparent"
+                    ? "bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] border border-emerald-300 text-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.22)]"
+                    : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/60 border border-transparent hover:border-emerald-100"
                 }`}
                 title="Report"
               >
-                <BarChart3 className="w-5 h-5" />
+                <BarChart3 className={`w-5 h-5 transition-transform duration-200 ${isReportActive ? "text-emerald-600" : "text-slate-400"}`} />
               </button>
 
               {/* Flyout Popover */}
@@ -475,20 +457,20 @@ export default function SolisSidebar({
             <div className="space-y-1">
               <button
                 onClick={() => setIsReportExpanded(!isReportExpanded)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group ${
                   isReportActive
-                    ? "text-slate-900 font-bold bg-gray-50/80"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-gray-50"
+                    ? "text-emerald-800 font-bold bg-emerald-50/80 border border-emerald-200/60 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:translate-x-0.5"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-slate-600" />
+                <div className="flex items-center gap-2.5">
+                  <BarChart3 className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isReportActive ? "text-emerald-600" : "text-slate-500"}`} />
                   <span>Report</span>
                 </div>
                 {isReportExpanded ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" />
                 )}
               </button>
 

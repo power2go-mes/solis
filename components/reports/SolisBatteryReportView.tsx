@@ -201,6 +201,8 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       socData = [45, 42, 38, 35, 58, 84, 98, 100, 100, 92, 80, 68];
     }
 
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
     const option: echarts.EChartsOption = {
       backgroundColor: "transparent",
       tooltip: {
@@ -228,7 +230,8 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         bottom: 0,
         itemWidth: 14,
         itemHeight: 10,
-        textStyle: { color: "#64748b", fontSize: 12 },
+        textStyle: { color: "#64748b", fontSize: isMobile ? 9 : 12 },
+        itemGap: isMobile ? 6 : 10,
         data: [
           {
             name: "Battery Power (Charge + / Discharge - kW)",
@@ -242,13 +245,23 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           },
         ],
       },
-      grid: { top: 30, left: "3%", right: "3%", bottom: 50, containLabel: true },
+      grid: {
+        top: 30,
+        left: isMobile ? "2%" : "3%",
+        right: isMobile ? "2%" : "3%",
+        bottom: isMobile ? 60 : 50,
+        containLabel: true,
+      },
       xAxis: {
         type: "category",
         data: timeLabels,
         boundaryGap: true,
         axisLine: { lineStyle: { color: "#f1f5f9" } },
-        axisLabel: { color: "#94a3b8", fontSize: 11 },
+        axisLabel: {
+          color: "#94a3b8",
+          fontSize: isMobile ? 9 : 11,
+          interval: isMobile ? 2 : "auto",
+        },
       },
       yAxis: [
         {

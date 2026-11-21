@@ -231,16 +231,18 @@ function SolisCloudDashboard() {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          {/* Top Navigation Bar */}
-          <SolisTopNav
-            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-            canGoBack={activeView !== "plant_overview" || navigationHistory.length > 0}
-            onGoBack={handleGoBack}
-          />
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+          {/* Top Navigation Bar - Sticky / Fixed at top so it never scrolls away */}
+          <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-2xs">
+            <SolisTopNav
+              onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+              canGoBack={activeView !== "plant_overview" || navigationHistory.length > 0}
+              onGoBack={handleGoBack}
+            />
+          </div>
 
-          {/* Page Body */}
-          <main className="flex-1 p-3.5 sm:p-5 lg:p-6 space-y-4 max-w-[1600px] w-full mx-auto">
+          {/* Page Body - Scrollable content area with smooth view transition */}
+          <main key={activeView} className="flex-1 p-3.5 sm:p-5 lg:p-6 space-y-4 max-w-[1600px] w-full mx-auto overflow-y-auto view-transition">
             {activeView === "plant_overview" ? (
               /* ============================================================== */
               /* EXACT SOLISCLOUD PLANT OVERVIEW PAGE (PRIMARY VIEW)            */
@@ -397,112 +399,114 @@ function SolisCloudDashboard() {
       {/*    100% Strict Visual & Functional Parity with Mobile Images   */}
       {/* ============================================================== */}
       <div className="block md:hidden z-10 w-full min-h-screen">
-        {activeView === "plant_overview" ? (
-          <SolisMobilePlantList
-            plants={overviewPlants}
-            onSelectPlant={(plantId) => handleSelectPlant(plantId)}
-            onCreatePlant={() => setIsCreatePlantOpen(true)}
-            onNavigateTab={(tab) => navigateToView(tab as any)}
-            activeView={activeView}
-          />
-        ) : activeView === "om_alarms" || activeView === "om_alerts" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                onClick={() => navigateToView("plant_overview")}
-                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
-              >
-                ← Back to Overview
-              </button>
-            </div>
-            <SolisOMAlarmsPage
-              initialCategory={activeView === "om_alarms" ? "Alarm" : "Alert"}
-              onSelectPlant={(plantId) => {
-                setSelectedPlantId(plantId);
-                navigateToView("device_overview");
-              }}
+        <div key={`mobile-content-${activeView}`} className="w-full min-h-screen view-transition">
+          {activeView === "plant_overview" ? (
+            <SolisMobilePlantList
+              plants={overviewPlants}
+              onSelectPlant={(plantId) => handleSelectPlant(plantId)}
+              onCreatePlant={() => setIsCreatePlantOpen(true)}
+              onNavigateTab={(tab) => navigateToView(tab as any)}
+              activeView={activeView}
             />
-          </div>
-        ) : activeView === "report_plant" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                onClick={() => navigateToView("plant_overview")}
-                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
-              >
-                ← Back to Overview
-              </button>
+          ) : activeView === "om_alarms" || activeView === "om_alerts" ? (
+            <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
+              <div className="mb-3 flex items-center justify-between">
+                <button
+                  onClick={() => navigateToView("plant_overview")}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
+                >
+                  ← Back to Overview
+                </button>
+              </div>
+              <SolisOMAlarmsPage
+                initialCategory={activeView === "om_alarms" ? "Alarm" : "Alert"}
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  navigateToView("device_overview");
+                }}
+              />
             </div>
-            <SolisPlantReportView
-              onSelectPlant={(plantId) => {
-                setSelectedPlantId(plantId);
-                navigateToView("device_overview");
-              }}
-            />
-          </div>
-        ) : activeView === "report_inverter" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                onClick={() => navigateToView("plant_overview")}
-                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
-              >
-                ← Back to Overview
-              </button>
+          ) : activeView === "report_plant" ? (
+            <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
+              <div className="mb-3 flex items-center justify-between">
+                <button
+                  onClick={() => navigateToView("plant_overview")}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
+                >
+                  ← Back to Overview
+                </button>
+              </div>
+              <SolisPlantReportView
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  navigateToView("device_overview");
+                }}
+              />
             </div>
-            <SolisInverterReportView
-              onSelectInverter={() => navigateToView("device_overview")}
-            />
-          </div>
-        ) : activeView === "report_battery" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                onClick={() => navigateToView("plant_overview")}
-                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
-              >
-                ← Back to Overview
-              </button>
+          ) : activeView === "report_inverter" ? (
+            <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
+              <div className="mb-3 flex items-center justify-between">
+                <button
+                  onClick={() => navigateToView("plant_overview")}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
+                >
+                  ← Back to Overview
+                </button>
+              </div>
+              <SolisInverterReportView
+                onSelectInverter={() => navigateToView("device_overview")}
+              />
             </div>
-            <SolisBatteryReportView
-              onSelectBattery={() => navigateToView("device_overview")}
-            />
-          </div>
-        ) : activeView === "device_overview" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                onClick={() => navigateToView("plant_overview")}
-                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
-              >
-                ← Back to Overview
-              </button>
+          ) : activeView === "report_battery" ? (
+            <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
+              <div className="mb-3 flex items-center justify-between">
+                <button
+                  onClick={() => navigateToView("plant_overview")}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
+                >
+                  ← Back to Overview
+                </button>
+              </div>
+              <SolisBatteryReportView
+                onSelectBattery={() => navigateToView("device_overview")}
+              />
             </div>
-            <SolisDeviceOverviewPage
-              onSelectPlant={(plantId) => {
-                setSelectedPlantId(plantId);
-                navigateToView("plant_detail");
-              }}
-              onSelectPlantByName={(name) => {
-                const match = plantsList.find((p) =>
-                  p.name.toLowerCase().includes(name.toLowerCase())
-                );
-                if (match) setSelectedPlantId(match.id);
-                navigateToView("plant_detail");
-              }}
+          ) : activeView === "device_overview" ? (
+            <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
+              <div className="mb-3 flex items-center justify-between">
+                <button
+                  onClick={() => navigateToView("plant_overview")}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
+                >
+                  ← Back to Overview
+                </button>
+              </div>
+              <SolisDeviceOverviewPage
+                onSelectPlant={(plantId) => {
+                  setSelectedPlantId(plantId);
+                  navigateToView("plant_detail");
+                }}
+                onSelectPlantByName={(name) => {
+                  const match = plantsList.find((p) =>
+                    p.name.toLowerCase().includes(name.toLowerCase())
+                  );
+                  if (match) setSelectedPlantId(match.id);
+                  navigateToView("plant_detail");
+                }}
+              />
+            </div>
+          ) : (
+            <SolisMobilePlantDetail
+              selectedPlantId={selectedPlantId}
+              plantsList={plantsList}
+              initialTab={tabParam}
+              onSelectPlant={(plantId) => handleSelectPlant(plantId)}
+              onBack={() => navigateToView("plant_overview")}
             />
-          </div>
-        ) : (
-          <SolisMobilePlantDetail
-            selectedPlantId={selectedPlantId}
-            plantsList={plantsList}
-            initialTab={tabParam}
-            onSelectPlant={(plantId) => handleSelectPlant(plantId)}
-            onBack={() => navigateToView("plant_overview")}
-          />
-        )}
+          )}
+        </div>
 
-        {/* Global Floating Bottom Navbar for ALL Mobile Pages (except plant_detail which has its own sub-navigation) */}
+        {/* Global Floating Bottom Navbar for ALL Mobile Pages (outside transform context) */}
         {activeView !== "plant_detail" && (
           <SolisMobileBottomNav
             activeView={activeView}
