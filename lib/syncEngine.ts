@@ -259,11 +259,16 @@ export async function executeLiveSync() {
         const gKw = Number((gW / 1000).toFixed(2));
         let lKw = Number((lW / 1000).toFixed(2));
 
+        const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
+
         if (lKw <= 0) {
           const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
           if (calculatedLoadKw > 0) {
             lKw = calculatedLoadKw;
             lW = Math.round(calculatedLoadKw * 1000);
+          } else if (idx === timeArray.length - 1 && mixLoadKw > 0) {
+            lKw = mixLoadKw;
+            lW = Math.round(mixLoadKw * 1000);
           }
         }
 

@@ -141,13 +141,16 @@ function postRequest(apiPath, body) {
   });
 }
 
-// Active 5 Plants
+// All 8 authorized plants (including Towfiq chinoy)
 const PLANTS = [
+  { id: "1298491919451014032", name: "Towfiq chinoy", capacityKwp: 29.67, location: "Karachi, Pakistan", commissioning: "2026-07-01" },
   { id: "1298491919450797504", name: "Menu Karachi Office", capacityKwp: 80.0, location: "Karachi, Pakistan", commissioning: "2026-07-21" },
   { id: "1298491919450958553", name: "OPL Residence", capacityKwp: 55.5, location: "Gharo, Pakistan", commissioning: "2026-10-20" },
   { id: "1298491919450873747", name: "36 Chenab", capacityKwp: 25.155, location: "Lahore, Pakistan", commissioning: "2026-09-02" },
   { id: "1298491919450740581", name: "P2G 50KW", capacityKwp: 32.0, location: "Karachi, Pakistan", commissioning: "2026-06-23" },
   { id: "1298491919450840394", name: "P2G 1ST 6kw", capacityKwp: 20.0, location: "Karachi, Pakistan", commissioning: "2026-08-13" },
+  { id: "1298491919450851319", name: "P2G 20kw", capacityKwp: 18.0, location: "Karachi, Pakistan", commissioning: "2026-08-01" },
+  { id: "1298491919450734544", name: "P2G 15KW", capacityKwp: 20.0, location: "Karachi, Pakistan", commissioning: "2026-08-01" },
 ];
 
 function getPktDateStr() {
@@ -250,17 +253,24 @@ async function uploadCurveBatch(rows) {
   return rows.length;
 }
 
-function parseCurveRows(stationId, dateStr, curveData) {
+function parseCurveRows(stationId, dateStr, curveData, mixData = {}) {
   if (!curveData) return [];
   const timeArray = curveData.time || [];
   const timeStrArray = curveData.timeStr || [];
   const solarPowerArray = curveData.pvAndAcCoupledPowerList || curveData.powerList || [];
   const batteryPowerArray = curveData.batteryPower || [];
   const gridPowerArray = curveData.psum || curveData.gridPowerList || [];
-  const loadPowerArray = curveData.familyLoadPowerList || curveData.bypassLoadPowerList || [];
+  const loadPowerArray =
+    (curveData.totalAndSmartLoadPowerList && curveData.totalAndSmartLoadPowerList.length > 0)
+      ? curveData.totalAndSmartLoadPowerList
+      : (curveData.familyLoadPowerList && curveData.familyLoadPowerList.length > 0)
+      ? curveData.familyLoadPowerList
+      : curveData.bypassLoadPowerList || [];
   const socArray = curveData.batteryCapacitySocList || [];
 
   if (timeArray.length === 0) return [];
+
+  const mixLoadKw = Number(mixData.totalLoadPower || mixData.familyLoadPower || mixData.totalAndSmartLoadPower || 0);
 
   const rows = [];
   for (let idx = 0; idx < timeArray.length; idx++) {
@@ -280,13 +290,25 @@ function parseCurveRows(stationId, dateStr, curveData) {
     const sW = Number(solarPowerArray[idx] || 0);
     const bW = Number(batteryPowerArray[idx] || 0);
     const gW = Number(gridPowerArray[idx] || 0);
-    const lW = Number(loadPowerArray[idx] || 0);
+    let lW = Number(loadPowerArray[idx] || 0);
     const soc = Number(socArray[idx] || 0);
 
     const sKw = Number((sW / 1000).toFixed(2));
     const bKw = Number((bW / 1000).toFixed(2));
     const gKw = Number((gW / 1000).toFixed(2));
-    const lKw = Number((lW / 1000).toFixed(2));
+    let lKw = Number((lW / 1000).toFixed(2));
+
+    // Calculate load from inverter power balance or mix totalLoadPower if 0
+    if (lKw <= 0) {
+      const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
+      if (calculatedLoadKw > 0) {
+        lKw = calculatedLoadKw;
+        lW = Math.round(calculatedLoadKw * 1000);
+      } else if (idx === timeArray.length - 1 && mixLoadKw > 0) {
+        lKw = mixLoadKw;
+        lW = Math.round(mixLoadKw * 1000);
+      }
+    }
 
     let bState = "Idle";
     if (bKw > 0.05) bState = "Discharging";
@@ -363,7 +385,7 @@ async function runLiveSync() {
         }
 
         if (curveRes.json?.success && curveRes.json.data) {
-          const rows = parseCurveRows(p.id, dStr, curveRes.json.data);
+          const rows = parseCurveRows(p.id, dStr, curveRes.json.data, mix);
           if (rows.length > 0) {
             await uploadCurveBatch(rows);
             totalCurvePoints += rows.length;
@@ -388,12 +410,17 @@ async function runLiveSync() {
 
       // 3. Upsert solis_telemetry_latest with matching real-time numbers
       const isOnline = latestCurvePoint !== null;
-      const liveSolarKw = isOnline ? latestCurvePoint.solarKw : 0;
+      const liveSolarKw = isOnline ? latestCurvePoint.solarKw : Number(mix.power || 0);
       const liveSoc = isOnline && latestCurvePoint.soc > 0 ? latestCurvePoint.soc : Number(mix.batteryCapacitySoc || 0);
-      const liveBatKw = isOnline ? Math.abs(latestCurvePoint.batKw) : 0;
-      const liveBatState = isOnline ? latestCurvePoint.batState : "Idle";
-      const liveGridKw = isOnline ? latestCurvePoint.gridKw : 0;
-      const liveLoadKw = isOnline ? latestCurvePoint.loadKw : 0;
+      const liveBatKw = isOnline ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
+      const liveBatState = isOnline ? latestCurvePoint.batState : (mix.batteryState || "Idle");
+      const liveGridKw = isOnline ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
+      const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
+      const liveLoadKw = mixLoadKw > 0
+        ? mixLoadKw
+        : (isOnline && latestCurvePoint.loadKw > 0
+          ? latestCurvePoint.loadKw
+          : Math.max(0, Number((liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw).toFixed(2))));
 
       const telemetryLatestUpsertSql = `
         INSERT INTO solis_telemetry_latest (
@@ -666,11 +693,11 @@ async function startDaemon() {
     }
   }, 120_000);
 
-  // Schedule recurring 10-minute live sync
-  const TEN_MINUTES = 10 * 60 * 1000;
+  // Schedule recurring 1-minute live sync (near real-time delay: 1-2 minutes)
+  const ONE_MINUTE = 60 * 1000;
   setInterval(async () => {
     await runLiveSyncWithRetry();
-  }, TEN_MINUTES);
+  }, ONE_MINUTE);
 
   // Schedule recurring 6-hour missing data audit
   const SIX_HOURS = 6 * 60 * 60 * 1000;

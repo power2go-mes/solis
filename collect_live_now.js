@@ -308,14 +308,17 @@ async function run() {
           const gKw = Number((gW / 1000).toFixed(2));
           let lKw = Number((lW / 1000).toFixed(2));
 
-          // If load array is empty or 0, calculate from power balance:
-          // Inverter Power Balance: Load = Solar + Battery (Discharging/positive) - Grid (Export/positive)
-          // or if detailMix reports totalLoadPower, use proportional calculation
+          const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
+
+          // If load array is empty or 0, calculate from power balance or mix snapshot:
           if (lKw <= 0) {
             const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
             if (calculatedLoadKw > 0) {
               lKw = calculatedLoadKw;
               lW = Math.round(calculatedLoadKw * 1000);
+            } else if (idx === timeArray.length - 1 && mixLoadKw > 0) {
+              lKw = mixLoadKw;
+              lW = Math.round(mixLoadKw * 1000);
             }
           }
 
