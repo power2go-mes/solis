@@ -1451,6 +1451,8 @@ export default function SolisClientDashboard({
               dailyYieldKwh={liveDailyYield}
               dailyChargeKwh={liveDailyCharge}
               dailyDischargeKwh={liveDailyDischarge}
+              onReload={handleManualRefresh}
+              isLoading={isRefreshing}
             />
 
             {/* Card 2: Operating Data Container */}

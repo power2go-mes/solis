@@ -14,6 +14,8 @@ interface SolisHousePowerFlowProps {
   dailyChargeKwh?: number;
   dailyDischargeKwh?: number;
   isMobile?: boolean;
+  onReload?: () => void;
+  isLoading?: boolean;
 }
 
 export default function SolisHousePowerFlow({
@@ -27,6 +29,8 @@ export default function SolisHousePowerFlow({
   dailyChargeKwh = 80.4,
   dailyDischargeKwh = 53.0,
   isMobile = false,
+  onReload,
+  isLoading = false,
 }: SolisHousePowerFlowProps) {
   const [view3D, setView3D] = useState(true);
 
@@ -56,21 +60,11 @@ export default function SolisHousePowerFlow({
       {/* Top Right Card Controls */}
       <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 flex items-center gap-2 z-30">
         <button
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 hover:bg-white text-slate-700 shadow-sm border border-white/90 backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer"
-          title="History playback"
+          onClick={onReload}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-emerald-600 shadow-sm border border-white/95 backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer active:scale-90"
+          title="Reload house animation data"
         >
-          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
-        </button>
-        <button
-          onClick={() => setView3D(!view3D)}
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-sm border backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer ${
-            view3D
-              ? "bg-white text-slate-800 border-white"
-              : "bg-white/60 text-slate-500 border-white/60 hover:bg-white"
-          }`}
-          title="Toggle 3D View"
-        >
-          <Box className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <Clock className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700 hover:text-emerald-600 ${isLoading ? "animate-spin text-emerald-600" : ""}`} />
         </button>
       </div>
 
