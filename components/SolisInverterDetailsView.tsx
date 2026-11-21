@@ -166,11 +166,11 @@ const ALL_INVERTERS: InverterRecord[] = [
     ],
   },
   {
-    sn: "1053050258280019",
+    sn: "1053050259280019",
     name: "Inverter",
     model: "5305",
-    series: "S6-EH3P25K-H",
-    ratedPowerKw: 25,
+    series: "S6-EH3P30K-H",
+    ratedPowerKw: 30,
     plantName: "36 Chenab",
     plantId: "34200F",
     dataloggerSn: "7A1257240AE01C5C",
@@ -234,12 +234,12 @@ const ALL_INVERTERS: InverterRecord[] = [
     ],
   },
   {
-    sn: "1031735257050184",
+    sn: "1031731257050184",
     name: "Inverter",
     model: "5301",
-    series: "S6-EH3P20K-H",
-    ratedPowerKw: 20,
-    plantName: "P2G 1ST 6kw",
+    series: "S6-EH3P6K-H",
+    ratedPowerKw: 6,
+    plantName: "P2G 1ST 6KW",
     plantId: "342004",
     dataloggerSn: "7A1256240B001722",
     alarmInfo: "None",
@@ -463,7 +463,7 @@ export default function SolisInverterDetailsView({
       const alarmSeries: (number | null)[] = [];
 
       for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 10; m += 10) {
+        for (let m = 0; m < 60; m += 10) {
           const hh = String(h).padStart(2, "0");
           const mm = String(m).padStart(2, "0");
           const t = `${hh}:${mm}`;

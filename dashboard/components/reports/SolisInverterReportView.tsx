@@ -206,7 +206,10 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
 
     const handleResize = () => chart?.resize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chart?.dispose();
+    };
   }, [filteredRows]);
 
   const handleExportCSV = () => {

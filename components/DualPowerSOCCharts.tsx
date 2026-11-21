@@ -432,6 +432,8 @@ export default function DualPowerSOCCharts({
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
+      powerChartInstance.current?.dispose();
+      socChartInstance.current?.dispose();
     };
   }, [chartData]);
 

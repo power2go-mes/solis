@@ -378,9 +378,9 @@ export default function SolisMeterDetailsView({
               />
             </div>
             <div className="mt-2 flex items-center gap-1.5 font-mono text-xs text-slate-800">
-              <span>SN: --</span>
+              <span>SN: {meterSn}</span>
               <button
-                onClick={() => handleCopy("--")}
+                onClick={() => handleCopy(meterSn)}
                 className="text-slate-400 hover:text-[#f37021]"
                 title="Copy SN"
               >

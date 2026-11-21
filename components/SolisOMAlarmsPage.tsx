@@ -22,73 +22,6 @@ import {
 } from "lucide-react";
 import SolisAlarmDetailModal, { AlarmItem } from "./SolisAlarmDetailModal";
 
-const DEFAULT_ACTIVE_ALARMS = [
-  {
-    id: "active-1",
-    deviceType: "Inverter",
-    level: "Info",
-    status: "Active",
-    plantName: "Towfiq chinoy",
-    plantId: "1298491919450873747",
-    sn: "1053050258180112",
-    alarmContent: "NO-Grid",
-    alarmCode: "1015",
-    suggestedTreatment:
-      "1. If it occurs unexpectedly, check whether the AC circuit breaker has tripped or whether the utility grid is off. 2. Verify grid voltage and frequency with a multimeter.",
-    alarmDuration: "5h",
-    beginTimeStr: "20/11/2026 11:15 (UTC+05:00)",
-    category: "Alarm",
-  },
-  {
-    id: "active-2",
-    deviceType: "Inverter",
-    level: "Warning",
-    status: "Active",
-    plantName: "P2G 50KW",
-    plantId: "1298491919450740581",
-    sn: "1053050255210107",
-    alarmContent: "UN-V-Batt2",
-    alarmCode: "107C",
-    suggestedTreatment:
-      "1. Check the battery system voltage and DC breaker. 2. Verify BMS communication cable is securely inserted into CAN/RS485 port.",
-    alarmDuration: "16h",
-    beginTimeStr: "20/11/2026 00:26 (UTC+05:00)",
-    category: "Alarm",
-  },
-  {
-    id: "active-3",
-    deviceType: "Inverter",
-    level: "Info",
-    status: "Active",
-    plantName: "P2G 50KW",
-    plantId: "1298491919450740581",
-    sn: "1053050255210107",
-    alarmContent: "NO-Battery2",
-    alarmCode: "107D",
-    suggestedTreatment:
-      "1. Confirm battery settings on inverter screen or app. 2. Check battery power switch is closed and operational.",
-    alarmDuration: "16h",
-    beginTimeStr: "20/11/2026 00:26 (UTC+05:00)",
-    category: "Alert",
-  },
-  {
-    id: "active-4",
-    deviceType: "Inverter",
-    level: "Info",
-    status: "Active",
-    plantName: "P2G 15KW",
-    plantId: "1298491919450734544",
-    sn: "1033320253150969",
-    alarmContent: "NO-Grid",
-    alarmCode: "1015",
-    suggestedTreatment:
-      "1. If it occurs unexpectedly, check whether the AC circuit breaker has tripped or whether utility grid is off. 2. Verify grid voltage with multimeter.",
-    alarmDuration: "23d 1h",
-    beginTimeStr: "28/10/2026 15:00 (UTC+05:00)",
-    category: "Alarm",
-  },
-];
-
 interface SolisOMAlarmsPageProps {
   initialCategory?: "All" | "Alarm" | "Alert";
   onSelectPlant?: (plantId: string) => void;
@@ -112,9 +45,10 @@ export default function SolisOMAlarmsPage({
   const [plantFilter, setPlantFilter] = useState("All");
 
   // Data states
-  const [records, setRecords] = useState<any[]>(DEFAULT_ACTIVE_ALARMS);
-  const [counts, setCounts] = useState({ all: 4, alarms: 3, alerts: 1, active: 4, recovered: 0 });
-  const [isLoading, setIsLoading] = useState(false);
+  const [records, setRecords] = useState<any[]>([]);
+  const [counts, setCounts] = useState({ all: 0, alarms: 0, alerts: 0, active: 0, recovered: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,8 +58,8 @@ export default function SolisOMAlarmsPage({
   // Modal states
   const [selectedAlarmForModal, setSelectedAlarmForModal] = useState<AlarmItem | null>(null);
   const [isAlarmPushOpen, setIsAlarmPushOpen] = useState(false);
-  const [pushEmail, setPushEmail] = useState("qasim.moosvi@gmail.com");
-  const [pushPhone, setPushPhone] = useState("+92 300 1234567");
+  const [pushEmail, setPushEmail] = useState("");
+  const [pushPhone, setPushPhone] = useState("");
   const [isPushSaved, setIsPushSaved] = useState(false);
 
   // Fetch alarms from API
@@ -138,19 +72,22 @@ export default function SolisOMAlarmsPage({
       if (deviceType !== "All") params.set("deviceType", deviceType);
       if (selectedCategory !== "All") params.set("category", selectedCategory);
       if (searchSn.trim()) params.set("search", searchSn.trim());
+      if (plantFilter !== "All") params.set("plant", plantFilter);
 
       const res = await fetch(`/api/alarms/all?${params.toString()}`, { cache: "no-store" });
       const data = await res.json();
-      if (data.success) {
-        let recs = data.records || [];
-        if (plantFilter !== "All") {
-          recs = recs.filter((r: any) => r.plantName.toLowerCase().includes(plantFilter.toLowerCase()));
-        }
-        setRecords(recs);
+      if (res.ok && data.success) {
+        setLoadError("");
+        setRecords(Array.isArray(data.records) ? data.records : []);
         if (data.counts) setCounts(data.counts);
+      } else {
+        setRecords([]);
+        setLoadError(data.error || "Alarm data could not be loaded.");
       }
     } catch (err) {
       console.error("Error fetching alarms:", err);
+      setRecords([]);
+      setLoadError("Alarm data could not be loaded. Check the database connection and retry.");
     } finally {
       setIsLoading(false);
     }

@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get("key");
     const expectedKey = process.env.CRON_SECRET || "solis2026";
 
-    if (expectedKey && key !== expectedKey) {
+    if (key !== expectedKey) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized. Pass ?key=solis2026" },
+        { success: false, error: "Unauthorized." },
         { status: 401 }
       );
     }
