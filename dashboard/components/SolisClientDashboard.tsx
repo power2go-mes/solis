@@ -1851,9 +1851,9 @@ export default function SolisClientDashboard({
               <div className="grid grid-cols-4 gap-2 text-center pb-3 border-b border-gray-100">
                 {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
                   <div key={idx} className="flex flex-col items-center">
-                    <span className="text-[10px] text-slate-500 font-medium mb-1">{day}</span>
-                    <div className="w-6 h-6 flex items-center justify-center text-[#10b981]">
-                      <Sun className="w-5 h-5 fill-orange-400 text-[#10b981]" />
+                    <span className="text-[11px] text-slate-500 font-medium mb-1">{day}</span>
+                    <div className="w-9 h-9 flex items-center justify-center text-[#10b981]">
+                      <Sun className="w-7 h-7 fill-orange-400 text-[#10b981] drop-shadow-xs" />
                     </div>
                   </div>
                 ))}
@@ -1896,16 +1896,16 @@ export default function SolisClientDashboard({
 
               <div className="space-y-3">
                 {/* Trees */}
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100/80">
                   <div>
-                    <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
+                    <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">
                       {plantMeta.trees.toFixed(2)}
                     </div>
-                    <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                    <div className="text-xs text-slate-500 font-normal mt-0.5">
                       Equivalent Trees
                     </div>
                   </div>
-                  <div className="relative w-12 h-12">
+                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 drop-shadow-xs shrink-0">
                     <Image
                       src="/solis/tree-Bt0ZdeGH.png"
                       alt="Trees"
@@ -1917,16 +1917,16 @@ export default function SolisClientDashboard({
                 </div>
 
                 {/* CO2 Reduced */}
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100/80">
                   <div>
-                    <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
+                    <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">
                       {plantMeta.co2Tons.toFixed(2)} <span className="text-xs font-normal">t</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                    <div className="text-xs text-slate-500 font-normal mt-0.5">
                       CO₂ Reduced
                     </div>
                   </div>
-                  <div className="relative w-12 h-12">
+                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 drop-shadow-xs shrink-0">
                     <Image
                       src="/solis/cloud-DwomYkkV.png"
                       alt="CO2"
@@ -1938,14 +1938,14 @@ export default function SolisClientDashboard({
                 </div>
 
                 {/* Coal Saved */}
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/70 border border-gray-100/80">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100/80">
                   <div>
-                    <div className="text-lg font-bold text-slate-900 font-mono tracking-tight">
+                    <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">
                       {plantMeta.coalTons.toFixed(2)} <span className="text-xs font-normal">t</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-normal mt-0.5">Coal Saved</div>
+                    <div className="text-xs text-slate-500 font-normal mt-0.5">Coal Saved</div>
                   </div>
-                  <div className="relative w-12 h-12">
+                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 drop-shadow-xs shrink-0">
                     <Image
                       src="/solis/carbon-CeHwfZ7r.png"
                       alt="Coal"
