@@ -14,17 +14,18 @@ import {
   SolisOverviewResponse,
 } from "./types";
 
+// Supabase Transaction Pooler (Port 6543) allows thousands of concurrent serverless requests without exhausting max connections
 const FALLBACK_DB_URL =
-  "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+  "postgresql://postgres.jimlvgbbgomrhaqrzllx:Abdul1367453390@aws-1-ap-south-1.pooler.supabase.com:6543/postgres";
 
 let connectionString =
   process.env.DATABASE_URL ||
   process.env.SUPABASE_DB_URL ||
   FALLBACK_DB_URL;
 
-// If using port 6543 which can hang on some firewalls/ISPs, fall back to standard session port 5432
-if (connectionString.includes("pooler.supabase.com:6543")) {
-  connectionString = connectionString.replace("pooler.supabase.com:6543", "pooler.supabase.com:5432");
+// Ensure serverless uses port 6543 for transaction pooling
+if (connectionString.includes("pooler.supabase.com:5432")) {
+  connectionString = connectionString.replace("pooler.supabase.com:5432", "pooler.supabase.com:6543");
 }
 
 // Global database pool for Next.js server runtime
@@ -37,8 +38,8 @@ const pool =
   new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 4,
-    idleTimeoutMillis: 10000,
+    max: 2, // Serverless lambdas should keep max 1-2 connections
+    idleTimeoutMillis: 5000,
     connectionTimeoutMillis: 5000,
   });
 
