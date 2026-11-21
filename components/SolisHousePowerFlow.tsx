@@ -33,7 +33,7 @@ export default function SolisHousePowerFlow({
   const isPvActive = solarKw > 0.05;
   const isLoadActive = loadKw > 0.05;
   const isBatteryActive = Math.abs(batteryKw) > 0.05;
-  const isBatteryCharging = batteryState.toLowerCase() === "charging" || batteryKw > 0.05;
+  const isBatteryCharging = batteryState?.toLowerCase() === "charging";
   const isGridActive = Math.abs(gridKw) > 0.05;
   const isGridExporting = gridKw >= 0;
 
@@ -351,7 +351,7 @@ export default function SolisHousePowerFlow({
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {solarKw.toFixed(1)}
+                  {solarKw}
                 </span>
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
               </div>
@@ -367,7 +367,7 @@ export default function SolisHousePowerFlow({
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {loadKw.toFixed(1)}
+                  {loadKw}
                 </span>
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
               </div>
@@ -388,7 +388,7 @@ export default function SolisHousePowerFlow({
               </div>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {Math.abs(batteryKw).toFixed(1)}
+                  {Math.abs(batteryKw)}
                 </span>
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
               </div>
@@ -401,7 +401,7 @@ export default function SolisHousePowerFlow({
                     : "border-slate-300 bg-slate-100 text-slate-500"
                 }`}
               >
-                {batteryState || (isBatteryCharging ? "Charging" : "Idle")}
+                {batteryState || (isBatteryCharging ? "Charging" : isBatteryActive ? "Discharging" : "Idle")}
               </span>
             </div>
 
@@ -415,7 +415,7 @@ export default function SolisHousePowerFlow({
               </span>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {Math.abs(gridKw).toFixed(0)}
+                  {Math.abs(gridKw)}
                 </span>
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
               </div>
@@ -432,7 +432,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyYieldKwh.toFixed(1)}
+                  {dailyYieldKwh}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
@@ -443,7 +443,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyChargeKwh.toFixed(1)}
+                  {dailyChargeKwh}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
@@ -454,7 +454,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyDischargeKwh.toFixed(0)}
+                  {dailyDischargeKwh}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
