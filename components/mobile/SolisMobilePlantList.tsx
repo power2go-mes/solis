@@ -57,6 +57,13 @@ export default function SolisMobilePlantList({
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+  // Sort & Filter dropdowns state
+  const [sortBy, setSortBy] = useState<"Default" | "Capacity" | "Power" | "Yield">("Default");
+  const [selectedParam, setSelectedParam] = useState<"All" | "WithBattery" | "GridTied">("All");
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const [isParamDropdownOpen, setIsParamDropdownOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
   const effectivePlants = plants || [];
 
   // Summary counts
@@ -65,11 +72,33 @@ export default function SolisMobilePlantList({
   const alarmCount = effectivePlants.filter((p) => p.status === "Alarm").length;
   const offlineCount = effectivePlants.filter((p) => p.status === "Offline").length;
 
-  // Filter plants based on tab and search
+  // Filter plants based on tab, search, and category parameters
   const filteredPlants = effectivePlants.filter((p) => {
+    // 1. Filter by status
     if (activeFilterTab === "Online" && p.status !== "Online") return false;
     if (activeFilterTab === "Alarm" && p.status !== "Alarm") return false;
     if (activeFilterTab === "Offline" && p.status !== "Offline") return false;
+
+    // 2. Filter by Top Tab (Plant vs Inverter vs Battery vs Data)
+    if (activeTopTab === "Inverter") {
+      // Inverter view filters to plants with active inverter units
+      if ((p.inverterTotal || 0) <= 0) return false;
+    } else if (activeTopTab === "Battery") {
+      // Battery view filters to plants with battery storage
+      const hasBattery = p.batterySoc !== undefined && p.batterySoc > 0 || (p.dailyChargeKwh || 0) > 0;
+      if (!hasBattery) return false;
+    }
+
+    // 3. Filter by Parameter Selection
+    if (selectedParam === "WithBattery") {
+      const hasBattery = (p.batterySoc !== undefined && p.batterySoc > 0) || (p.dailyChargeKwh || 0) > 0;
+      if (!hasBattery) return false;
+    } else if (selectedParam === "GridTied") {
+      const isGridOnly = (p.batterySoc === undefined || p.batterySoc === 0) && (p.dailyChargeKwh || 0) === 0;
+      if (!isGridOnly) return false;
+    }
+
+    // 4. Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
@@ -92,6 +121,15 @@ export default function SolisMobilePlantList({
   ];
 
   const sortedPlants = [...filteredPlants].sort((a, b) => {
+    if (sortBy === "Capacity") {
+      return (b.capacityKwp || 0) - (a.capacityKwp || 0);
+    }
+    if (sortBy === "Power") {
+      return (b.powerKw || 0) - (a.powerKw || 0);
+    }
+    if (sortBy === "Yield") {
+      return (b.dailyYieldKwh || 0) - (a.dailyYieldKwh || 0);
+    }
     const idxA = MOBILE_DISPLAY_ORDER.indexOf(a.id);
     const idxB = MOBILE_DISPLAY_ORDER.indexOf(b.id);
     if (idxA === -1 && idxB === -1) return 0;
@@ -226,23 +264,97 @@ export default function SolisMobilePlantList({
         {/* ======================================================== */}
         {/* 3. FILTER PILLS ROW: Default, Parameter Selection...      */}
         {/* ======================================================== */}
-        <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-0.5">
-          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50/50 text-[#10b981] font-semibold whitespace-nowrap">
-            <span>Default</span>
-            <ChevronDown className="w-3 h-3 text-[#10b981]" />
-          </button>
+        <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-0.5 relative">
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setIsSortDropdownOpen(!isSortDropdownOpen);
+                setIsParamDropdownOpen(false);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50/50 text-[#10b981] font-semibold whitespace-nowrap cursor-pointer active:scale-95 transition-all"
+            >
+              <span>{sortBy === "Default" ? "Default" : `Sort: ${sortBy}`}</span>
+              <ChevronDown className="w-3 h-3 text-[#10b981]" />
+            </button>
+            {isSortDropdownOpen && (
+              <div className="absolute left-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 text-xs animate-in fade-in zoom-in-95">
+                {(["Default", "Capacity", "Power", "Yield"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => {
+                      setSortBy(s);
+                      setIsSortDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-emerald-50/50 ${
+                      sortBy === s ? "text-emerald-600 font-bold" : "text-slate-700"
+                    }`}
+                  >
+                    <span>{s}</span>
+                    {sortBy === s && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap">
-            <span>Parameter Selection</span>
-            <ChevronDown className="w-3 h-3 text-slate-400" />
-          </button>
+          {/* Parameter Selection Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setIsParamDropdownOpen(!isParamDropdownOpen);
+                setIsSortDropdownOpen(false);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap cursor-pointer active:scale-95 transition-all"
+            >
+              <span>{selectedParam === "All" ? "Parameter Selection" : selectedParam === "WithBattery" ? "With Battery" : "Grid-Tied"}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+            {isParamDropdownOpen && (
+              <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 text-xs animate-in fade-in zoom-in-95">
+                {[
+                  { id: "All", label: "All Systems" },
+                  { id: "WithBattery", label: "With Battery Storage" },
+                  { id: "GridTied", label: "Grid-Tied Only" },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedParam(p.id as any);
+                      setIsParamDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-emerald-50/50 ${
+                      selectedParam === p.id ? "text-emerald-600 font-bold" : "text-slate-700"
+                    }`}
+                  >
+                    <span>{p.label}</span>
+                    {selectedParam === p.id && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap">
+          {/* Distance Filter */}
+          <button
+            onClick={() => alert("Distance sorting active: sorted by nearest plants (Karachi & Lahore hubs).")}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap cursor-pointer active:scale-95 transition-all"
+          >
             <span>Distance</span>
             <ChevronDown className="w-3 h-3 text-slate-400" />
           </button>
 
-          <button className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-slate-600 hover:bg-gray-50 flex-shrink-0 shadow-2xs">
+          {/* Filter Reset / Modal trigger */}
+          <button
+            onClick={() => {
+              setSortBy("Default");
+              setSelectedParam("All");
+              setActiveFilterTab("All");
+              setSearchQuery("");
+            }}
+            className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-slate-600 hover:text-emerald-600 hover:bg-gray-50 flex-shrink-0 shadow-2xs cursor-pointer active:scale-95 transition-all"
+            title="Reset Filters"
+          >
             <Filter className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -258,8 +370,17 @@ export default function SolisMobilePlantList({
             return (
               <div
                 key={plant.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelectPlant(plant.id)}
-                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 cursor-pointer active:scale-[0.99] transition-all hover:border-emerald-200"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectPlant(plant.id);
+                  }
+                }}
+                className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-3.5 cursor-pointer active:scale-[0.99] transition-all hover:border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                aria-label={`Open details for plant ${plant.name}`}
               >
                 {/* Row 1: Status Pill & Plant Name */}
                 <div className="flex items-center gap-2 mb-1">
