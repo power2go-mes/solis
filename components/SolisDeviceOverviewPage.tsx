@@ -1435,8 +1435,16 @@ export default function SolisDeviceOverviewPage({
                     <td className="py-3.5 px-3 font-mono text-[11px] text-slate-500">{d.updateTime}</td>
                     <td className="py-3.5 px-3 text-center">
                       <button
-                        onClick={() => alert(`Datalogger ${d.sn} diagnostics: All telemetry packets normal.`)}
-                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#10b981] shadow-2xs transition-all"
+                        onClick={() => {
+                          const isOnline = d.status === "Online";
+                          const timeNow = new Date().toLocaleTimeString("en-US", { hour12: false });
+                          alert(
+                            isOnline
+                              ? `Datalogger ${d.sn} Diagnostics [${timeNow}]: Heartbeat OK, Signal Strong (88%), Telemetry packets continuous.`
+                              : `Datalogger ${d.sn} Diagnostics [${timeNow}]: Device Offline. No response from remote endpoint.`
+                          );
+                        }}
+                        className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-slate-600 font-medium text-xs hover:border-orange-300 hover:bg-orange-50/50 hover:text-[#10b981] shadow-2xs transition-all cursor-pointer"
                       >
                         Operation
                       </button>

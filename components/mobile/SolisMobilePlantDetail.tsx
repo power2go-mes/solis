@@ -1060,17 +1060,15 @@ export default function SolisMobilePlantDetail({
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 8. FLOATING BOTTOM NAVIGATION: Overview, Device, Alarm, Settings */}
-      {/* ======================================================== */}
-      <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-1.5 text-xs font-semibold pointer-events-auto">
+      {/* Floating Bottom Navigation for Plant Detail (Overview, Device, Alarm, Settings) */}
+      <div className="fixed bottom-3 left-3 right-3 z-50 flex justify-center pointer-events-none md:hidden">
+        <div className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-full px-2.5 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between w-full max-w-[360px] text-xs font-semibold pointer-events-auto">
           {/* Overview */}
           <button
             onClick={() => setActiveBottomNav("Overview")}
-            className={`px-4 py-1.5 rounded-full transition-all ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
               activeBottomNav === "Overview"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-orange-500/25"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
@@ -1080,9 +1078,9 @@ export default function SolisMobilePlantDetail({
           {/* Device */}
           <button
             onClick={() => setActiveBottomNav("Device")}
-            className={`px-4 py-1.5 rounded-full transition-all ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
               activeBottomNav === "Device"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-orange-500/25"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
@@ -1092,9 +1090,9 @@ export default function SolisMobilePlantDetail({
           {/* Alarm with red notification dot */}
           <button
             onClick={() => setActiveBottomNav("Alarm")}
-            className={`px-4 py-1.5 rounded-full transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1 shrink-0 ${
               activeBottomNav === "Alarm"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-orange-500/25"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >
@@ -1105,9 +1103,9 @@ export default function SolisMobilePlantDetail({
           {/* Settings / Info */}
           <button
             onClick={() => setActiveBottomNav("Settings")}
-            className={`px-4 py-1.5 rounded-full transition-all ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
               activeBottomNav === "Settings" || activeBottomNav === "Info"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-orange-500/25"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-md shadow-emerald-500/25"
                 : "text-slate-600 hover:text-slate-900 active:scale-95"
             }`}
           >

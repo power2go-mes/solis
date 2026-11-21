@@ -112,7 +112,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
-        if (data.success && Array.isArray(data.rows) && data.rows.length > 0) {
+        if (data.success && Array.isArray(data.rows)) {
           setBatteryRows(
             data.rows.map((r: any) => ({
               sn: r.sn,
@@ -127,9 +127,13 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
               sohPct: r.sohPct,
             }))
           );
+        } else {
+          setBatteryRows([]);
         }
         if (data.success && Array.isArray(data.curve)) {
           setCurveData(data.curve);
+        } else {
+          setCurveData([]);
         }
       })
       .catch((err) => console.error("Error fetching battery report:", err))

@@ -47,7 +47,7 @@ export default function SolisHousePowerFlow({
   const isGridImporting = gridKw < -0.05;
 
   return (
-    <div className="relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#879bbd] via-[#a8bdd6] to-[#ccd9e7] border border-blue-200/80 shadow-[0_8px_32px_rgba(20,40,80,0.12)] overflow-hidden transition-all select-none p-3 sm:p-5">
+    <div className={`relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#879bbd] via-[#a8bdd6] to-[#ccd9e7] border border-blue-200/80 shadow-[0_8px_32px_rgba(20,40,80,0.12)] overflow-hidden transition-all select-none ${isMobile ? "p-1.5" : "p-3 sm:p-5"}`}>
       {/* Soft atmospheric sunbeam glow from top-left */}
       <div
         className="absolute top-0 left-0 w-[500px] h-[500px] pointer-events-none rounded-tl-3xl opacity-40"
@@ -73,23 +73,25 @@ export default function SolisHousePowerFlow({
         {/* ======================================================== */}
         {/* 3D VILLA HOUSE & SVG ANIMATIONS (approx 8-9 cols)        */}
         {/* ======================================================== */}
-        <div className="lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center min-h-[380px] sm:min-h-[480px] md:min-h-[540px]">
+        <div className={`lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center ${isMobile ? "min-h-[260px]" : "min-h-[380px] sm:min-h-[480px] md:min-h-[540px]"}`}>
           {/* Base Container maintaining aspect ratio 1024 x 576 */}
-          <div className="relative w-full max-w-[1080px] aspect-[1024/576] rounded-2xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
-            {/* High-Resolution 3D Modern Villa Image */}
-            <img
-              src="/solis_villa_hd.jpg"
-              alt="Solis 3D Villa High Res"
-              className="w-full h-full object-cover pointer-events-none select-none"
-            />
+          <div className="relative w-full max-w-[1080px] aspect-[1024/576] rounded-xl sm:rounded-2xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
+            {/* House Image & Energy Flow SVG overlay - 3% left shift adjustment */}
+            <div className={`absolute inset-0 w-full h-full transition-transform duration-300 origin-center ${isMobile ? "scale-120 translate-x-[12%]" : "scale-130 translate-x-[17%]"}`}>
+              {/* High-Resolution 3D Modern Villa Image */}
+              <img
+                src="/solis_villa_hd.jpg"
+                alt="Solis 3D Villa High Res"
+                className="w-full h-full object-cover pointer-events-none select-none scale-105"
+              />
 
-            {/* SVG OVERLAY: Energy Flow Lines, Animated Pulses & Dotted Guidelines */}
-            <svg
-              viewBox="0 0 1024 576"
-              className="absolute inset-0 w-full h-full pointer-events-none select-none"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+              {/* SVG OVERLAY: Energy Flow Lines, Animated Pulses & Dotted Guidelines */}
+              <svg
+                viewBox="0 0 1024 576"
+                className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
               <defs>
                 {/* Amber Glow Filter for active energy dots and pulses */}
                 <filter id="solisAmberGlow" x="-60%" y="-60%" width="220%" height="220%">
@@ -124,7 +126,7 @@ export default function SolisHousePowerFlow({
 
               {/* Battery Guideline: from battery unit down to Battery callout */}
               <path
-                d="M 480 445 L 480 475 L 340 475 L 340 500"
+                d="M 480 445 L 480 475 L 140 475 L 140 500"
                 stroke="#cbd5e1"
                 strokeWidth="1.4"
                 strokeDasharray="3 3"
@@ -133,7 +135,7 @@ export default function SolisHousePowerFlow({
 
               {/* Grid Guideline: from grid tower power line down to Grid callout */}
               <path
-                d="M 320 445 L 320 485 L 370 485 L 370 500"
+                d="M 320 445 L 320 485 L 260 485 L 260 500"
                 stroke="#cbd5e1"
                 strokeWidth="1.4"
                 strokeDasharray="3 3"
@@ -318,6 +320,7 @@ export default function SolisHousePowerFlow({
                 <animate attributeName="opacity" values="0.22;0.42;0.22" dur="4.5s" repeatCount="indefinite" />
               </rect>
             </svg>
+            </div>
 
             {/* ---------------------------------------------------- */}
             {/* 5. LIVE CALLOUT BADGES (Positioned exactly as in UI)  */}
@@ -325,52 +328,52 @@ export default function SolisHousePowerFlow({
             {/* Callout 1: PV (Top Left) */}
             <div
               className="absolute z-20 flex flex-col pointer-events-none"
-              style={{ left: "10%", top: "10%" }}
+              style={{ left: "7%", top: "7%" }}
             >
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
+              <span className="text-[10px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 PV
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                <span className="text-base sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
                   {solarKw.toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
+                <span className="text-[9px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
             </div>
 
             {/* Callout 2: Load (Top Middle-Left) */}
             <div
               className="absolute z-20 flex flex-col pointer-events-none"
-              style={{ left: "24%", top: "10%" }}
+              style={{ left: "22%", top: "7%" }}
             >
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
+              <span className="text-[10px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 Load
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                <span className="text-base sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
                   {loadKw.toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
+                <span className="text-[9px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
             </div>
 
-            {/* Callout 3: Battery (Bottom Left-Center) */}
+            {/* Callout 3: Battery (Aligned vertically with PV on both PC & mobile) */}
             <div
               className="absolute z-20 flex flex-col items-start pointer-events-none"
-              style={{ left: "22%", top: "76%" }}
+              style={{ left: "7%", top: "72%" }}
             >
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
+              <span className="text-[10px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 Battery <strong className="text-emerald-600 font-bold ml-0.5">{batterySoc}%</strong>
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                <span className="text-base sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
                   {Math.abs(batteryKw).toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
+                <span className="text-[9px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
               {/* Charging / Discharging / Idle pill button */}
               <span
-                className={`inline-block mt-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border shadow-2xs ${
+                className={`inline-block mt-0.5 sm:mt-1 px-1.5 sm:px-2.5 py-0.5 rounded-md text-[9px] sm:text-[11px] font-semibold border shadow-2xs ${
                   isBatteryCharging
                     ? "border-emerald-400 bg-emerald-50 text-emerald-600"
                     : isBatteryActive
@@ -382,23 +385,23 @@ export default function SolisHousePowerFlow({
               </span>
             </div>
 
-            {/* Callout 4: Grid (Bottom Right-Center) */}
+            {/* Callout 4: Grid (Aligned vertically with Load on both PC & mobile) */}
             <div
               className="absolute z-20 flex flex-col items-start pointer-events-none"
-              style={{ left: "38%", top: "76%" }}
+              style={{ left: "22%", top: "72%" }}
             >
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
+              <span className="text-[10px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 Grid
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                <span className="text-base sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
                   {Math.abs(gridKw).toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
+                <span className="text-[9px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
               {/* Exporting / Importing / Idle pill button matching Charging pill styling */}
               <span
-                className={`inline-block mt-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border shadow-2xs ${
+                className={`inline-block mt-0.5 sm:mt-1 px-1.5 sm:px-2.5 py-0.5 rounded-md text-[9px] sm:text-[11px] font-semibold border shadow-2xs ${
                   isGridExporting
                     ? "border-emerald-400 bg-emerald-50 text-emerald-600"
                     : isGridImporting

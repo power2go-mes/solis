@@ -502,11 +502,13 @@ function SolisCloudDashboard() {
           />
         )}
 
-        {/* Global Floating Bottom Navbar for ALL Mobile Pages */}
-        <SolisMobileBottomNav
-          activeView={activeView}
-          onNavigateTab={(tab) => navigateToView(tab as any)}
-        />
+        {/* Global Floating Bottom Navbar for ALL Mobile Pages (except plant_detail which has its own sub-navigation) */}
+        {activeView !== "plant_detail" && (
+          <SolisMobileBottomNav
+            activeView={activeView}
+            onNavigateTab={(tab) => navigateToView(tab as any)}
+          />
+        )}
       </div>
 
       {/* Create Plant Information Modal */}

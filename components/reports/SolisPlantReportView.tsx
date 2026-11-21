@@ -117,7 +117,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
-        if (data.success && Array.isArray(data.rows) && data.rows.length > 0) {
+        if (data.success && Array.isArray(data.rows)) {
           setStationRows(
             data.rows.map((r: any) => ({
               id: r.id,
@@ -131,9 +131,13 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
               specificYieldH: r.specificYieldH,
             }))
           );
+        } else {
+          setStationRows([]);
         }
         if (data.success && Array.isArray(data.chartData)) {
           setChartTimeline(data.chartData);
+        } else {
+          setChartTimeline([]);
         }
       })
       .catch((err) => console.error("Error fetching plant report:", err))

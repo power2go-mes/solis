@@ -110,7 +110,7 @@ export default function SolisMeterDetailsView({
           const mins = h * 60 + m;
           if (mins <= 810) {
             if (mins < 370) {
-              activePower.push(Number((-0.05 + Math.random() * 0.05).toFixed(2)));
+              activePower.push(-0.02);
             } else if (mins >= 370 && mins <= 650) {
               const prog = (mins - 370) / (650 - 370);
               const dip = -Math.sin(prog * Math.PI) * 3.8 - (mins % 30 === 0 ? 0.3 : 0);
