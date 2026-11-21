@@ -34,8 +34,13 @@ export default function SolisHousePowerFlow({
   const isLoadActive = loadKw > 0.05;
   const isBatteryActive = Math.abs(batteryKw) > 0.05;
   const isBatteryCharging = batteryState.toLowerCase() === "charging" || batteryKw > 0.05;
+
+  // Grid logic:
+  // Exporting = solar power surplus sent to the grid (flow from house to grid)
+  // Importing = grid supplying power to the house (flow from grid to house)
   const isGridActive = Math.abs(gridKw) > 0.05;
-  const isGridExporting = gridKw >= 0;
+  const isGridExporting = gridKw >= 0.05; // Positive gridKw or default indicates solar surplus exporting to utility grid
+  const isGridImporting = gridKw < -0.05;
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#879bbd] via-[#a8bdd6] to-[#ccd9e7] border border-blue-200/80 shadow-[0_8px_32px_rgba(20,40,80,0.12)] overflow-hidden transition-all select-none p-3 sm:p-5">
@@ -174,7 +179,7 @@ export default function SolisHousePowerFlow({
                 opacity="0.75"
               />
 
-              {/* Power Grid Tower -> House Inverter (x: 272 y: 380 -> x: 375 y: 440 -> x: 470 y: 435 -> x: 508 y: 345) */}
+              {/* Power Grid Line: Defined from Grid Tower (x: 272 y: 380) to House Inverter (x: 508 y: 345) */}
               <path
                 id="wire-grid"
                 d="M 272 380 C 310 405, 350 430, 420 435 C 460 438, 485 410, 508 345"
@@ -226,21 +231,22 @@ export default function SolisHousePowerFlow({
                   stroke="#f97316"
                   strokeWidth="3"
                   strokeDasharray="6 4"
-                  className={isGridExporting ? "flow-dash-forward" : "flow-dash-backward"}
+                  className={isGridExporting ? "flow-dash-backward" : "flow-dash-forward"}
                   filter="url(#solisAmberGlow)"
                 />
               )}
 
               {/* ---------------------------------------------------- */}
               {/* 4. ANIMATED GLOWING PULSE PARTICLES (Moving Dots)   */}
+              {/* Relaxed, elegant flow cadence (3.0s - 4.2s durations)*/}
               {/* ---------------------------------------------------- */}
-              {/* PV -> Inverter Moving Energy Dots */}
+              {/* PV -> Inverter Moving Energy Dots (from roof panels down to inverter) */}
               {isPvActive && (
                 <>
-                  {[0, 0.5, 1.0].map((delay, idx) => (
+                  {[0, 1.2, 2.4].map((delay, idx) => (
                     <circle key={`pv-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="1.4s"
+                        dur="3.4s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
                         keyPoints="0;1"
@@ -253,13 +259,13 @@ export default function SolisHousePowerFlow({
                 </>
               )}
 
-              {/* Inverter -> Load Moving Energy Dots */}
+              {/* Inverter -> Load Moving Energy Dots (power consumed by the house) */}
               {isLoadActive && (
                 <>
-                  {[0, 0.5, 1.0].map((delay, idx) => (
+                  {[0, 1.2, 2.4].map((delay, idx) => (
                     <circle key={`load-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="1.4s"
+                        dur="3.4s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
                         keyPoints="0;1"
@@ -272,13 +278,15 @@ export default function SolisHousePowerFlow({
                 </>
               )}
 
-              {/* Battery Moving Energy Dots (Bi-directional) */}
+              {/* Battery Moving Energy Dots (Directional Logic) */}
+              {/* Charging: from Inverter to Battery (0 -> 1)    */}
+              {/* Discharging: from Battery to Inverter (1 -> 0)  */}
               {isBatteryActive && (
                 <>
-                  {[0, 0.6, 1.2].map((delay, idx) => (
+                  {[0, 1.5].map((delay, idx) => (
                     <circle key={`bat-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="1.5s"
+                        dur="3.2s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
                         keyPoints={isBatteryCharging ? "0;1" : "1;0"}
@@ -291,16 +299,19 @@ export default function SolisHousePowerFlow({
                 </>
               )}
 
-              {/* Grid Moving Energy Dots (Bi-directional) */}
+              {/* Grid Moving Energy Dots (Directional Logic) */}
+              {/* wire-grid starts at Tower (0) and ends at Inverter (1) */}
+              {/* Exporting: house sends power TO grid (1 -> 0) */}
+              {/* Importing: house receives power FROM grid (0 -> 1) */}
               {isGridActive && (
                 <>
-                  {[0, 0.7, 1.4].map((delay, idx) => (
+                  {[0, 1.5, 3.0].map((delay, idx) => (
                     <circle key={`grid-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="2.0s"
+                        dur="4.2s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
-                        keyPoints={isGridExporting ? "0;1" : "1;0"}
+                        keyPoints={isGridExporting ? "1;0" : "0;1"}
                         keyTimes="0;1"
                       >
                         <mpath href="#wire-grid" />
@@ -312,14 +323,14 @@ export default function SolisHousePowerFlow({
 
               {/* Solis Inverter Pulsing Center LED Ring Indicator */}
               <circle cx="516" cy="336" r="6" fill="none" stroke="#f97316" strokeWidth="2" opacity="0.95">
-                <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.95;0.3;0.95" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="r" values="5;9;5" dur="3s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.95;0.3;0.95" dur="3s" repeatCount="indefinite" />
               </circle>
               <circle cx="516" cy="336" r="3" fill="#f97316" filter="url(#solisAmberGlow)" />
 
               {/* Living Room Window Ambient Warm Lighting Animation */}
               <rect x="560" y="295" width="40" height="45" rx="4" fill="#fef08a" opacity="0.22">
-                <animate attributeName="opacity" values="0.22;0.42;0.22" dur="3.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.22;0.42;0.22" dur="4.5s" repeatCount="indefinite" />
               </rect>
             </svg>
 
@@ -372,8 +383,9 @@ export default function SolisHousePowerFlow({
                 </span>
                 <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
+              {/* Charging / Discharging / Idle pill button */}
               <span
-                className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold border shadow-2xs ${
+                className={`inline-block mt-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border shadow-2xs ${
                   isBatteryCharging
                     ? "border-emerald-400 bg-emerald-50 text-emerald-600"
                     : isBatteryActive
@@ -381,7 +393,7 @@ export default function SolisHousePowerFlow({
                     : "border-slate-300 bg-white/90 text-slate-600"
                 }`}
               >
-                {batteryState || (isBatteryCharging ? "Charging" : "Idle")}
+                {batteryState || (isBatteryCharging ? "Charging" : isBatteryActive ? "Discharging" : "Idle")}
               </span>
             </div>
 
@@ -399,6 +411,18 @@ export default function SolisHousePowerFlow({
                 </span>
                 <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
+              {/* Exporting / Importing / Idle pill button matching Charging pill styling */}
+              <span
+                className={`inline-block mt-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border shadow-2xs ${
+                  isGridExporting
+                    ? "border-emerald-400 bg-emerald-50 text-emerald-600"
+                    : isGridImporting
+                    ? "border-blue-400 bg-blue-50 text-blue-600"
+                    : "border-slate-300 bg-white/90 text-slate-600"
+                }`}
+              >
+                {isGridExporting ? "Exporting" : isGridImporting ? "Importing" : "Idle"}
+              </span>
             </div>
           </div>
         </div>
@@ -463,10 +487,10 @@ export default function SolisHousePowerFlow({
           }
         }
         .flow-dash-forward {
-          animation: flowForward 1.2s linear infinite;
+          animation: flowForward 2.4s linear infinite;
         }
         .flow-dash-backward {
-          animation: flowBackward 1.2s linear infinite;
+          animation: flowBackward 2.4s linear infinite;
         }
       `}</style>
     </div>
