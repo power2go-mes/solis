@@ -1889,68 +1889,68 @@ export default function SolisClientDashboard({
             </div>
 
             {/* Card 4: Environmental Benefits */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-2xs p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-800">Environmental Benefits</span>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs p-5">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-bold text-slate-800">Environmental Benefits</span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {/* Trees */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100/80">
-                  <div>
-                    <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">
+                <div className="relative overflow-hidden flex flex-col justify-between p-4 rounded-xl bg-gray-50/80 border border-gray-100 min-h-[96px]">
+                  <div className="z-10">
+                    <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
                       {plantMeta.trees.toFixed(2)}
                     </div>
                     <div className="text-xs text-slate-500 font-normal mt-0.5">
                       Equivalent Trees
                     </div>
                   </div>
-                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 drop-shadow-xs shrink-0">
+                  <div className="absolute -bottom-2 -right-2 w-28 h-28 pointer-events-none select-none">
                     <Image
                       src="/solis/tree-Bt0ZdeGH.png"
                       alt="Trees"
                       fill
-                      className="object-contain"
+                      className="object-contain object-bottom-right"
                       unoptimized
                     />
                   </div>
                 </div>
 
                 {/* CO2 Reduced */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100/80">
-                  <div>
-                    <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">
-                      {plantMeta.co2Tons.toFixed(2)} <span className="text-xs font-normal">t</span>
+                <div className="relative overflow-hidden flex flex-col justify-between p-4 rounded-xl bg-gray-50/80 border border-gray-100 min-h-[96px]">
+                  <div className="z-10">
+                    <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.co2Tons.toFixed(2)} <span className="text-sm font-normal text-slate-700">t</span>
                     </div>
                     <div className="text-xs text-slate-500 font-normal mt-0.5">
                       CO₂ Reduced
                     </div>
                   </div>
-                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 drop-shadow-xs shrink-0">
+                  <div className="absolute -bottom-2 -right-2 w-28 h-28 pointer-events-none select-none">
                     <Image
                       src="/solis/cloud-DwomYkkV.png"
                       alt="CO2"
                       fill
-                      className="object-contain"
+                      className="object-contain object-bottom-right"
                       unoptimized
                     />
                   </div>
                 </div>
 
                 {/* Coal Saved */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100/80">
-                  <div>
-                    <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">
-                      {plantMeta.coalTons.toFixed(2)} <span className="text-xs font-normal">t</span>
+                <div className="relative overflow-hidden flex flex-col justify-between p-4 rounded-xl bg-gray-50/80 border border-gray-100 min-h-[96px]">
+                  <div className="z-10">
+                    <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.coalTons.toFixed(2)} <span className="text-sm font-normal text-slate-700">t</span>
                     </div>
                     <div className="text-xs text-slate-500 font-normal mt-0.5">Coal Saved</div>
                   </div>
-                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 drop-shadow-xs shrink-0">
+                  <div className="absolute -bottom-2 -right-2 w-28 h-28 pointer-events-none select-none">
                     <Image
                       src="/solis/carbon-CeHwfZ7r.png"
                       alt="Coal"
                       fill
-                      className="object-contain"
+                      className="object-contain object-bottom-right"
                       unoptimized
                     />
                   </div>
