@@ -32,6 +32,7 @@ import SolisAlarmsTab from "./SolisAlarmsTab";
 import SolisAlertsTab from "./SolisAlertsTab";
 import SolisLayoutTab from "./SolisLayoutTab";
 import SolisModifyPlantModal from "./SolisModifyPlantModal";
+import SolisAlarmDetailsView, { AlarmDetailRecord } from "./SolisAlarmDetailsView";
 import { PlantInfo, TelemetryLatest, EnergyBreakdownResult, DailyEnergyRecord } from "@/lib/types";
 import { ChartSeriesData } from "@/lib/db";
 
@@ -248,6 +249,9 @@ export default function SolisClientDashboard({
   const [lifetimeData, setLifetimeData] = useState<EnergyBreakdownResult | null>(null);
   const [plantDetailsData, setPlantDetailsData] = useState<any>(null);
   const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(false);
+
+  // Full Page Alarm/Alert details drilldown
+  const [activeAlarmDetail, setActiveAlarmDetail] = useState<AlarmDetailRecord | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [visiblePowerSeries, setVisiblePowerSeries] = useState({ PV: true, Grid: true, Battery: true, "Total Load": true });
@@ -1923,21 +1927,52 @@ export default function SolisClientDashboard({
             />
           )}
 
-          {/* Card 5: Alarm Tab (SolisCloud Fault & Recovery Audit) */}
-          {activeSubnav === "Alarm" && (
-            <SolisAlarmsTab
-              alarmsData={plantDetailsData?.alarms}
-              isLoading={isDetailsLoading}
-              onViewDevice={(sn) => {
+          {/* Full Page Alarm/Alert Details View if drilled in */}
+          {activeAlarmDetail ? (
+            <SolisAlarmDetailsView
+              alarm={activeAlarmDetail}
+              onBack={() => setActiveAlarmDetail(null)}
+              onSelectPlantByName={(name) => {
+                const match = plantsList.find((p) => p.name.toLowerCase() === name.toLowerCase());
+                if (match) onSelectPlant(match.id);
+                setActiveAlarmDetail(null);
+              }}
+              onSelectDevice={(sn) => {
                 setActiveSubnav("Device");
+                setActiveAlarmDetail(null);
               }}
             />
-          )}
+          ) : (
+            <>
+              {/* Card 5: Alarm Tab (SolisCloud Fault & Recovery Audit) */}
+              {activeSubnav === "Alarm" && (
+                <SolisAlarmsTab
+                  alarmsData={plantDetailsData?.alarms}
+                  isLoading={isDetailsLoading}
+                  onViewDevice={(sn) => {
+                    setActiveSubnav("Device");
+                  }}
+                  onViewAlarmDetail={(alarm) => {
+                    setActiveAlarmDetail(alarm);
+                  }}
+                />
+              )}
 
-      {/* Card 6: Alert Tab (Operational & Diagnostic Notifications) */}
-      {activeSubnav === "Alert" && (
-        <SolisAlertsTab alertsData={plantDetailsData?.alerts} isLoading={isDetailsLoading} />
-      )}
+              {/* Card 6: Alert Tab (Operational & Diagnostic Notifications) */}
+              {activeSubnav === "Alert" && (
+                <SolisAlertsTab
+                  alertsData={plantDetailsData?.alerts}
+                  isLoading={isDetailsLoading}
+                  onViewDevice={(sn) => {
+                    setActiveSubnav("Device");
+                  }}
+                  onViewAlarmDetail={(alarm) => {
+                    setActiveAlarmDetail(alarm);
+                  }}
+                />
+              )}
+            </>
+          )}
 
       {/* Modify Information Modal */}
       <SolisModifyPlantModal
