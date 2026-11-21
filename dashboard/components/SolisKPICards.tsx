@@ -25,7 +25,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.currentPowerKw}
+                {loading ? "..." : Number(summary.currentPowerKw || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kW</span>
             </div>
@@ -36,7 +36,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {displayKwp}
+                {Number(displayKwp || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWp</span>
             </div>
@@ -66,7 +66,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.dailyChargeKwh}
+                {loading ? "..." : Number(summary.dailyChargeKwh || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWh</span>
             </div>
@@ -77,7 +77,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.dailyDischargeKwh}
+                {loading ? "..." : Number(summary.dailyDischargeKwh || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWh</span>
             </div>
@@ -107,7 +107,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.monthlyChargeMwh.toFixed(3)}
+                {loading ? "..." : Number(summary.monthlyChargeMwh || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">MWh</span>
             </div>
@@ -118,7 +118,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.monthlyDischargeMwh.toFixed(3)}
+                {loading ? "..." : Number(summary.monthlyDischargeMwh || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">MWh</span>
             </div>
@@ -167,7 +167,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.totalChargeMwh.toFixed(3)}
+                {loading ? "..." : Number(summary.totalChargeMwh || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">MWh</span>
             </div>
@@ -178,7 +178,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.totalDischargeMwh.toFixed(3)}
+                {loading ? "..." : Number(summary.totalDischargeMwh || 0).toFixed(2)}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">MWh</span>
             </div>

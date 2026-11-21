@@ -698,17 +698,17 @@ export default function SolisPlantTable({
 
                     {/* Daily Yield */}
                     <td className="py-3.5 px-3.5 whitespace-nowrap font-normal text-slate-800">
-                      {plant.dailyYieldKwh}kWh
+                      {Number(plant.dailyYieldKwh || 0).toFixed(2)}kWh
                     </td>
 
                     {/* Daily Charge */}
                     <td className="py-3.5 px-3.5 whitespace-nowrap font-normal text-slate-800">
-                      {plant.dailyChargeKwh}kWh
+                      {Number(plant.dailyChargeKwh || 0).toFixed(2)}kWh
                     </td>
 
                     {/* Daily Discharge */}
                     <td className="py-3.5 px-3.5 whitespace-nowrap font-normal text-slate-800">
-                      {plant.dailyDischargeKwh}kWh
+                      {Number(plant.dailyDischargeKwh || 0).toFixed(2)}kWh
                     </td>
 
                     {/* Total Yield */}
