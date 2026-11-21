@@ -33,35 +33,35 @@ export default function SolisHousePowerFlow({
   const isPvActive = solarKw > 0.05;
   const isLoadActive = loadKw > 0.05;
   const isBatteryActive = Math.abs(batteryKw) > 0.05;
-  const isBatteryCharging = batteryState?.toLowerCase() === "charging";
+  const isBatteryCharging = batteryState.toLowerCase() === "charging" || batteryKw > 0.05;
   const isGridActive = Math.abs(gridKw) > 0.05;
   const isGridExporting = gridKw >= 0;
 
   return (
-    <div className="relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#d9ebff] via-[#e8f3ff] to-[#f4f8fe] border border-blue-100/90 shadow-[0_4px_24px_rgba(37,99,235,0.04)] overflow-hidden transition-all select-none p-3 sm:p-5">
+    <div className="relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#879bbd] via-[#a8bdd6] to-[#ccd9e7] border border-blue-200/80 shadow-[0_8px_32px_rgba(20,40,80,0.12)] overflow-hidden transition-all select-none p-3 sm:p-5">
       {/* Soft atmospheric sunbeam glow from top-left */}
       <div
-        className="absolute top-0 left-0 w-96 h-96 pointer-events-none rounded-tl-3xl opacity-80"
+        className="absolute top-0 left-0 w-[500px] h-[500px] pointer-events-none rounded-tl-3xl opacity-40"
         style={{
           background:
-            "radial-gradient(ellipse at 12% 8%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 35%, rgba(255,255,255,0) 70%)",
+            "radial-gradient(ellipse at 15% 10%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0) 70%)",
         }}
       />
 
       {/* Top Right Card Controls */}
       <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 flex items-center gap-2 z-30">
         <button
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 shadow-2xs border border-white/80 backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 hover:bg-white text-slate-700 shadow-sm border border-white/90 backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer"
           title="History playback"
         >
-          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />
+          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
         </button>
         <button
           onClick={() => setView3D(!view3D)}
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-2xs border backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer ${
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-sm border backdrop-blur-xs flex items-center justify-center transition-all cursor-pointer ${
             view3D
               ? "bg-white text-slate-800 border-white"
-              : "bg-white/60 text-slate-400 border-white/60 hover:bg-white"
+              : "bg-white/60 text-slate-500 border-white/60 hover:bg-white"
           }`}
           title="Toggle 3D View"
         >
@@ -75,26 +75,26 @@ export default function SolisHousePowerFlow({
         {/* 3D VILLA HOUSE & SVG ANIMATIONS (approx 8-9 cols)        */}
         {/* ======================================================== */}
         <div className="lg:col-span-8 xl:col-span-9 relative w-full flex items-center justify-center min-h-[300px] sm:min-h-[380px] md:min-h-[420px]">
-          {/* Base Container maintaining aspect ratio 645 x 445 */}
-          <div className="relative w-full max-w-[645px] aspect-[645/445]">
-            {/* Spotless Clean 3D Modern Villa Image */}
+          {/* Base Container maintaining aspect ratio 1024 x 576 */}
+          <div className="relative w-full max-w-[820px] aspect-[1024/576] rounded-xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.18)]">
+            {/* High-Resolution 3D Modern Villa Image */}
             <img
-              src="/solis_villa_clean.png"
-              alt="Solis 3D Villa"
-              className="w-full h-full object-contain pointer-events-none select-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.06)]"
+              src="/solis_villa_hd.jpg"
+              alt="Solis 3D Villa High Res"
+              className="w-full h-full object-cover pointer-events-none select-none"
             />
 
             {/* SVG OVERLAY: Energy Flow Lines, Animated Pulses & Dotted Guidelines */}
             <svg
-              viewBox="0 0 645 445"
+              viewBox="0 0 1024 576"
               className="absolute inset-0 w-full h-full pointer-events-none select-none"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
-                {/* Amber Glow Filter for active energy dots */}
+                {/* Amber Glow Filter for active energy dots and pulses */}
                 <filter id="solisAmberGlow" x="-60%" y="-60%" width="220%" height="220%">
-                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feGaussianBlur stdDeviation="3" result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
@@ -105,93 +105,83 @@ export default function SolisHousePowerFlow({
               {/* ---------------------------------------------------- */}
               {/* 1. DOTTED CALLOUT GUIDELINES (Grey dotted lines)      */}
               {/* ---------------------------------------------------- */}
-              {/* PV Guideline: from PV callout down, across & drops onto roof panel */}
+              {/* PV Guideline: from PV callout down, across & drops onto roof panels */}
               <path
-                d="M 80 85 L 80 135 L 227 135 L 227 165"
-                stroke="#94a3b8"
-                strokeWidth="1.2"
-                strokeDasharray="2.5 2.5"
-                opacity="0.85"
+                d="M 140 105 L 140 155 L 470 155 L 470 205"
+                stroke="#cbd5e1"
+                strokeWidth="1.4"
+                strokeDasharray="3 3"
+                opacity="0.9"
               />
 
-              {/* Load Guideline: from Load callout down, across & drops onto living room flat roof */}
+              {/* Load Guideline: from Load callout down, across & drops to living room window */}
               <path
-                d="M 245 85 L 245 135 L 360 135 L 360 185"
-                stroke="#94a3b8"
-                strokeWidth="1.2"
-                strokeDasharray="2.5 2.5"
-                opacity="0.85"
+                d="M 260 105 L 260 155 L 580 155 L 580 295"
+                stroke="#cbd5e1"
+                strokeWidth="1.4"
+                strokeDasharray="3 3"
+                opacity="0.9"
               />
 
               {/* Battery Guideline: from battery unit down to Battery callout */}
               <path
-                d="M 180 370 L 180 405"
-                stroke="#94a3b8"
-                strokeWidth="1.2"
-                strokeDasharray="2.5 2.5"
-                opacity="0.85"
+                d="M 480 445 L 480 475 L 340 475 L 340 500"
+                stroke="#cbd5e1"
+                strokeWidth="1.4"
+                strokeDasharray="3 3"
+                opacity="0.9"
               />
 
-              {/* Grid Guideline: from grid terrace wire down to Grid callout */}
+              {/* Grid Guideline: from grid tower power line down to Grid callout */}
               <path
-                d="M 400 375 L 400 405"
-                stroke="#94a3b8"
-                strokeWidth="1.2"
-                strokeDasharray="2.5 2.5"
-                opacity="0.85"
+                d="M 320 445 L 320 485 L 370 485 L 370 500"
+                stroke="#cbd5e1"
+                strokeWidth="1.4"
+                strokeDasharray="3 3"
+                opacity="0.9"
               />
 
               {/* ---------------------------------------------------- */}
               {/* 2. BASE PHYSICAL CONDUIT WIRES (Underlying paths)    */}
               {/* ---------------------------------------------------- */}
-              {/* PV Roof Panels -> Inverter Top */}
+              {/* PV Roof Panels -> Inverter Top (x=516, y: 260 -> 316) */}
               <path
                 id="wire-pv"
-                d="M 305 240 L 305 300"
-                stroke="#fed7aa"
+                d="M 516 260 L 516 316"
+                stroke="#ffedd5"
                 strokeWidth="2.5"
                 strokeDasharray="3 3"
-                opacity="0.65"
+                opacity="0.75"
               />
 
-              {/* Inverter -> Meter Box */}
-              <path
-                id="wire-meter"
-                d="M 314 360 C 318 395, 335 395, 355 395"
-                stroke="#fed7aa"
-                strokeWidth="2.5"
-                strokeDasharray="3 3"
-                opacity="0.65"
-              />
-
-              {/* Meter Box -> Living Room Window (Load) */}
+              {/* Inverter Right -> Load Window (x: 526 -> 578, y=318) */}
               <path
                 id="wire-load"
-                d="M 365 375 L 365 290"
-                stroke="#fed7aa"
+                d="M 526 318 L 578 318"
+                stroke="#ffedd5"
                 strokeWidth="2.5"
                 strokeDasharray="3 3"
-                opacity="0.65"
+                opacity="0.75"
               />
 
-              {/* Inverter -> Battery Pack */}
+              {/* Inverter Bottom -> Battery Pack (x: 516 -> 516 y: 358 -> 392, then L 492 392) */}
               <path
                 id="wire-battery"
-                d="M 298 360 C 298 395, 280 395, 250 395"
-                stroke="#fed7aa"
+                d="M 516 358 L 516 392 L 492 392"
+                stroke="#ffedd5"
                 strokeWidth="2.5"
                 strokeDasharray="3 3"
-                opacity="0.65"
+                opacity="0.75"
               />
 
-              {/* Meter Box -> Grid */}
+              {/* Power Grid Tower -> House Inverter (x: 272 y: 380 -> x: 375 y: 440 -> x: 470 y: 435 -> x: 508 y: 345) */}
               <path
                 id="wire-grid"
-                d="M 365 410 C 375 425, 385 432, 405 440"
-                stroke="#fed7aa"
+                d="M 272 380 C 310 405, 350 430, 420 435 C 460 438, 485 410, 508 345"
+                stroke="#ffedd5"
                 strokeWidth="2.5"
                 strokeDasharray="3 3"
-                opacity="0.65"
+                opacity="0.7"
               />
 
               {/* ---------------------------------------------------- */}
@@ -199,9 +189,9 @@ export default function SolisHousePowerFlow({
               {/* ---------------------------------------------------- */}
               {isPvActive && (
                 <path
-                  d="M 305 240 L 305 300"
+                  d="M 516 260 L 516 316"
                   stroke="#f97316"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeDasharray="6 4"
                   className="flow-dash-forward"
                   filter="url(#solisAmberGlow)"
@@ -209,31 +199,21 @@ export default function SolisHousePowerFlow({
               )}
 
               {isLoadActive && (
-                <>
-                  <path
-                    d="M 314 360 C 318 395, 335 395, 355 395"
-                    stroke="#f97316"
-                    strokeWidth="2.5"
-                    strokeDasharray="6 4"
-                    className="flow-dash-forward"
-                    filter="url(#solisAmberGlow)"
-                  />
-                  <path
-                    d="M 365 375 L 365 290"
-                    stroke="#f97316"
-                    strokeWidth="2.5"
-                    strokeDasharray="6 4"
-                    className="flow-dash-forward"
-                    filter="url(#solisAmberGlow)"
-                  />
-                </>
+                <path
+                  d="M 526 318 L 578 318"
+                  stroke="#f97316"
+                  strokeWidth="3"
+                  strokeDasharray="6 4"
+                  className="flow-dash-forward"
+                  filter="url(#solisAmberGlow)"
+                />
               )}
 
               {isBatteryActive && (
                 <path
-                  d="M 298 360 C 298 395, 280 395, 250 395"
+                  d="M 516 358 L 516 392 L 492 392"
                   stroke="#f97316"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeDasharray="6 4"
                   className={isBatteryCharging ? "flow-dash-forward" : "flow-dash-backward"}
                   filter="url(#solisAmberGlow)"
@@ -242,9 +222,9 @@ export default function SolisHousePowerFlow({
 
               {isGridActive && (
                 <path
-                  d="M 365 410 C 375 425, 385 432, 405 440"
+                  d="M 272 380 C 310 405, 350 430, 420 435 C 460 438, 485 410, 508 345"
                   stroke="#f97316"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeDasharray="6 4"
                   className={isGridExporting ? "flow-dash-forward" : "flow-dash-backward"}
                   filter="url(#solisAmberGlow)"
@@ -257,10 +237,10 @@ export default function SolisHousePowerFlow({
               {/* PV -> Inverter Moving Energy Dots */}
               {isPvActive && (
                 <>
-                  {[0, 0.6, 1.2].map((delay, idx) => (
-                    <circle key={`pv-dot-${idx}`} r="3.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                  {[0, 0.5, 1.0].map((delay, idx) => (
+                    <circle key={`pv-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="1.6s"
+                        dur="1.4s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
                         keyPoints="0;1"
@@ -273,13 +253,13 @@ export default function SolisHousePowerFlow({
                 </>
               )}
 
-              {/* Load Moving Energy Dots (Meter to living room window) */}
+              {/* Inverter -> Load Moving Energy Dots */}
               {isLoadActive && (
                 <>
-                  {[0, 0.6, 1.2].map((delay, idx) => (
-                    <circle key={`load-dot-${idx}`} r="3.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                  {[0, 0.5, 1.0].map((delay, idx) => (
+                    <circle key={`load-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="1.8s"
+                        dur="1.4s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
                         keyPoints="0;1"
@@ -295,8 +275,8 @@ export default function SolisHousePowerFlow({
               {/* Battery Moving Energy Dots (Bi-directional) */}
               {isBatteryActive && (
                 <>
-                  {[0, 0.7].map((delay, idx) => (
-                    <circle key={`bat-dot-${idx}`} r="3.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                  {[0, 0.6, 1.2].map((delay, idx) => (
+                    <circle key={`bat-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
                         dur="1.5s"
                         repeatCount="indefinite"
@@ -314,10 +294,10 @@ export default function SolisHousePowerFlow({
               {/* Grid Moving Energy Dots (Bi-directional) */}
               {isGridActive && (
                 <>
-                  {[0, 0.7].map((delay, idx) => (
-                    <circle key={`grid-dot-${idx}`} r="3.5" fill="#f59e0b" filter="url(#solisAmberGlow)">
+                  {[0, 0.7, 1.4].map((delay, idx) => (
+                    <circle key={`grid-dot-${idx}`} r="4" fill="#f59e0b" filter="url(#solisAmberGlow)">
                       <animateMotion
-                        dur="1.5s"
+                        dur="2.0s"
                         repeatCount="indefinite"
                         begin={`${delay}s`}
                         keyPoints={isGridExporting ? "0;1" : "1;0"}
@@ -331,11 +311,16 @@ export default function SolisHousePowerFlow({
               )}
 
               {/* Solis Inverter Pulsing Center LED Ring Indicator */}
-              <circle cx="305" cy="320" r="5" fill="none" stroke="#f97316" strokeWidth="1.8" opacity="0.9">
-                <animate attributeName="r" values="4;7;4" dur="2.2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2.2s" repeatCount="indefinite" />
+              <circle cx="516" cy="336" r="6" fill="none" stroke="#f97316" strokeWidth="2" opacity="0.95">
+                <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.95;0.3;0.95" dur="2s" repeatCount="indefinite" />
               </circle>
-              <circle cx="305" cy="320" r="2.5" fill="#f97316" />
+              <circle cx="516" cy="336" r="3" fill="#f97316" filter="url(#solisAmberGlow)" />
+
+              {/* Living Room Window Ambient Warm Lighting Animation */}
+              <rect x="560" y="295" width="40" height="45" rx="4" fill="#fef08a" opacity="0.22">
+                <animate attributeName="opacity" values="0.22;0.42;0.22" dur="3.5s" repeatCount="indefinite" />
+              </rect>
             </svg>
 
             {/* ---------------------------------------------------- */}
@@ -344,80 +329,75 @@ export default function SolisHousePowerFlow({
             {/* Callout 1: PV (Top Left) */}
             <div
               className="absolute z-20 flex flex-col pointer-events-none"
-              style={{ left: "12%", top: "7%" }}
+              style={{ left: "10%", top: "10%" }}
             >
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 tracking-tight">
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 | PV
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {solarKw}
+                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                  {solarKw.toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
+                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
             </div>
 
-            {/* Callout 2: Load (Top Middle) */}
+            {/* Callout 2: Load (Top Middle-Left) */}
             <div
               className="absolute z-20 flex flex-col pointer-events-none"
-              style={{ left: "38%", top: "7%" }}
+              style={{ left: "24%", top: "10%" }}
             >
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 tracking-tight">
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 | Load
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {loadKw}
+                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                  {loadKw.toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
+                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
             </div>
 
-            {/* Callout 3: Battery (Bottom Left) */}
+            {/* Callout 3: Battery (Bottom Left-Center) */}
             <div
               className="absolute z-20 flex flex-col items-start pointer-events-none"
-              style={{ left: "28%", top: "88%" }}
+              style={{ left: "22%", top: "76%" }}
             >
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] sm:text-xs font-medium text-slate-500 tracking-tight">
-                  | Battery
-                </span>
-                <span className="text-[11px] sm:text-xs font-bold text-slate-900 font-mono">
-                  {batterySoc}%
-                </span>
-              </div>
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
+                | Battery <strong className="text-emerald-600 font-bold ml-0.5">{batterySoc}%</strong>
+              </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {Math.abs(batteryKw)}
+                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                  {Math.abs(batteryKw).toFixed(1)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
+                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
               <span
-                className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold border shadow-2xs ${
                   isBatteryCharging
                     ? "border-emerald-400 bg-emerald-50 text-emerald-600"
                     : isBatteryActive
-                    ? "border-orange-400 bg-orange-50 text-[#f37021]"
-                    : "border-slate-300 bg-slate-100 text-slate-500"
+                    ? "border-amber-400 bg-amber-50 text-amber-600"
+                    : "border-slate-300 bg-white/90 text-slate-600"
                 }`}
               >
-                {batteryState || (isBatteryCharging ? "Charging" : isBatteryActive ? "Discharging" : "Idle")}
+                {batteryState || (isBatteryCharging ? "Charging" : "Idle")}
               </span>
             </div>
 
-            {/* Callout 4: Grid (Bottom Right) */}
+            {/* Callout 4: Grid (Bottom Right-Center) */}
             <div
               className="absolute z-20 flex flex-col items-start pointer-events-none"
-              style={{ left: "62%", top: "88%" }}
+              style={{ left: "38%", top: "76%" }}
             >
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 tracking-tight">
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-700 tracking-tight">
                 | Grid
               </span>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {Math.abs(gridKw)}
+                <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-mono drop-shadow-xs">
+                  {Math.abs(gridKw).toFixed(0)}
                 </span>
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">kW</span>
+                <span className="text-[10px] sm:text-xs font-bold text-slate-600 ml-1">kW</span>
               </div>
             </div>
           </div>
@@ -432,7 +412,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyYieldKwh}
+                  {dailyYieldKwh.toFixed(1)}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
@@ -443,7 +423,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyChargeKwh}
+                  {dailyChargeKwh.toFixed(1)}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
@@ -454,7 +434,7 @@ export default function SolisHousePowerFlow({
             <div>
               <div className="flex items-baseline">
                 <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  {dailyDischargeKwh}
+                  {dailyDischargeKwh.toFixed(0)}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-700 ml-1">kWh</span>
               </div>
