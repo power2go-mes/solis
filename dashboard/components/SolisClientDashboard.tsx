@@ -1281,6 +1281,23 @@ export default function SolisClientDashboard({
     ? Number(telemetry.grid_power_kw)
     : (curveGrid !== null ? curveGrid : 0);
 
+  // Live daily yield, charge, and discharge (synchronized with plant overview & real-time telemetry)
+  const isViewingToday = currentDate === getPktDateStr();
+  const rawData = (telemetry as any)?.raw_data;
+  const liveDailyYield = isViewingToday && rawData?.dayEnergy !== undefined && rawData?.dayEnergy !== null
+    ? Number(rawData.dayEnergy)
+    : Number(totals.pv || 0);
+
+  const liveDailyCharge = isViewingToday && rawData?.batteryTodayChargeEnergy !== undefined && rawData?.batteryTodayChargeEnergy !== null
+    ? Number(rawData.batteryTodayChargeEnergy)
+    : Number(totals.charge || 0);
+
+  const liveDailyDischarge = isViewingToday && rawData?.batteryTodayDischargeEnergy !== undefined && rawData?.batteryTodayDischargeEnergy !== null
+    ? Number(rawData.batteryTodayDischargeEnergy)
+    : (isViewingToday && rawData?.batteryDischargeEnergy !== undefined && rawData?.batteryDischargeEnergy !== null
+      ? Number(rawData.batteryDischargeEnergy)
+      : Number(totals.discharge || 0));
+
   const subnavItems = ["Overview", "Layout", "Info", "Device", "Alarm", "Alert"];
 
   return (
@@ -1431,9 +1448,9 @@ export default function SolisClientDashboard({
               batteryKw={liveBatteryKw}
               batteryState={liveBatteryState}
               gridKw={liveGridKw}
-              dailyYieldKwh={Number(totals.pv || 112.7)}
-              dailyChargeKwh={Number(totals.charge || 80.4)}
-              dailyDischargeKwh={Number(totals.discharge || 53.0)}
+              dailyYieldKwh={liveDailyYield}
+              dailyChargeKwh={liveDailyCharge}
+              dailyDischargeKwh={liveDailyDischarge}
             />
 
             {/* Card 2: Operating Data Container */}
