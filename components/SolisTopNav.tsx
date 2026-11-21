@@ -13,20 +13,23 @@ import {
   LogOut,
   Shield,
   Settings,
+  ArrowLeft,
 } from "lucide-react";
 
 interface SolisTopNavProps {
   onOpenMobileMenu: () => void;
+  canGoBack?: boolean;
+  onGoBack?: () => void;
 }
 
-export default function SolisTopNav({ onOpenMobileMenu }: SolisTopNavProps) {
+export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack }: SolisTopNavProps) {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState("Light");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   return (
     <header className="h-14 bg-transparent px-4 sm:px-6 flex items-center justify-between z-20 select-none">
-      {/* Left: Power2Go Official Brand Logo aligned with Profile Section */}
+      {/* Left: Power2Go Official Brand Logo & Go Back Button */}
       <div className="flex items-center gap-3">
         {/* Mobile hamburger menu (visible on phone/tablet) */}
         <div className="flex items-center md:hidden">
@@ -38,6 +41,18 @@ export default function SolisTopNav({ onOpenMobileMenu }: SolisTopNavProps) {
             <Menu className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Global Go Back Button */}
+        {canGoBack && onGoBack && (
+          <button
+            onClick={onGoBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white/90 text-slate-700 hover:text-slate-900 hover:bg-white active:scale-95 transition-all text-xs font-semibold shadow-2xs mr-1"
+            title="Go Back"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+        )}
 
         <div className="flex items-center">
           <Image

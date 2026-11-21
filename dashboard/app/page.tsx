@@ -23,6 +23,7 @@ import SolisPlantReportView from "@/components/reports/SolisPlantReportView";
 import SolisInverterReportView from "@/components/reports/SolisInverterReportView";
 import SolisBatteryReportView from "@/components/reports/SolisBatteryReportView";
 import SolisDeviceOverviewPage from "@/components/SolisDeviceOverviewPage";
+import SolisAlarmDetailsView, { AlarmDetailRecord } from "@/components/SolisAlarmDetailsView";
 import { SidebarViewType } from "@/components/SolisSidebar";
 
 // Client Detailed 4-Graph Components
@@ -43,10 +44,27 @@ function SolisCloudDashboard() {
   const tabParam = searchParams.get("tab") || "Overview";
   const viewParam = (searchParams.get("view") as SidebarViewType) || "";
 
-  // View Mode: "plant_overview", "device_overview", "plant_detail", "om_alarms", "om_alerts", "report_plant", "report_inverter", "report_battery"
-  const [activeView, setActiveView] = useState<SidebarViewType | "plant_detail">(
+  // View Mode: "plant_overview", "device_overview", "plant_detail", "om_alarms", "om_alerts", "alarm_detail", "report_plant", "report_inverter", "report_battery"
+  const [activeView, setActiveView] = useState<SidebarViewType | "plant_detail" | "alarm_detail">(
     (viewParam as any) || (stationIdParam ? "plant_detail" : "plant_overview")
   );
+  const [selectedAlarmDetail, setSelectedAlarmDetail] = useState<AlarmDetailRecord | null>(null);
+  const [navigationHistory, setNavigationHistory] = useState<Array<SidebarViewType | "plant_detail" | "alarm_detail">>([]);
+
+  const navigateToView = (view: SidebarViewType | "plant_detail" | "alarm_detail") => {
+    setNavigationHistory((prev) => [...prev, activeView]);
+    setActiveView(view);
+  };
+
+  const handleGoBack = () => {
+    if (navigationHistory.length > 0) {
+      const prev = navigationHistory[navigationHistory.length - 1];
+      setNavigationHistory((hist) => hist.slice(0, -1));
+      setActiveView(prev);
+    } else {
+      setActiveView("plant_overview");
+    }
+  };
   const [selectedPlantId, setSelectedPlantId] = useState<string>(
     stationIdParam || "1298491919450873747"
   );
@@ -151,7 +169,7 @@ function SolisCloudDashboard() {
   const handleSelectPlant = (plantId: string) => {
     setSelectedPlantId(plantId);
     loadTelemetry(plantId);
-    setActiveView("plant_detail");
+    navigateToView("plant_detail");
   };
 
   const currentPlantInfo = plantsList.find((p) => p.id === selectedPlantId);
@@ -195,7 +213,7 @@ function SolisCloudDashboard() {
         {/* Left Sidebar (Exact SolisCloud Navigation with Power2Go branding) */}
         <SolisSidebar
           activeView={activeView}
-          onSelectView={(view) => setActiveView(view)}
+          onSelectView={(view) => navigateToView(view)}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
           isCollapsed={isSidebarCollapsed}
@@ -205,7 +223,11 @@ function SolisCloudDashboard() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           {/* Top Navigation Bar */}
-          <SolisTopNav onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
+          <SolisTopNav
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+            canGoBack={activeView !== "plant_overview" || navigationHistory.length > 0}
+            onGoBack={handleGoBack}
+          />
 
           {/* Page Body */}
           <main className="flex-1 p-3.5 sm:p-5 lg:p-6 space-y-4 max-w-[1600px] w-full mx-auto">
@@ -242,10 +264,14 @@ function SolisCloudDashboard() {
                 initialCategory="Alarm"
                 onSelectPlant={(plantId) => {
                   setSelectedPlantId(plantId);
-                  setActiveView("device_overview");
+                  navigateToView("device_overview");
                 }}
                 onSelectDevice={(sn) => {
-                  setActiveView("device_overview");
+                  navigateToView("device_overview");
+                }}
+                onViewAlarmDetail={(alarm) => {
+                  setSelectedAlarmDetail(alarm);
+                  navigateToView("alarm_detail");
                 }}
               />
             ) : activeView === "om_alerts" ? (
@@ -256,11 +282,34 @@ function SolisCloudDashboard() {
                 initialCategory="Alert"
                 onSelectPlant={(plantId) => {
                   setSelectedPlantId(plantId);
-                  setActiveView("device_overview");
+                  navigateToView("device_overview");
                 }}
                 onSelectDevice={(sn) => {
-                  setActiveView("device_overview");
+                  navigateToView("device_overview");
                 }}
+                onViewAlarmDetail={(alarm) => {
+                  setSelectedAlarmDetail(alarm);
+                  navigateToView("alarm_detail");
+                }}
+              />
+            ) : activeView === "alarm_detail" ? (
+              /* ============================================================== */
+              /* ALARM DETAILS PAGE (EXACT SCREENSHOT REFERENCE)                */
+              /* ============================================================== */
+              <SolisAlarmDetailsView
+                alarm={selectedAlarmDetail}
+                onBack={handleGoBack}
+                onSelectPlantByName={(name) => {
+                  const match = plantsList.find((p) =>
+                    p.name.toLowerCase().includes(name.toLowerCase())
+                  );
+                  if (match) {
+                    setSelectedPlantId(match.id);
+                    loadTelemetry(match.id);
+                    navigateToView("plant_detail");
+                  }
+                }}
+                onSelectDevice={() => navigateToView("device_overview")}
               />
             ) : activeView === "report_plant" ? (
               /* ============================================================== */

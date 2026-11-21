@@ -296,8 +296,6 @@ export default function SolisSidebar({
                 title="O&M"
               >
                 <Wrench className="w-5 h-5" />
-                {/* Solis Red Notification Dot */}
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#ef4444] ring-2 ring-white" />
               </button>
 
               {/* Flyout Popover */}
@@ -312,7 +310,6 @@ export default function SolisSidebar({
                 >
                   <div className="text-[13px] font-medium text-slate-400 px-3 pt-1 pb-2 flex items-center justify-between">
                     <span>O&M</span>
-                    <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
                   </div>
                   {/* Alarm */}
                   <button
@@ -368,10 +365,7 @@ export default function SolisSidebar({
               >
                 <div className="flex items-center gap-2">
                   <Wrench className="w-4 h-4 text-slate-600" />
-                  <span className="flex items-center gap-1">
-                    <span>O&M</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
-                  </span>
+                  <span>O&M</span>
                 </div>
                 {isOMExpanded ? (
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -701,9 +695,8 @@ export default function SolisSidebar({
 
                 {/* 2. O&M */}
                 <div>
-                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1 flex items-center gap-1.5">
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1">
                     <span>O&M</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
                   </div>
                   <button
                     onClick={() => {

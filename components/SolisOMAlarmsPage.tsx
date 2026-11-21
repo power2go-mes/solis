@@ -57,7 +57,27 @@ export default function SolisOMAlarmsPage({
   const [pageSize, setPageSize] = useState(10);
   const [goToPageInput, setGoToPageInput] = useState("1");
 
-  // Modal states
+  // Ignored / hidden alarms state
+  const [ignoredIds, setIgnoredIds] = useState<Set<string | number>>(() => new Set());
+  const [activeMenuId, setActiveMenuId] = useState<string | number | null>(null);
+
+  const toggleIgnore = (id: string | number) => {
+    setIgnoredIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+    setActiveMenuId(null);
+  };
+
+  const deleteRecord = (id: string | number) => {
+    setRecords((prev) => prev.filter((r) => r.id !== id));
+    setActiveMenuId(null);
+  };
   const [selectedAlarmForModal, setSelectedAlarmForModal] = useState<AlarmItem | null>(null);
   const [isAlarmPushOpen, setIsAlarmPushOpen] = useState(false);
   const [pushEmail, setPushEmail] = useState("");
@@ -391,24 +411,52 @@ export default function SolisOMAlarmsPage({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pagedRecords.map((row) => (
-                  <tr key={row.id} className="hover:bg-orange-50/30 transition-colors group">
+                  <tr
+                    key={row.id}
+                    onClick={() => {
+                      const item = {
+                        id: row.id,
+                        alarmCode: row.alarmCode,
+                        alarmContent: row.alarmContent,
+                        deviceType: row.deviceType || "Inverter",
+                        deviceSn: row.sn,
+                        plantName: row.plantName,
+                        plantId: row.plantId,
+                        alarmLevel: row.level,
+                        alarmStatus: row.status,
+                        alarmDuration: row.alarmDuration,
+                        startTime: row.beginTimeStr || "",
+                        recoveryTime: row.status === "Recovered" ? "Recovered" : "--",
+                        handlingMethod: row.suggestedTreatment,
+                      };
+                      if (onViewAlarmDetail) {
+                        onViewAlarmDetail(item);
+                      }
+                    }}
+                    className="hover:bg-orange-50/30 transition-colors group cursor-pointer"
+                  >
                     {/* Device Type */}
                     <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">
                       {row.deviceType}
                     </td>
 
-                    {/* Level Badge */}
+                    {/* Level Badge with Solis red dot (hidden if ignored) */}
                     <td className="py-3.5 px-3 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                          row.level === "Warning"
-                            ? "bg-orange-50 text-[#f37021] border border-orange-200"
-                            : row.level === "Critical"
-                            ? "bg-red-50 text-red-600 border border-red-200"
-                            : "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                        }`}
-                      >
-                        {row.level}
+                      <span className="relative inline-flex items-center">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            row.level === "Warning"
+                              ? "bg-orange-50 text-[#f37021] border border-orange-200"
+                              : row.level === "Critical"
+                              ? "bg-red-50 text-red-600 border border-red-200"
+                              : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                          }`}
+                        >
+                          {row.level}
+                        </span>
+                        {!ignoredIds.has(row.id) && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#ef4444] border-2 border-white shadow-xs animate-pulse" />
+                        )}
                       </span>
                     </td>
 
@@ -498,47 +546,48 @@ export default function SolisOMAlarmsPage({
                       {row.alarmDuration}
                     </td>
 
-                    {/* Operation Button */}
-                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          const item = {
-                            id: row.id,
-                            alarmCode: row.alarmCode,
-                            alarmContent: row.alarmContent,
-                            deviceType: row.deviceType || "Inverter",
-                            deviceSn: row.sn,
-                            plantName: row.plantName,
-                            plantId: row.plantId,
-                            alarmLevel: row.level,
-                            alarmStatus: row.status,
-                            alarmDuration: row.alarmDuration,
-                            startTime: row.beginTimeStr || "",
-                            recoveryTime: row.status === "Recovered" ? "Recovered" : "--",
-                            handlingMethod: row.suggestedTreatment,
-                          };
-                          if (onViewAlarmDetail) {
-                            onViewAlarmDetail(item);
-                          } else {
-                            setSelectedAlarmForModal({
-                              id: row.id,
-                              alarmCode: row.alarmCode,
-                              alarmName: row.alarmContent,
-                              severity: row.level,
-                              deviceSn: row.sn,
-                              plantName: row.plantName,
-                              beginTime: row.beginTimeStr || "",
-                              endTime: undefined,
-                              duration: row.alarmDuration,
-                              status: row.status,
-                              advice: row.suggestedTreatment,
-                            });
-                          }
-                        }}
-                        className="px-3.5 py-1 rounded-lg border border-gray-200 bg-white text-slate-700 text-xs font-semibold hover:border-[#f37021] hover:text-[#10b981] active:scale-95 transition-all shadow-2xs"
-                      >
-                        Operation
-                      </button>
+                    {/* Operation Button with Ignore & Delete Popover matching reference */}
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap relative">
+                      <div className="inline-block relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(activeMenuId === row.id ? null : row.id);
+                          }}
+                          className={`px-3.5 py-1 rounded-lg border text-xs font-semibold active:scale-95 transition-all shadow-2xs ${
+                            activeMenuId === row.id
+                              ? "border-[#f37021] text-[#f37021] bg-orange-50/50"
+                              : "border-gray-200 bg-white text-slate-700 hover:border-gray-300"
+                          }`}
+                        >
+                          Operation
+                        </button>
+
+                        {/* Floating Popup Menu matching Screenshot: Ignore and Delete */}
+                        {activeMenuId === row.id && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-full mt-1.5 w-28 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-150"
+                          >
+                            <button
+                              onClick={() => toggleIgnore(row.id)}
+                              className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-orange-50 hover:text-[#f37021] flex items-center justify-between transition-colors"
+                            >
+                              <span>{ignoredIds.has(row.id) ? "Unignore" : "Ignore"}</span>
+                              {ignoredIds.has(row.id) && (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => deleteRecord(row.id)}
+                              className="w-full text-left px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center justify-between transition-colors border-t border-gray-50"
+                            >
+                              <span>Delete</span>
+                              <X className="w-3.5 h-3.5 text-rose-400" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
