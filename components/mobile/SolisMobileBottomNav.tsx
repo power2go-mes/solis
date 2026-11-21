@@ -180,14 +180,14 @@ export default function SolisMobileBottomNav({
         </div>
       )}
 
-      {/* Main Floating Bottom Pill - EXACT LAPTOP NAMES: Overview, O&M, Report, Favorites */}
-      <div className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between w-full max-w-sm pointer-events-auto">
+      {/* Main Floating Bottom Pill - EXACT LAPTOP NAMES: Overview, O&M, Report */}
+      <div className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-full px-3 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-around w-full max-w-xs pointer-events-auto">
         {/* 1. Overview */}
         <button
           onClick={() => {
             setOpenSubmenu(openSubmenu === "Overview" ? null : "Overview");
           }}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all ${
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all ${
             isOverviewActive
               ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/25 active:scale-95"
               : "text-slate-600 hover:text-slate-900 active:scale-95"
@@ -203,7 +203,7 @@ export default function SolisMobileBottomNav({
           onClick={() => {
             setOpenSubmenu(openSubmenu === "OM" ? null : "OM");
           }}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all relative ${
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all relative ${
             isOMActive
               ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/25 active:scale-95"
               : "text-slate-600 hover:text-slate-900 active:scale-95"
@@ -222,7 +222,7 @@ export default function SolisMobileBottomNav({
           onClick={() => {
             setOpenSubmenu(openSubmenu === "Report" ? null : "Report");
           }}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all ${
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all ${
             isReportActive
               ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/25 active:scale-95"
               : "text-slate-600 hover:text-slate-900 active:scale-95"
@@ -231,22 +231,6 @@ export default function SolisMobileBottomNav({
           <BarChart3 className="w-3.5 h-3.5" />
           <span>Report</span>
           <ChevronUp className={`w-3 h-3 transition-transform ${openSubmenu === "Report" ? "rotate-180" : ""}`} />
-        </button>
-
-        {/* 4. Favorites */}
-        <button
-          onClick={() => {
-            setOpenSubmenu(null);
-            alert("Favorites: Showing all pinned plants and devices.");
-          }}
-          className={`flex items-center gap-1 px-3 py-2 rounded-full font-medium text-xs transition-all ${
-            isFavoritesActive
-              ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md"
-              : "text-slate-600 hover:text-slate-900 active:scale-95"
-          }`}
-        >
-          <Heart className="w-3.5 h-3.5" />
-          <span>Favorites</span>
         </button>
       </div>
     </div>
