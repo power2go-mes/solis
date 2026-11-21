@@ -133,13 +133,16 @@ function postRequest(apiPath, body) {
   });
 }
 
-// Exactly the 5 active plants
+// All 8 authorized plants (including Towfiq chinoy and all other client plants)
 const PLANTS = [
+  { id: "1298491919451014032", name: "Towfiq chinoy", capacityKwp: 29.67, location: "Karachi, Pakistan" },
   { id: "1298491919450797504", name: "Menu Karachi Office", capacityKwp: 80.0, location: "Karachi, Pakistan" },
   { id: "1298491919450958553", name: "OPL Residence", capacityKwp: 55.5, location: "Gharo, Pakistan" },
   { id: "1298491919450873747", name: "36 Chenab", capacityKwp: 25.155, location: "Lahore, Pakistan" },
   { id: "1298491919450740581", name: "P2G 50KW", capacityKwp: 32.0, location: "Karachi, Pakistan" },
   { id: "1298491919450840394", name: "P2G 1ST 6kw", capacityKwp: 20.0, location: "Karachi, Pakistan" },
+  { id: "1298491919450851319", name: "P2G 20kw", capacityKwp: 18.0, location: "Karachi, Pakistan" },
+  { id: "1298491919450734544", name: "P2G 15KW", capacityKwp: 20.0, location: "Karachi, Pakistan" },
 ];
 
 function numOrNull(val) {
@@ -273,7 +276,12 @@ async function run() {
         const solarPowerArray = dayData.pvAndAcCoupledPowerList || dayData.powerList || [];
         const batteryPowerArray = dayData.batteryPower || [];
         const gridPowerArray = dayData.psum || dayData.gridPowerList || [];
-        const loadPowerArray = dayData.familyLoadPowerList || dayData.bypassLoadPowerList || [];
+        const loadPowerArray =
+          (dayData.totalAndSmartLoadPowerList && dayData.totalAndSmartLoadPowerList.length > 0)
+            ? dayData.totalAndSmartLoadPowerList
+            : (dayData.familyLoadPowerList && dayData.familyLoadPowerList.length > 0)
+            ? dayData.familyLoadPowerList
+            : dayData.bypassLoadPowerList || [];
         const socArray = dayData.batteryCapacitySocList || [];
 
         const curveRows = [];
@@ -292,13 +300,24 @@ async function run() {
           const sW = Number(solarPowerArray[idx] || 0);
           const bW = Number(batteryPowerArray[idx] || 0);
           const gW = Number(gridPowerArray[idx] || 0);
-          const lW = Number(loadPowerArray[idx] || 0);
+          let lW = Number(loadPowerArray[idx] || 0);
           const sc = Number(socArray[idx] || 0);
 
           const sKw = Number((sW / 1000).toFixed(2));
           const bKw = Number((bW / 1000).toFixed(2));
           const gKw = Number((gW / 1000).toFixed(2));
-          const lKw = Number((lW / 1000).toFixed(2));
+          let lKw = Number((lW / 1000).toFixed(2));
+
+          // If load array is empty or 0, calculate from power balance:
+          // Inverter Power Balance: Load = Solar + Battery (Discharging/positive) - Grid (Export/positive)
+          // or if detailMix reports totalLoadPower, use proportional calculation
+          if (lKw <= 0) {
+            const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
+            if (calculatedLoadKw > 0) {
+              lKw = calculatedLoadKw;
+              lW = Math.round(calculatedLoadKw * 1000);
+            }
+          }
 
           let bState = "Idle";
           if (bKw > 0.05) bState = "Discharging";
@@ -334,7 +353,7 @@ async function run() {
 
         // Fast batch upload
         await uploadCurveBatch(curveRows);
-        console.log(`    -> Curve: Batch saved ${curveRows.length} intervals (Latest: ${latestCurvePoint?.timeStr || 'N/A'}, PV: ${latestCurvePoint?.solarKw ?? 0} kW, Bat: ${latestCurvePoint?.batKw ?? 0} kW ${latestCurvePoint?.batState ?? 'Idle'}, SOC: ${latestCurvePoint?.soc ?? 0}%)`);
+        console.log(`    -> Curve: Batch saved ${curveRows.length} intervals (Latest: ${latestCurvePoint?.timeStr || 'N/A'}, PV: ${latestCurvePoint?.solarKw ?? 0} kW, Bat: ${latestCurvePoint?.batKw ?? 0} kW ${latestCurvePoint?.batState ?? 'Idle'}, SOC: ${latestCurvePoint?.soc ?? 0}%, Load: ${latestCurvePoint?.loadKw ?? 0} kW)`);
 
         // 3. Update solis_telemetry_latest with matching real-time numbers
         const liveSolarKw = latestCurvePoint ? latestCurvePoint.solarKw : Number(mix.power || 0);
@@ -342,7 +361,12 @@ async function run() {
         const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
         const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
         const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
-        const liveLoadKw = latestCurvePoint ? latestCurvePoint.loadKw : Number(mix.familyLoadPower || 0);
+        
+        // Resolve true live load power from mix (totalLoadPower, familyLoadPower, or power balance)
+        const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
+        const liveLoadKw = mixLoadKw > 0 
+          ? mixLoadKw 
+          : (latestCurvePoint && latestCurvePoint.loadKw > 0 ? latestCurvePoint.loadKw : Math.max(0, Number((liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw).toFixed(2))));
 
         const telemetryLatestUpsertSql = `
           INSERT INTO solis_telemetry_latest (
@@ -402,46 +426,52 @@ async function run() {
         const monthlyDays = monthRes.json?.data || [];
         const todayRecord = monthlyDays.find(d => (d.dateStr || d.date) === todayDateStr);
 
-        if (todayRecord) {
-          const dailyUpsertSql = `
-            INSERT INTO solis_daily_energy (
-              station_id, energy_date, solar_pv_kwh, house_load_kwh,
-              battery_charge_kwh, battery_discharge_kwh,
-              grid_purchased_kwh, grid_sold_kwh, backup_load_kwh,
-              self_consumption_kwh, peak_sun_hours, currency, raw, updated_at
-            ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
-            ) ON CONFLICT (station_id, energy_date) DO UPDATE SET
-              solar_pv_kwh = EXCLUDED.solar_pv_kwh,
-              house_load_kwh = EXCLUDED.house_load_kwh,
-              battery_charge_kwh = EXCLUDED.battery_charge_kwh,
-              battery_discharge_kwh = EXCLUDED.battery_discharge_kwh,
-              grid_purchased_kwh = EXCLUDED.grid_purchased_kwh,
-              grid_sold_kwh = EXCLUDED.grid_sold_kwh,
-              backup_load_kwh = EXCLUDED.backup_load_kwh,
-              self_consumption_kwh = EXCLUDED.self_consumption_kwh,
-              peak_sun_hours = EXCLUDED.peak_sun_hours,
-              currency = EXCLUDED.currency,
-              raw = EXCLUDED.raw,
-              updated_at = NOW();
-          `;
-          await pool.query(dailyUpsertSql, [
-            p.id,
-            todayDateStr,
-            numOrNull(todayRecord.produceEnergy ?? todayRecord.energy ?? todayRecord.pvAndAcCoupledEnergy),
-            numOrNull(todayRecord.consumeEnergy ?? todayRecord.homeLoadEnergy),
-            numOrNull(todayRecord.batteryChargeEnergy),
-            numOrNull(todayRecord.batteryDischargeEnergy),
-            numOrNull(todayRecord.gridPurchasedEnergy),
-            numOrNull(todayRecord.gridSellEnergy),
-            numOrNull(todayRecord.backUpEnergy),
-            numOrNull(todayRecord.oneSelf),
-            numOrNull(todayRecord.fullHour),
-            String(todayRecord.moneyStr || "PKR"),
-            JSON.stringify(todayRecord),
-          ]);
-          console.log(`    -> Daily Energy Today: ${todayRecord.produceEnergy ?? 0} kWh generated, ${todayRecord.batteryChargeEnergy || 0} kWh charged today.\n`);
-        }
+        // Also fallback to detailMix energy values if month chart has not updated yet
+        const todayYieldKwh = numOrNull(todayRecord?.produceEnergy ?? todayRecord?.energy ?? todayRecord?.pvAndAcCoupledEnergy ?? mix.dayEnergy ?? mix.dayEnergyStorage);
+        const todayLoadKwh = numOrNull(todayRecord?.consumeEnergy ?? todayRecord?.homeLoadEnergy ?? mix.homeLoadTodayEnergy ?? mix.homeLoadEnergy);
+        const todayChargeKwh = numOrNull(todayRecord?.batteryChargeEnergy ?? mix.batteryTodayChargeEnergy);
+        const todayDischargeKwh = numOrNull(todayRecord?.batteryDischargeEnergy ?? mix.batteryTodayDischargeEnergy);
+        const todayGridBuyKwh = numOrNull(todayRecord?.gridPurchasedEnergy ?? mix.gridPurchasedDayEnergy);
+        const todayGridSellKwh = numOrNull(todayRecord?.gridSellEnergy ?? mix.gridSellDayEnergy);
+
+        const dailyUpsertSql = `
+          INSERT INTO solis_daily_energy (
+            station_id, energy_date, solar_pv_kwh, house_load_kwh,
+            battery_charge_kwh, battery_discharge_kwh,
+            grid_purchased_kwh, grid_sold_kwh, backup_load_kwh,
+            self_consumption_kwh, peak_sun_hours, currency, raw, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+          ) ON CONFLICT (station_id, energy_date) DO UPDATE SET
+            solar_pv_kwh = COALESCE(EXCLUDED.solar_pv_kwh, solis_daily_energy.solar_pv_kwh),
+            house_load_kwh = COALESCE(EXCLUDED.house_load_kwh, solis_daily_energy.house_load_kwh),
+            battery_charge_kwh = COALESCE(EXCLUDED.battery_charge_kwh, solis_daily_energy.battery_charge_kwh),
+            battery_discharge_kwh = COALESCE(EXCLUDED.battery_discharge_kwh, solis_daily_energy.battery_discharge_kwh),
+            grid_purchased_kwh = COALESCE(EXCLUDED.grid_purchased_kwh, solis_daily_energy.grid_purchased_kwh),
+            grid_sold_kwh = COALESCE(EXCLUDED.grid_sold_kwh, solis_daily_energy.grid_sold_kwh),
+            backup_load_kwh = COALESCE(EXCLUDED.backup_load_kwh, solis_daily_energy.backup_load_kwh),
+            self_consumption_kwh = COALESCE(EXCLUDED.self_consumption_kwh, solis_daily_energy.self_consumption_kwh),
+            peak_sun_hours = COALESCE(EXCLUDED.peak_sun_hours, solis_daily_energy.peak_sun_hours),
+            currency = EXCLUDED.currency,
+            raw = EXCLUDED.raw,
+            updated_at = NOW();
+        `;
+        await pool.query(dailyUpsertSql, [
+          p.id,
+          todayDateStr,
+          todayYieldKwh,
+          todayLoadKwh,
+          todayChargeKwh,
+          todayDischargeKwh,
+          todayGridBuyKwh,
+          todayGridSellKwh,
+          numOrNull(todayRecord?.backUpEnergy),
+          numOrNull(todayRecord?.oneSelf ?? mix.oneSelf),
+          numOrNull(todayRecord?.fullHour ?? mix.fullHour),
+          String(todayRecord?.moneyStr || mix.money || "PKR"),
+          JSON.stringify(todayRecord || mix),
+        ]);
+        console.log(`    -> Daily Energy Today: Yield ${todayYieldKwh ?? 0} kWh, Load ${todayLoadKwh ?? 0} kWh, Charge ${todayChargeKwh ?? 0} kWh.`);
 
       } catch (err) {
         console.error(`Error on plant ${p.name}:`, err.message);

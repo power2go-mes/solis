@@ -95,11 +95,14 @@ function postRequest(apiPath: string, body: any): Promise<any> {
 }
 
 const PLANTS = [
+  { id: "1298491919451014032", name: "Towfiq chinoy", capacityKwp: 29.67, location: "Karachi, Pakistan" },
   { id: "1298491919450797504", name: "Menu Karachi Office", capacityKwp: 80.0, location: "Karachi, Pakistan" },
   { id: "1298491919450958553", name: "OPL Residence", capacityKwp: 55.5, location: "Gharo, Pakistan" },
   { id: "1298491919450873747", name: "36 Chenab", capacityKwp: 25.155, location: "Lahore, Pakistan" },
   { id: "1298491919450740581", name: "P2G 50KW", capacityKwp: 32.0, location: "Karachi, Pakistan" },
   { id: "1298491919450840394", name: "P2G 1ST 6kw", capacityKwp: 20.0, location: "Karachi, Pakistan" },
+  { id: "1298491919450851319", name: "P2G 20kw", capacityKwp: 18.0, location: "Karachi, Pakistan" },
+  { id: "1298491919450734544", name: "P2G 15KW", capacityKwp: 20.0, location: "Karachi, Pakistan" },
 ];
 
 function numOrNull(val: any) {
@@ -224,7 +227,12 @@ export async function executeLiveSync() {
       const solarPowerArray = dayData.pvAndAcCoupledPowerList || dayData.powerList || [];
       const batteryPowerArray = dayData.batteryPower || [];
       const gridPowerArray = dayData.psum || dayData.gridPowerList || [];
-      const loadPowerArray = dayData.familyLoadPowerList || dayData.bypassLoadPowerList || [];
+      const loadPowerArray =
+        (dayData.totalAndSmartLoadPowerList && dayData.totalAndSmartLoadPowerList.length > 0)
+          ? dayData.totalAndSmartLoadPowerList
+          : (dayData.familyLoadPowerList && dayData.familyLoadPowerList.length > 0)
+          ? dayData.familyLoadPowerList
+          : dayData.bypassLoadPowerList || [];
       const socArray = dayData.batteryCapacitySocList || [];
 
       const curveRows: any[] = [];
@@ -243,13 +251,21 @@ export async function executeLiveSync() {
         const sW = Number(solarPowerArray[idx] || 0);
         const bW = Number(batteryPowerArray[idx] || 0);
         const gW = Number(gridPowerArray[idx] || 0);
-        const lW = Number(loadPowerArray[idx] || 0);
+        let lW = Number(loadPowerArray[idx] || 0);
         const sc = Number(socArray[idx] || 0);
 
         const sKw = Number((sW / 1000).toFixed(2));
         const bKw = Number((bW / 1000).toFixed(2));
         const gKw = Number((gW / 1000).toFixed(2));
-        const lKw = Number((lW / 1000).toFixed(2));
+        let lKw = Number((lW / 1000).toFixed(2));
+
+        if (lKw <= 0) {
+          const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
+          if (calculatedLoadKw > 0) {
+            lKw = calculatedLoadKw;
+            lW = Math.round(calculatedLoadKw * 1000);
+          }
+        }
 
         let bState = "Idle";
         if (bKw > 0.05) bState = "Discharging";
@@ -290,7 +306,10 @@ export async function executeLiveSync() {
       const liveBatKw = latestCurvePoint ? Math.abs(latestCurvePoint.batKw) : Number(mix.batteryPower || 0);
       const liveBatState = latestCurvePoint ? latestCurvePoint.batState : (mix.batteryState || "Idle");
       const liveGridKw = latestCurvePoint ? latestCurvePoint.gridKw : Number(mix.gridPower || 0);
-      const liveLoadKw = latestCurvePoint ? latestCurvePoint.loadKw : Number(mix.familyLoadPower || 0);
+      const mixLoadKw = Number(mix.totalLoadPower || mix.familyLoadPower || mix.totalAndSmartLoadPower || 0);
+      const liveLoadKw = mixLoadKw > 0
+        ? mixLoadKw
+        : (latestCurvePoint && latestCurvePoint.loadKw > 0 ? latestCurvePoint.loadKw : Math.max(0, Number((liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw).toFixed(2))));
 
       const telemetryLatestUpsertSql = `
         INSERT INTO solis_telemetry_latest (

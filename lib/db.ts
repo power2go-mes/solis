@@ -189,7 +189,7 @@ export async function getAuthorizedPlants(): Promise<PlantInfo[]> {
           rawBatKw = Number(curveMatch.battery_power_kw) || 0;
           soc = Number(curveMatch.battery_soc) > 0 ? Number(curveMatch.battery_soc) : (Number(match?.battery_soc) || 0);
           gridKw = Number(curveMatch.grid_power_kw) || 0;
-          loadKw = Number(curveMatch.load_power_kw) || 0;
+          loadKw = Number(match?.load_power_kw) > 0 ? Number(match?.load_power_kw) : (Number(curveMatch.load_power_kw) || 0);
           batState = curveMatch.battery_state || "Idle";
           invState = match?.summary?.inverter?.state ?? (solarKw > 0.5 ? "1" : "2");
         } else if (match && !isOnlineToday) {
