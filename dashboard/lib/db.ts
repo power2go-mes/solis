@@ -1525,14 +1525,14 @@ export async function getPlantOverviewData(): Promise<SolisOverviewResponse> {
     });
 
     const summary: SolisOverviewSummary = {
-      currentPowerKw: Number(totalPowerKw.toFixed(1)),
-      installedCapacityKwp: Number(totalCapacityKwp.toFixed(1)),
-      dailyChargeKwh: Number(storageDailyCharge.toFixed(1)),
-      dailyDischargeKwh: Number(storageDailyDischarge.toFixed(1)),
-      monthlyChargeMwh: Number(totalMonthlyCharge.toFixed(3)),
-      monthlyDischargeMwh: Number(totalMonthlyDischarge.toFixed(3)),
-      totalChargeMwh: Number(totalAllCharge.toFixed(3)),
-      totalDischargeMwh: Number(totalAllDischarge.toFixed(3)),
+      currentPowerKw: totalPowerKw,
+      installedCapacityKwp: totalCapacityKwp,
+      dailyChargeKwh: storageDailyCharge,
+      dailyDischargeKwh: storageDailyDischarge,
+      monthlyChargeMwh: totalMonthlyCharge,
+      monthlyDischargeMwh: totalMonthlyDischarge,
+      totalChargeMwh: totalAllCharge,
+      totalDischargeMwh: totalAllDischarge,
       plantCounts: {
         total: plants.length,
         online: onlineCount,

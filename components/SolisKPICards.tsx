@@ -25,7 +25,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.currentPowerKw.toFixed(1)}
+                {loading ? "..." : summary.currentPowerKw}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kW</span>
             </div>
@@ -66,7 +66,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.dailyChargeKwh.toFixed(1)}
+                {loading ? "..." : summary.dailyChargeKwh}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWh</span>
             </div>
@@ -77,7 +77,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : summary.dailyDischargeKwh.toFixed(1)}
+                {loading ? "..." : summary.dailyDischargeKwh}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWh</span>
             </div>

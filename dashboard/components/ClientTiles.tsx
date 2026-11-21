@@ -85,7 +85,7 @@ export default function ClientTiles({
                   </div>
                   <div className="mt-1.5 flex items-baseline gap-1">
                     <span className="font-mono font-black text-slate-900 text-base">
-                      {isOffline ? "0.0" : pvKw.toFixed(1)}
+                      {isOffline ? "0" : pvKw}
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium">kW</span>
                   </div>
@@ -143,10 +143,10 @@ export default function ClientTiles({
                       }`}
                     >
                       {isCharging
-                        ? `+${batKwDisplay.toFixed(1)}kW`
+                        ? `+${batKwDisplay}kW`
                         : isDischarging
-                        ? `-${batKwDisplay.toFixed(1)}kW`
-                        : "0.0kW"}
+                        ? `-${batKwDisplay}kW`
+                        : "0kW"}
                     </span>
                   </div>
                 </div>
@@ -180,10 +180,10 @@ export default function ClientTiles({
                 </div>
                 <span className="font-mono text-xs font-black shrink-0 ml-1">
                   {isCharging
-                    ? `+${batKwDisplay.toFixed(1)} kW`
+                    ? `+${batKwDisplay} kW`
                     : isDischarging
-                    ? `-${batKwDisplay.toFixed(1)} kW`
-                    : "0.0 kW"}
+                    ? `-${batKwDisplay} kW`
+                    : "0 kW"}
                 </span>
               </div>
 
@@ -218,7 +218,7 @@ export default function ClientTiles({
                 </div>
 
                 <div className="text-slate-500 font-mono text-[10px]">
-                  Grid: <strong className="text-slate-800 font-bold">{isOffline ? "0.0" : Number(plant.liveGridKw ?? 0).toFixed(1)}</strong> kW
+                  Grid: <strong className="text-slate-800 font-bold">{isOffline ? "0" : Number(plant.liveGridKw ?? 0)}</strong> kW
                 </div>
               </div>
 

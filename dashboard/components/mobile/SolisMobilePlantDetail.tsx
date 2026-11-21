@@ -723,31 +723,31 @@ export default function SolisMobilePlantDetail({
             const pvPoints = dayCurveData?.pvData || [];
             const loadPoints = dayCurveData?.loadData || [];
             const dayYieldKwh = dayDailyEnergy
-              ? Number(dayDailyEnergy.solar_pv_kwh || 0).toFixed(1)
+              ? Number(dayDailyEnergy.solar_pv_kwh || 0)
               : pvPoints.length > 0
-              ? pvPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(1)
+              ? pvPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0)
               : "—";
 
             const dayConsumptionKwh = dayDailyEnergy
-              ? Number(dayDailyEnergy.house_load_kwh || 0).toFixed(1)
+              ? Number(dayDailyEnergy.house_load_kwh || 0)
               : loadPoints.length > 0
-              ? loadPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0).toFixed(1)
+              ? loadPoints.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0)
               : "—";
 
             const dayDischargeKwh = dayDailyEnergy
-              ? Number(dayDailyEnergy.battery_discharge_kwh || 0).toFixed(1)
+              ? Number(dayDailyEnergy.battery_discharge_kwh || 0)
               : "—";
 
             const dayChargeKwh = dayDailyEnergy
-              ? Number(dayDailyEnergy.battery_charge_kwh || 0).toFixed(1)
+              ? Number(dayDailyEnergy.battery_charge_kwh || 0)
               : "—";
 
             const dayImportKwh = dayDailyEnergy
-              ? Number(dayDailyEnergy.grid_purchased_kwh || 0).toFixed(1)
+              ? Number(dayDailyEnergy.grid_purchased_kwh || 0)
               : "—";
 
             const dayExportKwh = dayDailyEnergy
-              ? Number(dayDailyEnergy.grid_sold_kwh || 0).toFixed(1)
+              ? Number(dayDailyEnergy.grid_sold_kwh || 0)
               : "—";
 
             return (

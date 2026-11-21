@@ -293,20 +293,20 @@ function parseCurveRows(stationId, dateStr, curveData, mixData = {}) {
     let lW = Number(loadPowerArray[idx] || 0);
     const soc = Number(socArray[idx] || 0);
 
-    const sKw = Number((sW / 1000).toFixed(2));
-    const bKw = Number((bW / 1000).toFixed(2));
-    const gKw = Number((gW / 1000).toFixed(2));
-    let lKw = Number((lW / 1000).toFixed(2));
+    const sKw = sW / 1000;
+    const bKw = bW / 1000;
+    const gKw = gW / 1000;
+    let lKw = lW / 1000;
 
     // Calculate load from inverter power balance or mix totalLoadPower if 0
     if (lKw <= 0) {
-      const calculatedLoadKw = Number((sKw + bKw - gKw).toFixed(2));
+      const calculatedLoadKw = sKw + bKw - gKw;
       if (calculatedLoadKw > 0) {
         lKw = calculatedLoadKw;
-        lW = Math.round(calculatedLoadKw * 1000);
+        lW = calculatedLoadKw * 1000;
       } else if (idx === timeArray.length - 1 && mixLoadKw > 0) {
         lKw = mixLoadKw;
-        lW = Math.round(mixLoadKw * 1000);
+        lW = mixLoadKw * 1000;
       }
     }
 
@@ -420,7 +420,7 @@ async function runLiveSync() {
         ? mixLoadKw
         : (isOnline && latestCurvePoint.loadKw > 0
           ? latestCurvePoint.loadKw
-          : Math.max(0, Number((liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw).toFixed(2))));
+          : Math.max(0, liveSolarKw + (liveBatState === "Discharging" ? liveBatKw : -liveBatKw) - liveGridKw));
 
       const telemetryLatestUpsertSql = `
         INSERT INTO solis_telemetry_latest (
