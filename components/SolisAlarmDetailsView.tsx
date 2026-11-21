@@ -50,6 +50,20 @@ export default function SolisAlarmDetailsView({
 }: SolisAlarmDetailsViewProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"Details" | "History">("Details");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const handleIgnore = () => {
+    setStatusMessage("Alarm ignored for 24 hours.");
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
+
+  const handleDelete = () => {
+    setStatusMessage("Alarm cleared from active list.");
+    setTimeout(() => {
+      setStatusMessage(null);
+      onBack();
+    }, 1200);
+  };
 
   // Default fallback data matching exact screenshot: media_1795238980789_0251e3e7.jpg
   const record: AlarmDetailRecord = alarm || {
@@ -107,15 +121,20 @@ export default function SolisAlarmDetailsView({
         </div>
 
         <div className="flex items-center gap-2">
+          {statusMessage && (
+            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 animate-in fade-in">
+              {statusMessage}
+            </span>
+          )}
           <button
-            onClick={() => alert("Alarm Ignored for 24 hours.")}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all"
+            onClick={handleIgnore}
+            className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
           >
             Ignore
           </button>
           <button
-            onClick={() => alert("Alarm cleared from active list.")}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-all"
+            onClick={handleDelete}
+            className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-rose-600 hover:bg-rose-50 shadow-2xs transition-all cursor-pointer"
           >
             Delete
           </button>

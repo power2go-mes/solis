@@ -248,6 +248,99 @@ export default function SolisClientDashboard({
   const [yearData, setYearData] = useState<EnergyBreakdownResult | null>(null);
   const [lifetimeData, setLifetimeData] = useState<EnergyBreakdownResult | null>(null);
   const [plantDetailsData, setPlantDetailsData] = useState<any>(null);
+
+  // Favorites & Fullscreen state
+  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const stored = localStorage.getItem("solis_fav_plants");
+      if (stored) {
+        const arr = JSON.parse(stored);
+        return Array.isArray(arr) && arr.includes(selectedPlantId);
+      }
+    } catch {}
+    return false;
+  });
+
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  const toggleFavorite = () => {
+    try {
+      const stored = localStorage.getItem("solis_fav_plants");
+      let arr = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(arr)) arr = [];
+      if (arr.includes(selectedPlantId)) {
+        arr = arr.filter((id: string) => id !== selectedPlantId);
+        setIsFavorite(false);
+      } else {
+        arr.push(selectedPlantId);
+        setIsFavorite(true);
+      }
+      localStorage.setItem("solis_fav_plants", JSON.stringify(arr));
+    } catch {}
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  // Export Operating Data to CSV
+  const handleExportOperatingData = () => {
+    try {
+      let rows: string[][] = [];
+      if (activeTab === "Day") {
+        rows.push(["Timestamp", "PV (kW)", "Grid (kW)", "Battery (kW)", "Load (kW)", "Battery SOC (%)"]);
+        const labels = dayCurveData?.timeLabels || [];
+        const pvs = dayCurveData?.pvData || [];
+        const grids = dayCurveData?.gridData || [];
+        const bats = dayCurveData?.batteryData || [];
+        const loads = dayCurveData?.loadData || [];
+        const socs = dayCurveData?.socData || [];
+        for (let i = 0; i < labels.length; i++) {
+          rows.push([
+            labels[i] || "",
+            pvs[i] !== null && pvs[i] !== undefined ? String(pvs[i]) : "0",
+            grids[i] !== null && grids[i] !== undefined ? String(grids[i]) : "0",
+            bats[i] !== null && bats[i] !== undefined ? String(bats[i]) : "0",
+            loads[i] !== null && loads[i] !== undefined ? String(loads[i]) : "0",
+            socs[i] !== null && socs[i] !== undefined ? String(socs[i]) : "0",
+          ]);
+        }
+      } else {
+        rows.push(["Period", "PV (kWh)", "Import (kWh)", "Export (kWh)", "Charge (kWh)", "Discharge (kWh)", "Consumption (kWh)"]);
+        let ds = activeTab === "Month" ? monthData : activeTab === "Year" ? yearData : lifetimeData;
+        const labels = ds?.labels || [];
+        for (let i = 0; i < labels.length; i++) {
+          rows.push([
+            labels[i] || "",
+            String(ds?.pvData?.[i] ?? 0),
+            String(ds?.importData?.[i] ?? 0),
+            String(ds?.exportData?.[i] ?? 0),
+            String(ds?.chargeData?.[i] ?? 0),
+            String(ds?.dischargeData?.[i] ?? 0),
+            String(ds?.consumptionData?.[i] ?? 0),
+          ]);
+        }
+      }
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `${plantMeta.name || "plant"}_operating_data_${activeTab}_${currentDate}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error("Export operating data error:", e);
+    }
+  };
   const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(false);
 
   // Full Page Alarm/Alert details drilldown
@@ -1366,20 +1459,24 @@ export default function SolisClientDashboard({
             <div className="flex items-center gap-1 text-slate-400 ml-1">
               <button
                 onClick={handleManualRefresh}
-                className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
                 title="Refresh Client Data"
               >
                 <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#10b981]" : ""}`} />
               </button>
               <button
-                className="w-7 h-7 rounded-full hover:text-[#10b981] hover:bg-emerald-50 flex items-center justify-center transition-colors"
-                title="Add to Favorites"
+                onClick={toggleFavorite}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                  isFavorite ? "text-rose-500 bg-rose-50" : "hover:text-rose-500 hover:bg-rose-50"
+                }`}
+                title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
               >
-                <Heart className="w-3.5 h-3.5" />
+                <Heart className={`w-3.5 h-3.5 ${isFavorite ? "fill-rose-500" : ""}`} />
               </button>
               <button
-                className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors"
-                title="Fullscreen"
+                onClick={toggleFullscreen}
+                className="w-7 h-7 rounded-full hover:text-slate-700 hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -1504,14 +1601,16 @@ export default function SolisClientDashboard({
 
                   <div className="flex items-center gap-1 text-slate-400 pl-1">
                     <button
-                      className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors"
-                      title="Filter options"
+                      onClick={handleManualRefresh}
+                      className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+                      title="Refresh Operating Data"
                     >
-                      <Filter className="w-3.5 h-3.5" />
+                      <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#10b981]" : ""}`} />
                     </button>
                     <button
-                      className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors"
-                      title="Export Data"
+                      onClick={handleExportOperatingData}
+                      className="p-1.5 hover:text-slate-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+                      title="Export Operating Data (CSV)"
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>
