@@ -113,6 +113,14 @@ export default function DualPowerSOCCharts({
   // Render ECharts
   useEffect(() => {
     if (!powerChartRef.current || !socChartRef.current || !chartData) return;
+    if (
+      powerChartRef.current.clientWidth === 0 ||
+      powerChartRef.current.clientHeight === 0 ||
+      socChartRef.current.clientWidth === 0 ||
+      socChartRef.current.clientHeight === 0
+    ) {
+      return;
+    }
 
     if (!powerChartInstance.current) {
       powerChartInstance.current = echarts.init(powerChartRef.current);

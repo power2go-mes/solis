@@ -725,6 +725,7 @@ export default function SolisClientDashboard({
   // -------------------------------------------------------------
   useEffect(() => {
     if (activeTab !== "Day" || !powerChartRef.current) return;
+    if (powerChartRef.current.clientWidth === 0 || powerChartRef.current.clientHeight === 0) return;
 
     let chart = echarts.getInstanceByDom(powerChartRef.current);
     if (!chart || chart.isDisposed()) {
@@ -831,6 +832,7 @@ export default function SolisClientDashboard({
   // -------------------------------------------------------------
   useEffect(() => {
     if (activeTab !== "Day" || !socChartRef.current) return;
+    if (socChartRef.current.clientWidth === 0 || socChartRef.current.clientHeight === 0) return;
 
     let chart = echarts.getInstanceByDom(socChartRef.current);
     if (!chart || chart.isDisposed()) {
@@ -963,6 +965,7 @@ export default function SolisClientDashboard({
   // -------------------------------------------------------------
   useEffect(() => {
     if (activeTab === "Day" || !barChartRef.current) return;
+    if (barChartRef.current.clientWidth === 0 || barChartRef.current.clientHeight === 0) return;
 
     let chart = echarts.getInstanceByDom(barChartRef.current);
     if (!chart || chart.isDisposed()) {
