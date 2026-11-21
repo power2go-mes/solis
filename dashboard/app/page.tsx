@@ -55,6 +55,9 @@ function SolisCloudDashboard() {
   const navigateToView = (view: SidebarViewType | "plant_detail" | "alarm_detail") => {
     setNavigationHistory((prev) => [...prev, activeView]);
     setActiveView(view);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    }
   };
 
   const handleGoBack = () => {
@@ -64,6 +67,9 @@ function SolisCloudDashboard() {
       setActiveView(prev);
     } else {
       setActiveView("plant_overview");
+    }
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
   };
   const [selectedPlantId, setSelectedPlantId] = useState<string>(
@@ -171,6 +177,9 @@ function SolisCloudDashboard() {
     setSelectedPlantId(plantId);
     loadTelemetry(plantId);
     navigateToView("plant_detail");
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    }
   };
 
   const currentPlantInfo = plantsList.find((p) => p.id === selectedPlantId);

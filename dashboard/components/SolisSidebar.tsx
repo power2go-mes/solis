@@ -85,8 +85,8 @@ export default function SolisSidebar({
   isCollapsed,
   onToggleCollapse,
 }: SolisSidebarProps) {
-  // Flyout menu states for slim/collapsed mode - default to "overview" as in reference UI
-  const [activeFlyout, setActiveFlyout] = useState<"overview" | "om" | "report" | "service" | null>("overview");
+  // Flyout menu states for slim/collapsed mode - default to null (only shown on hover or click)
+  const [activeFlyout, setActiveFlyout] = useState<"overview" | "om" | "report" | "service" | null>(null);
   const flyoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Accordion open states for expanded mode
