@@ -392,13 +392,15 @@ function SolisCloudDashboard() {
             plants={overviewPlants}
             onSelectPlant={(plantId) => handleSelectPlant(plantId)}
             onCreatePlant={() => setIsCreatePlantOpen(true)}
+            onNavigateTab={(tab) => navigateToView(tab as any)}
+            activeView={activeView}
           />
         ) : activeView === "om_alarms" || activeView === "om_alerts" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
             <div className="mb-3 flex items-center justify-between">
               <button
-                onClick={() => setActiveView("plant_overview")}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+                onClick={() => navigateToView("plant_overview")}
+                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
               >
                 ← Back to Overview
               </button>
@@ -407,16 +409,16 @@ function SolisCloudDashboard() {
               initialCategory={activeView === "om_alarms" ? "Alarm" : "Alert"}
               onSelectPlant={(plantId) => {
                 setSelectedPlantId(plantId);
-                setActiveView("device_overview");
+                navigateToView("device_overview");
               }}
             />
           </div>
         ) : activeView === "report_plant" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
             <div className="mb-3 flex items-center justify-between">
               <button
-                onClick={() => setActiveView("plant_overview")}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+                onClick={() => navigateToView("plant_overview")}
+                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
               >
                 ← Back to Overview
               </button>
@@ -424,46 +426,44 @@ function SolisCloudDashboard() {
             <SolisPlantReportView
               onSelectPlant={(plantId) => {
                 setSelectedPlantId(plantId);
-                setActiveView("device_overview");
+                navigateToView("device_overview");
               }}
             />
           </div>
         ) : activeView === "report_inverter" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
             <div className="mb-3 flex items-center justify-between">
               <button
-                onClick={() => setActiveView("plant_overview")}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+                onClick={() => navigateToView("plant_overview")}
+                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
               >
                 ← Back to Overview
               </button>
             </div>
-            <SolisInverterReportView />
             <SolisInverterReportView
-              onSelectInverter={() => setActiveView("device_overview")}
+              onSelectInverter={() => navigateToView("device_overview")}
             />
           </div>
         ) : activeView === "report_battery" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
             <div className="mb-3 flex items-center justify-between">
               <button
-                onClick={() => setActiveView("plant_overview")}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+                onClick={() => navigateToView("plant_overview")}
+                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
               >
                 ← Back to Overview
               </button>
             </div>
-            <SolisBatteryReportView />
             <SolisBatteryReportView
-              onSelectBattery={() => setActiveView("device_overview")}
+              onSelectBattery={() => navigateToView("device_overview")}
             />
           </div>
         ) : activeView === "device_overview" ? (
-          <div className="p-3 bg-[#f7f9fa] min-h-screen">
+          <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
             <div className="mb-3 flex items-center justify-between">
               <button
-                onClick={() => setActiveView("plant_overview")}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-slate-700"
+                onClick={() => navigateToView("plant_overview")}
+                className="px-3.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-gray-50 flex items-center gap-1.5"
               >
                 ← Back to Overview
               </button>
@@ -471,18 +471,14 @@ function SolisCloudDashboard() {
             <SolisDeviceOverviewPage
               onSelectPlant={(plantId) => {
                 setSelectedPlantId(plantId);
-                setActiveView("plant_detail");
+                navigateToView("plant_detail");
               }}
               onSelectPlantByName={(name) => {
                 const match = plantsList.find((p) =>
                   p.name.toLowerCase().includes(name.toLowerCase())
                 );
                 if (match) setSelectedPlantId(match.id);
-                setActiveView("plant_detail");
-                if (match) {
-                  setSelectedPlantId(match.id);
-                  setActiveView("plant_detail");
-                }
+                navigateToView("plant_detail");
               }}
             />
           </div>
@@ -492,7 +488,7 @@ function SolisCloudDashboard() {
             plantsList={plantsList}
             initialTab={tabParam}
             onSelectPlant={(plantId) => handleSelectPlant(plantId)}
-            onBack={() => setActiveView("plant_overview")}
+            onBack={() => navigateToView("plant_overview")}
           />
         )}
       </div>

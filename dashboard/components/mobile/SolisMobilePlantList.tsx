@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   Search,
   Plus,
   ChevronDown,
+  ChevronUp,
   Filter,
   RotateCw,
-  Home,
-  Activity,
   LayoutGrid,
   Wrench,
-  User,
+  BarChart3,
+  Heart,
   ArrowUp,
+  Check,
 } from "lucide-react";
 import { SolisPlantOverviewItem } from "@/lib/types";
 
@@ -33,6 +34,7 @@ interface SolisMobilePlantListProps {
   onSelectPlant: (plantId: string) => void;
   onCreatePlant?: () => void;
   onNavigateTab?: (tab: string) => void;
+  activeView?: string;
 }
 
 type TabCategory = "All" | "Online" | "Alarm" | "Offline";
@@ -42,6 +44,7 @@ export default function SolisMobilePlantList({
   onSelectPlant,
   onCreatePlant,
   onNavigateTab,
+  activeView = "plant_overview",
 }: SolisMobilePlantListProps) {
   // Top category tabs: Plant | Inverter | Battery | Data
   const [activeTopTab, setActiveTopTab] = useState<string>("Plant");
@@ -53,8 +56,32 @@ export default function SolisMobilePlantList({
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Bottom navigation tab
-  const [activeBottomNav, setActiveBottomNav] = useState<string>("Plant");
+  // Submenu popup states for mobile bottom navigation (Overview, O&M, Report)
+  const [openSubmenu, setOpenSubmenu] = useState<"Overview" | "OM" | "Report" | null>(null);
+  const navContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close popup menu when tapping outside
+  useEffect(() => {
+    function handlePointerDown(e: MouseEvent | TouchEvent) {
+      if (navContainerRef.current && !navContainerRef.current.contains(e.target as Node)) {
+        setOpenSubmenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, []);
+
+  const isOverviewActive = activeView === "plant_overview" || activeView === "device_overview";
+  const isOMActive = activeView === "om_alarms" || activeView === "om_alerts";
+  const isReportActive =
+    activeView === "report_plant" ||
+    activeView === "report_inverter" ||
+    activeView === "report_battery";
+  const isFavoritesActive = activeView === "favorites";
 
   const effectivePlants = plants || [];
 
@@ -369,68 +396,219 @@ export default function SolisMobilePlantList({
       </div>
 
       {/* ======================================================== */}
-      {/* 5. FLOATING BOTTOM NAVIGATION: Plant, Events, Overview...  */}
+      {/* 5. FLOATING BOTTOM NAVIGATION: Laptop Navbar Equivalent   */}
+      {/* Overview | O&M | Report | Favorites                      */}
       {/* ======================================================== */}
-      <div className="fixed bottom-3 left-4 right-4 z-50 flex justify-center pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between w-full max-w-sm pointer-events-auto">
-          {/* Plant (Active Green Gradient Pill) */}
-          <button
-            onClick={() => {
-              setActiveBottomNav("Plant");
-              if (onNavigateTab) onNavigateTab("plant_overview");
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
-          >
-            <Home className="w-3.5 h-3.5 fill-white" />
-            <span>Plant</span>
-          </button>
+      <div ref={navContainerRef} className="fixed bottom-3 left-3 right-3 z-50 flex flex-col items-center pointer-events-none">
+        {/* Floating Submenus (pops up above the navbar) */}
+        {openSubmenu === "Overview" && (
+          <div className="pointer-events-auto mb-2 w-full max-w-xs bg-white/98 backdrop-blur-md rounded-2xl border border-gray-200 shadow-xl p-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider">
+              Overview
+            </div>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("plant_overview");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
+                activeView === "plant_overview"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span>Plant Overview</span>
+              {activeView === "plant_overview" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("device_overview");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all mt-1 ${
+                activeView === "device_overview"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span>Device Overview</span>
+              {activeView === "device_overview" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+          </div>
+        )}
 
-          {/* Events -> Navigates to O&M Alarms */}
-          <button
-            onClick={() => {
-              setActiveBottomNav("Events");
-              if (onNavigateTab) onNavigateTab("om_alarms");
-            }}
-            className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
-          >
-            <Activity className="w-4 h-4 mb-0.5" />
-            <span>Events</span>
-          </button>
+        {openSubmenu === "OM" && (
+          <div className="pointer-events-auto mb-2 w-full max-w-xs bg-white/98 backdrop-blur-md rounded-2xl border border-gray-200 shadow-xl p-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider">
+              O&M Operations
+            </div>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("om_alarms");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
+                activeView === "om_alarms"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span>Alarm Information</span>
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              </div>
+              {activeView === "om_alarms" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("om_alerts");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all mt-1 ${
+                activeView === "om_alerts"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span>Alert Information</span>
+              {activeView === "om_alerts" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+          </div>
+        )}
 
-          {/* Overview -> Navigates to Device Overview */}
+        {openSubmenu === "Report" && (
+          <div className="pointer-events-auto mb-2 w-full max-w-xs bg-white/98 backdrop-blur-md rounded-2xl border border-gray-200 shadow-xl p-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider">
+              Analytical Reports
+            </div>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("report_plant");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
+                activeView === "report_plant"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span>Plant Report</span>
+              {activeView === "report_plant" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("report_inverter");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all mt-1 ${
+                activeView === "report_inverter"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span>Inverter Report</span>
+              {activeView === "report_inverter" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab("report_battery");
+                setOpenSubmenu(null);
+              }}
+              className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all mt-1 ${
+                activeView === "report_battery"
+                  ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span>Battery Report</span>
+              {activeView === "report_battery" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+          </div>
+        )}
+
+        {/* Main Floating Bottom Pill - EXACT LAPTOP NAMES: Overview, O&M, Report, Favorites */}
+        <div className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-full px-2 py-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between w-full max-w-sm pointer-events-auto">
+          {/* 1. Overview */}
           <button
             onClick={() => {
-              setActiveBottomNav("Overview");
-              if (onNavigateTab) onNavigateTab("device_overview");
+              if (activeView === "plant_overview") {
+                setOpenSubmenu(openSubmenu === "Overview" ? null : "Overview");
+              } else {
+                if (onNavigateTab) onNavigateTab("plant_overview");
+                setOpenSubmenu(null);
+              }
             }}
-            className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all ${
+              isOverviewActive
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/25 active:scale-95"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
-            <LayoutGrid className="w-4 h-4 mb-0.5" />
+            <LayoutGrid className="w-3.5 h-3.5" />
             <span>Overview</span>
+            {isOverviewActive && <ChevronUp className="w-3 h-3 opacity-80" />}
           </button>
 
-          {/* Service */}
+          {/* 2. O&M */}
           <button
             onClick={() => {
-              setActiveBottomNav("Service");
-              alert("Solis Customer Support Hotline: +92 21 111-POWER2GO");
+              if (isOMActive) {
+                setOpenSubmenu(openSubmenu === "OM" ? null : "OM");
+              } else {
+                if (onNavigateTab) onNavigateTab("om_alarms");
+                setOpenSubmenu(null);
+              }
             }}
-            className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all relative ${
+              isOMActive
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/25 active:scale-95"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
-            <Wrench className="w-4 h-4 mb-0.5" />
-            <span>Service</span>
+            <div className="relative">
+              <Wrench className="w-3.5 h-3.5" />
+              <span className={`absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full ${isOMActive ? "bg-white" : "bg-red-500"}`} />
+            </div>
+            <span>O&M</span>
+            {isOMActive && <ChevronUp className="w-3 h-3 opacity-80" />}
           </button>
 
-          {/* Me */}
+          {/* 3. Report */}
           <button
             onClick={() => {
-              setActiveBottomNav("Me");
-              alert("Logged in as Qasim Moosvi (Owner)");
+              if (isReportActive) {
+                setOpenSubmenu(openSubmenu === "Report" ? null : "Report");
+              } else {
+                if (onNavigateTab) onNavigateTab("report_plant");
+                setOpenSubmenu(null);
+              }
             }}
-            className="flex flex-col items-center px-2 py-1 text-slate-500 hover:text-slate-900 text-[10px] font-medium"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all ${
+              isReportActive
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/25 active:scale-95"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
           >
-            <User className="w-4 h-4 mb-0.5" />
-            <span>Me</span>
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span>Report</span>
+            {isReportActive && <ChevronUp className="w-3 h-3 opacity-80" />}
+          </button>
+
+          {/* 4. Favorites */}
+          <button
+            onClick={() => {
+              setActiveFilterTab("All");
+              setOpenSubmenu(null);
+              alert("Favorites: Showing all pinned plants and devices.");
+            }}
+            className={`flex items-center gap-1 px-3 py-2 rounded-full font-medium text-xs transition-all ${
+              isFavoritesActive
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 active:scale-95"
+            }`}
+          >
+            <Heart className="w-3.5 h-3.5" />
+            <span>Favorites</span>
           </button>
         </div>
       </div>
