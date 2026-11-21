@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
-  const status = params.get("status") || "Active";
+  const status = params.get("status") || "All";
   const level = params.get("level") || "All";
   const deviceType = params.get("deviceType") || "All";
   const category = params.get("category") || "All";
