@@ -40,6 +40,8 @@ const pool =
     connectionTimeoutMillis: 5000,
   });
 
+export { pool };
+
 if (process.env.NODE_ENV !== "production") {
   global._solisDbPool = pool;
 }
