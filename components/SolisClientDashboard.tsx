@@ -1851,9 +1851,9 @@ export default function SolisClientDashboard({
               <div className="grid grid-cols-4 gap-2 text-center pb-3 border-b border-gray-100">
                 {["11.16", "11.17", "11.18", "Today"].map((day, idx) => (
                   <div key={idx} className="flex flex-col items-center">
-                    <span className="text-[11px] text-slate-500 font-medium mb-1">{day}</span>
-                    <div className="w-9 h-9 flex items-center justify-center text-[#10b981]">
-                      <Sun className="w-7 h-7 fill-orange-400 text-[#10b981] drop-shadow-xs" />
+                    <span className="text-xs text-slate-500 font-medium mb-1.5">{day}</span>
+                    <div className="w-14 h-14 flex items-center justify-center text-[#10b981]">
+                      <Sun className="w-12 h-12 fill-orange-400 text-[#10b981] drop-shadow-md" />
                     </div>
                   </div>
                 ))}
@@ -1896,16 +1896,16 @@ export default function SolisClientDashboard({
 
               <div className="space-y-4">
                 {/* Trees */}
-                <div className="relative overflow-hidden flex flex-col justify-between p-4 rounded-xl bg-gray-50/80 border border-gray-100 min-h-[96px]">
+                <div className="relative overflow-hidden flex flex-col justify-between p-5 rounded-2xl bg-gray-50/80 border border-gray-100 min-h-[120px]">
                   <div className="z-10">
-                    <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+                    <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
                       {plantMeta.trees.toFixed(2)}
                     </div>
-                    <div className="text-xs text-slate-500 font-normal mt-0.5">
+                    <div className="text-xs text-slate-500 font-medium mt-1">
                       Equivalent Trees
                     </div>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-28 h-28 pointer-events-none select-none">
+                  <div className="absolute -bottom-3 -right-3 w-44 h-44 pointer-events-none select-none">
                     <Image
                       src="/solis/tree-Bt0ZdeGH.png"
                       alt="Trees"
@@ -1917,16 +1917,16 @@ export default function SolisClientDashboard({
                 </div>
 
                 {/* CO2 Reduced */}
-                <div className="relative overflow-hidden flex flex-col justify-between p-4 rounded-xl bg-gray-50/80 border border-gray-100 min-h-[96px]">
+                <div className="relative overflow-hidden flex flex-col justify-between p-5 rounded-2xl bg-gray-50/80 border border-gray-100 min-h-[120px]">
                   <div className="z-10">
-                    <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
-                      {plantMeta.co2Tons.toFixed(2)} <span className="text-sm font-normal text-slate-700">t</span>
+                    <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.co2Tons.toFixed(2)} <span className="text-base font-normal text-slate-700">t</span>
                     </div>
-                    <div className="text-xs text-slate-500 font-normal mt-0.5">
+                    <div className="text-xs text-slate-500 font-medium mt-1">
                       CO₂ Reduced
                     </div>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-28 h-28 pointer-events-none select-none">
+                  <div className="absolute -bottom-3 -right-3 w-44 h-44 pointer-events-none select-none">
                     <Image
                       src="/solis/cloud-DwomYkkV.png"
                       alt="CO2"
@@ -1938,14 +1938,14 @@ export default function SolisClientDashboard({
                 </div>
 
                 {/* Coal Saved */}
-                <div className="relative overflow-hidden flex flex-col justify-between p-4 rounded-xl bg-gray-50/80 border border-gray-100 min-h-[96px]">
+                <div className="relative overflow-hidden flex flex-col justify-between p-5 rounded-2xl bg-gray-50/80 border border-gray-100 min-h-[120px]">
                   <div className="z-10">
-                    <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
-                      {plantMeta.coalTons.toFixed(2)} <span className="text-sm font-normal text-slate-700">t</span>
+                    <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+                      {plantMeta.coalTons.toFixed(2)} <span className="text-base font-normal text-slate-700">t</span>
                     </div>
-                    <div className="text-xs text-slate-500 font-normal mt-0.5">Coal Saved</div>
+                    <div className="text-xs text-slate-500 font-medium mt-1">Coal Saved</div>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-28 h-28 pointer-events-none select-none">
+                  <div className="absolute -bottom-3 -right-3 w-44 h-44 pointer-events-none select-none">
                     <Image
                       src="/solis/carbon-CeHwfZ7r.png"
                       alt="Coal"
