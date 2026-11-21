@@ -35,8 +35,12 @@ export default function SolisOMAlarmsPage({
   onSelectDevice,
   onViewAlarmDetail,
 }: SolisOMAlarmsPageProps) {
-  // Category view filter: All | Alarm | Alert
+  // Category view filter: All | Alarm | Alert (sync with initialCategory when prop changes)
   const [selectedCategory, setSelectedCategory] = useState<"All" | "Alarm" | "Alert">(initialCategory);
+
+  useEffect(() => {
+    setSelectedCategory(initialCategory);
+  }, [initialCategory]);
 
   // Filter form states
   const [searchSn, setSearchSn] = useState("");

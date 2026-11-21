@@ -332,7 +332,7 @@ export default function SolisSidebar({
                       onSelectView("om_alerts");
                       setActiveFlyout(null);
                     }}
-                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all mb-1 ${
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                       activeView === "om_alerts"
                         ? "border border-orange-300 bg-gradient-to-b from-white to-orange-50/40 text-[#10b981] font-semibold shadow-[0_2px_8px_rgba(243,112,33,0.12)]"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-normal"
@@ -340,15 +340,6 @@ export default function SolisSidebar({
                   >
                     Alert
                   </button>
-                  <div className="text-xs text-slate-400 px-3.5 py-2 truncate">
-                    Warning Message...
-                  </div>
-                  <div className="text-xs text-slate-400 px-3.5 py-2 truncate">
-                    Dispersion Rate A...
-                  </div>
-                  <div className="text-xs text-slate-400 px-3.5 py-2 truncate">
-                    Fleet Analysis
-                  </div>
                 </div>
               )}
             </div>
@@ -398,16 +389,6 @@ export default function SolisSidebar({
                   >
                     Alert
                   </button>
-
-                  <div className="text-[11px] text-slate-400 px-2.5 py-1 truncate">
-                    Warning Message...
-                  </div>
-                  <div className="text-[11px] text-slate-400 px-2.5 py-1 truncate">
-                    Dispersion Rate A...
-                  </div>
-                  <div className="text-[11px] text-slate-400 px-2.5 py-1 truncate">
-                    Fleet Analysis
-                  </div>
                 </div>
               )}
             </div>
