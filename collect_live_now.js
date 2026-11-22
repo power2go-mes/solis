@@ -479,6 +479,65 @@ async function run() {
         ]);
         console.log(`    -> Daily Energy Today: Yield ${todayYieldKwh ?? 0} kWh, Load ${todayLoadKwh ?? 0} kWh, Charge ${todayChargeKwh ?? 0} kWh.`);
 
+        // 5. Query and sync Alarms & Alerts (/api/alarm/list) directly into solis_alarm_logs
+        try {
+          const alarmRes = await postRequest("/api/alarm/list", {
+            pageNo: 1,
+            pageSize: 100,
+            stationId: p.id,
+          });
+          const alarmRecords = alarmRes.json?.data?.page?.records || [];
+          if (Array.isArray(alarmRecords) && alarmRecords.length > 0) {
+            let savedAlarms = 0;
+            for (const a of alarmRecords) {
+              const alarmSql = `
+                INSERT INTO solis_alarm_logs (
+                  station_id, station_name, device_sn, alarm_code,
+                  alarm_msg, alarm_level, alarm_begin_time, alarm_begin_time_str,
+                  alarm_end_time, alarm_end_time_str, alarm_duration_str,
+                  state, state_str, advice, protection_category, raw, updated_at
+                ) VALUES (
+                  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW()
+                ) ON CONFLICT (station_id, device_sn, alarm_code, alarm_begin_time) DO UPDATE SET
+                  state = EXCLUDED.state,
+                  state_str = EXCLUDED.state_str,
+                  alarm_end_time = EXCLUDED.alarm_end_time,
+                  alarm_end_time_str = EXCLUDED.alarm_end_time_str,
+                  alarm_duration_str = EXCLUDED.alarm_duration_str,
+                  advice = EXCLUDED.advice,
+                  updated_at = NOW();
+              `;
+              const beginDate = a.alarmBeginTime ? new Date(Number(a.alarmBeginTime)) : null;
+              const endDate = a.alarmEndTime ? new Date(Number(a.alarmEndTime)) : null;
+
+              await pool.query(alarmSql, [
+                p.id,
+                p.name,
+                a.sn || a.deviceSn || p.id,
+                String(a.alarmCode || a.code || "ALARM"),
+                a.alarmMsg || a.msg || "System Notice",
+                String(a.alarmLevel || a.level || "Warning"),
+                beginDate,
+                a.alarmBeginTimeStr || (beginDate ? beginDate.toISOString() : null),
+                endDate,
+                a.alarmEndTimeStr || (endDate ? endDate.toISOString() : null),
+                a.alarmDurationStr || a.durationStr || "",
+                String(a.state ?? "1"),
+                a.stateStr || (a.state === "2" ? "Recovered" : "Active"),
+                a.advice || a.handlingSuggestion || "",
+                a.protectionCategory || a.category || "Alarm",
+                JSON.stringify(a),
+              ]).catch(() => null);
+              savedAlarms++;
+            }
+            console.log(`    -> Alarms & Alerts: Synced ${savedAlarms} records.`);
+          } else {
+            console.log(`    -> Alarms & Alerts: 0 active alarms for ${p.name}.`);
+          }
+        } catch (alarmErr) {
+          console.warn(`    -> Warning syncing alarms for ${p.name}:`, alarmErr.message);
+        }
+
       } catch (err) {
         console.error(`Error on plant ${p.name}:`, err.message);
       }
