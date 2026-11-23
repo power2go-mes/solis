@@ -11,8 +11,10 @@ import {
   Heart,
   ChevronDown,
   FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excelExport";
+import { exportBatteryReportToPdf } from "@/lib/pdfReportExport";
 
 interface BatteryReportRecord {
   sn: string;
@@ -293,7 +295,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           yAxisIndex: 0,
           barWidth: 18,
           itemStyle: {
-            color: (params: any) => (params.value >= 0 ? "#10b981" : "#0284c7"),
+            color: (params: any) => (params.value >= 0 ? "#15803d" : "#0284c7"), // Exact Charge (#15803d Dark Green) vs Discharge (#0284c7 Sky Blue)
             borderRadius: [2, 2, 2, 2],
           },
           data: powerData,
@@ -307,11 +309,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           symbol: "circle",
           symbolSize: 6,
           itemStyle: {
-            color: "#f37021",
+            color: "#f5e026", // Exact Palette Yellow
             borderColor: "#ffffff",
             borderWidth: 2,
           },
-          lineStyle: { color: "#f37021", width: 2.5 },
+          lineStyle: { color: "#f5e026", width: 2.5 },
           data: socData,
         },
       ],
@@ -352,8 +354,37 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           ? [{ sheetName: "Charge & SOC Curve", data: curveData }]
           : []),
       ],
-      `SolisCloud_Battery_Report_${activeDateTab}_${reportDate}`
+      `P2G_CLOUD_Battery_Report_${activeDateTab}_${reportDate}`
     );
+  };
+
+  // Export to Professional PDF
+  const handleExportPdf = () => {
+    const chartInstance = chartRef.current
+      ? echarts.getInstanceByDom(chartRef.current)
+      : null;
+    const chartBase64 = chartInstance
+      ? chartInstance.getDataURL({ pixelRatio: 2, backgroundColor: "#ffffff" })
+      : undefined;
+
+    exportBatteryReportToPdf({
+      period: activeDateTab,
+      reportDate,
+      selectedSn,
+      rows: filteredRecords.map((r) => ({
+        sn: r.sn,
+        plantName: r.plantName,
+        nominalCapacity: r.nominalCapacity,
+        dailyChargeKwh: r.dailyChargeKwh,
+        dailyDischargeKwh: r.dailyDischargeKwh,
+        dailyCycles: r.cycles,
+        currentSocPct: r.socPct,
+        healthSohPct: r.sohPct,
+        temperatureC: 32,
+        batteryStatus: "Normal",
+      })),
+      chartDataUrl: chartBase64,
+    });
   };
 
   return (
@@ -409,6 +440,14 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Export Excel</span>
+          </button>
+
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#f37021] text-white rounded-lg text-xs font-semibold hover:bg-[#e05e10] active:scale-95 transition-all shadow-2xs"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Export PDF</span>
           </button>
         </div>
       </div>
@@ -564,10 +603,14 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                     {row.nominalCapacity}
                   </td>
                   <td className="py-3.5 px-3 font-semibold text-emerald-600">
-                    {row.dailyChargeKwh} kWh
+                    {activeDateTab === "Month" || activeDateTab === "Year"
+                      ? `${(row.dailyChargeKwh / 1000).toFixed(2)} MWh`
+                      : `${Math.round(row.dailyChargeKwh)} kWh`}
                   </td>
                   <td className="py-3.5 px-3 font-semibold text-blue-600">
-                    {row.dailyDischargeKwh} kWh
+                    {activeDateTab === "Month" || activeDateTab === "Year"
+                      ? `${(row.dailyDischargeKwh / 1000).toFixed(2)} MWh`
+                      : `${Math.round(row.dailyDischargeKwh)} kWh`}
                   </td>
                   <td className="py-3.5 px-3 font-bold text-slate-900">
                     {row.socPct}%

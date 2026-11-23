@@ -11,8 +11,10 @@ import {
   Flame,
   ChevronDown,
   FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excelExport";
+import { exportInverterReportToPdf } from "@/lib/pdfReportExport";
 
 interface InverterReportRecord {
   sn: string;
@@ -209,6 +211,8 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
       tempData = [25.0, 26.5, 29.2, 33.0, 36.5, 38.8, 39.1, 38.6, 37.4, 35.8, 33.2, 31.0, 29.5];
     }
 
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
     const option: echarts.EChartsOption = {
       backgroundColor: "transparent",
       tooltip: {
@@ -222,8 +226,8 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
         bottom: 0,
         textStyle: { color: "#64748b", fontSize: 11 },
         data: [
-          { name: "AC Output Power (kW)", icon: "circle", itemStyle: { color: "#f37021" } },
-          { name: "Internal Temperature (°C)", icon: "line", itemStyle: { color: "#ef4444" } },
+          { name: "AC Output Power (kW)", icon: "circle", itemStyle: { color: "#f5e026" } },
+          { name: "Internal Temperature (°C)", icon: "line", itemStyle: { color: "#8b5cf6" } },
         ],
       },
       grid: { top: 30, left: 45, right: 45, bottom: 45, containLabel: true },
@@ -263,12 +267,12 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
           smooth: true,
           showSymbol: true,
           symbolSize: 6,
-          itemStyle: { color: "#f37021", borderColor: "#fff", borderWidth: 2 },
-          lineStyle: { color: "#f37021", width: 2.5 },
+          itemStyle: { color: "#f5e026", borderColor: "#fff", borderWidth: 2 },
+          lineStyle: { color: "#f5e026", width: 2.5 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(243, 112, 33, 0.3)" },
-              { offset: 1, color: "rgba(243, 112, 33, 0.0)" },
+              { offset: 0, color: "rgba(245, 224, 38, 0.3)" },
+              { offset: 1, color: "rgba(245, 224, 38, 0.0)" },
             ]),
           },
           data: powerData,
@@ -279,8 +283,8 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
           yAxisIndex: 1,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: "#ef4444", width: 2, type: "dashed" },
-          itemStyle: { color: "#ef4444" },
+          lineStyle: { color: "#8b5cf6", width: 2, type: "dashed" },
+          itemStyle: { color: "#8b5cf6" },
           data: tempData,
         },
       ],
@@ -321,8 +325,43 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
           ? [{ sheetName: "Power & Thermal Curve", data: curveData }]
           : []),
       ],
-      `SolisCloud_Inverter_Report_${activeDateTab}_${reportDate}`
+      `P2G_CLOUD_Inverter_Report_${activeDateTab}_${reportDate}`
     );
+  };
+
+  // Export to PDF
+  const handleExportPdf = () => {
+    let chartDataUrl: string | null = null;
+    if (chartInstance.current && !chartInstance.current.isDisposed()) {
+      try {
+        chartDataUrl = chartInstance.current.getDataURL({
+          type: "png",
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
+      } catch (err) {
+        console.warn("Could not capture chart data URL:", err);
+      }
+    }
+
+    exportInverterReportToPdf({
+      period: activeDateTab,
+      reportDate,
+      selectedSn,
+      chartDataUrl,
+      rows: filteredInverters.map((r) => ({
+        sn: r.sn,
+        plantName: r.plantName,
+        model: r.model,
+        ratedPowerKw: r.ratedPowerKw,
+        yieldKwh: r.dailyYieldKwh,
+        pv1Voltage: r.pv1Voltage,
+        pv2Voltage: r.pv2Voltage,
+        temperatureC: r.temperatureC,
+        efficiencyPct: r.efficiencyPct,
+        status: r.status,
+      })),
+    });
   };
 
   return (
@@ -379,6 +418,14 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Export Excel</span>
+          </button>
+
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 active:scale-95 transition-all shadow-2xs shadow-emerald-600/20"
+          >
+            <FileText className="w-4 h-4 text-white" />
+            <span>Export PDF</span>
           </button>
         </div>
       </div>
@@ -527,7 +574,9 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
                   <td className="py-3.5 px-3 text-slate-600">{row.model}</td>
                   <td className="py-3.5 px-3 text-slate-600">{row.ratedPowerKw} kW</td>
                   <td className="py-3.5 px-3 font-semibold text-slate-900">
-                    {row.dailyYieldKwh} kWh
+                    {activeDateTab === "Month" || activeDateTab === "Year"
+                      ? `${(row.dailyYieldKwh / 1000).toFixed(2)} MWh`
+                      : `${Math.round(row.dailyYieldKwh)} kWh`}
                   </td>
                   <td className="py-3.5 px-3 text-slate-600">{row.pv1Voltage} V</td>
                   <td className="py-3.5 px-3 text-slate-600">{row.pv2Voltage} V</td>

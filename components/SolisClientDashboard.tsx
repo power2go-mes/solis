@@ -889,20 +889,20 @@ export default function SolisClientDashboard({
       series: [
         ...(visiblePowerSeries.PV ? [{
           name: "PV", type: "line", smooth: true, showSymbol: false, data: solarKw,
-          lineStyle: { color: "#eab308", width: 2 },
+          lineStyle: { color: "#f5e026", width: 2 },
           areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: "rgba(234, 179, 8, 0.25)" }, { offset: 1, color: "rgba(234, 179, 8, 0.0)" },
+            { offset: 0, color: "rgba(245, 224, 38, 0.25)" }, { offset: 1, color: "rgba(245, 224, 38, 0.0)" },
           ]) },
         }] : []),
         ...(visiblePowerSeries.Grid ? [{
           name: "Grid", type: "line", smooth: true, showSymbol: false, data: gridKw,
-          lineStyle: { color: "#3b82f6", width: 2 },
+          lineStyle: { color: "#0284c7", width: 2 },
           areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: "rgba(59, 130, 246, 0.2)" }, { offset: 1, color: "rgba(59, 130, 246, 0.0)" },
+            { offset: 0, color: "rgba(2, 132, 199, 0.2)" }, { offset: 1, color: "rgba(2, 132, 199, 0.0)" },
           ]) },
         }] : []),
-        ...(visiblePowerSeries.Battery ? [{ name: "Battery", type: "line", smooth: true, showSymbol: false, data: batKw, lineStyle: { color: "#22c55e", width: 2 } }] : []),
-        ...(visiblePowerSeries["Total Load"] ? [{ name: "Total Load", type: "line", smooth: true, showSymbol: false, data: loadKw, lineStyle: { color: "#a855f7", width: 2 } }] : []),
+        ...(visiblePowerSeries.Battery ? [{ name: "Battery", type: "line", smooth: true, showSymbol: false, data: batKw, lineStyle: { color: "#10b981", width: 2 } }] : []),
+        ...(visiblePowerSeries["Total Load"] ? [{ name: "Total Load", type: "line", smooth: true, showSymbol: false, data: loadKw, lineStyle: { color: "#8b5cf6", width: 2 } }] : []),
       ] as echarts.SeriesOption[],
     };
 
@@ -1026,16 +1026,16 @@ export default function SolisClientDashboard({
       series: [
         ...(visibleSocSeries.SOC ? [{
           name: "SOC", type: "line", smooth: true, showSymbol: false, data: batterySoc,
-          lineStyle: { color: "#22c55e", width: 2 },
+          lineStyle: { color: "#10b981", width: 2 },
           markLine: nowIndex >= 0 ? {
             symbol: "none", silent: true,
-            lineStyle: { type: "dashed", color: "#f97316", width: 1.5 },
-            label: { show: true, position: "insideEndTop", formatter: "Now", color: "#f97316", fontWeight: 600, fontSize: 11 },
+            lineStyle: { type: "dashed", color: "#f5e026", width: 1.5 },
+            label: { show: true, position: "insideEndTop", formatter: "Now", color: "#f5e026", fontWeight: 600, fontSize: 11 },
             data: [{ xAxis: nowTimeStr }],
           } : undefined,
         }] : []),
         ...(visibleSocSeries["Purchase Tariff"] ? [{ name: "Purchase Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: purchaseTariff, lineStyle: { color: "#38bdf8", width: 1.5 } }] : []),
-        ...(visibleSocSeries["Feed-in Tariff"] ? [{ name: "Feed-in Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: feedInTariff, lineStyle: { color: "#2563eb", width: 1.5 } }] : []),
+        ...(visibleSocSeries["Feed-in Tariff"] ? [{ name: "Feed-in Tariff", type: "line", yAxisIndex: 1, showSymbol: false, data: feedInTariff, lineStyle: { color: "#0284c7", width: 1.5 } }] : []),
       ] as echarts.SeriesOption[],
     };
 

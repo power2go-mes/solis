@@ -186,8 +186,11 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
   // Aggregate KPI Calculations
   const fleetTotalYield = useMemo(() => {
     const sum = filteredStations.reduce((acc, st) => acc + st.dailyYieldKwh, 0);
-    return sum.toFixed(2);
-  }, [filteredStations]);
+    if (activeDateTab === "Year" || activeDateTab === "Month") {
+      return (sum / 1000).toFixed(2);
+    }
+    return `${Math.round(sum)}`;
+  }, [filteredStations, activeDateTab]);
 
   const totalCapacity = useMemo(() => {
     return filteredStations.reduce((acc, st) => acc + st.capacityKwp, 0).toFixed(2);
@@ -201,7 +204,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
     if (activeDateTab === "Month") {
       return `${(sumKwh / 1000).toFixed(2)} MWh`;
     }
-    return `${sumKwh.toFixed(2)} kWh`;
+    return `${Math.round(sumKwh)} kWh`;
   }, [filteredStations, activeDateTab]);
 
   const financialSavings = useMemo(() => {
@@ -266,11 +269,8 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
             fontSize: isMobile ? 9 : 10,
             hideOverlap: true,
             interval: (index: number, value: string) => {
-              // Smart interval formatting: show clean hourly intervals (e.g. 00:00, 03:00, 06:00, ...)
-              // Or on mobile every 4-6 hours, on desktop every 2-3 hours
               if (!value) return false;
-              const isEvenHour = value.endsWith(":00") && (parseInt(value.slice(0, 2), 10) % (isMobile ? 4 : 2) === 0);
-              return isEvenHour;
+              return value.endsWith(":00") && (parseInt(value.slice(0, 2), 10) % (isMobile ? 4 : 2) === 0);
             },
           },
         },
@@ -287,25 +287,27 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
             smooth: true,
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "rgba(243, 112, 33, 0.35)" },
-                { offset: 1, color: "rgba(243, 112, 33, 0.0)" },
+                { offset: 0, color: "rgba(245, 224, 38, 0.35)" },
+                { offset: 1, color: "rgba(245, 224, 38, 0.0)" },
               ]),
             },
-            itemStyle: { color: "#f37021" },
+            itemStyle: { color: "#f5e026" }, // Exact Palette Yellow (PV)
             data: solarKw,
           },
           {
             name: "House Load (kW)",
             type: "line",
             smooth: true,
-            itemStyle: { color: "#10b981" },
+            itemStyle: { color: "#8b5cf6" }, // Exact Palette Purple (Consumption/Load)
             data: loadKw,
           },
           {
             name: "Grid Export/Import (kW)",
             type: "bar",
             barMaxWidth: 15,
-            itemStyle: { color: "#3b82f6" },
+            itemStyle: {
+              color: (params: any) => (params.value >= 0 ? "#0284c7" : "#38bdf8"), // Exact Export (#0284c7) vs Import (#38bdf8)
+            },
             data: gridKw,
           },
         ],
@@ -365,21 +367,21 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
             name: "Solar PV Yield (kWh)",
             type: "bar",
             barMaxWidth: isMobile ? 10 : 20,
-            itemStyle: { color: "#f37021", borderRadius: [3, 3, 0, 0] },
+            itemStyle: { color: "#f5e026", borderRadius: [3, 3, 0, 0] }, // Exact Palette Yellow (PV)
             data: pvYield,
           },
           {
             name: "Self-Consumed (kWh)",
             type: "bar",
             barMaxWidth: isMobile ? 10 : 20,
-            itemStyle: { color: "#10b981", borderRadius: [3, 3, 0, 0] },
+            itemStyle: { color: "#8b5cf6", borderRadius: [3, 3, 0, 0] }, // Exact Palette Purple (Consumption)
             data: selfConsumed,
           },
           {
             name: "Grid Export (kWh)",
             type: "bar",
             barMaxWidth: isMobile ? 10 : 20,
-            itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] },
+            itemStyle: { color: "#0284c7", borderRadius: [3, 3, 0, 0] }, // Exact Palette Dark Blue (Export)
             data: gridExport,
           },
         ],
@@ -546,7 +548,9 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
               <span className="text-3xl font-extrabold text-[#0f172a] font-sans">
                 {fleetTotalYield}
               </span>
-              <span className="text-xs font-medium text-slate-400">kWh</span>
+              <span className="text-xs font-medium text-slate-400">
+                {activeDateTab === "Month" || activeDateTab === "Year" ? "MWh" : "kWh"}
+              </span>
             </div>
             <span className="text-xs font-medium text-emerald-600 mt-1.5 inline-block">
               +12.4% vs Previous {activeDateTab}
@@ -676,22 +680,24 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
                   <td className="py-3.5 px-4 font-medium text-[#f37021]">{row.name}</td>
                   <td className="py-3.5 px-3 text-slate-600">{row.capacityKwp} kWp</td>
                   <td className="py-3.5 px-3 font-semibold text-slate-900">
-                    {row.dailyYieldKwh} kWh
+                    {activeDateTab === "Month" || activeDateTab === "Year"
+                      ? `${row.monthlyTotalMwh.toFixed(2)} MWh`
+                      : `${Math.round(row.dailyYieldKwh)} kWh`}
                   </td>
                   <td className="py-3.5 px-3 text-emerald-600 font-medium">
-                    {row.chargeKwh || 0} kWh
+                    {Math.round(row.chargeKwh || 0)} kWh
                   </td>
                   <td className="py-3.5 px-3 text-amber-600 font-medium">
-                    {row.dischargeKwh || 0} kWh
+                    {Math.round(row.dischargeKwh || 0)} kWh
                   </td>
                   <td className="py-3.5 px-3 text-slate-700 font-medium">
-                    {row.consumptionKwh || 0} kWh
+                    {Math.round(row.consumptionKwh || 0)} kWh
                   </td>
                   <td className="py-3.5 px-3 font-medium text-blue-600">
-                    {row.gridSoldKwh} kWh
+                    {Math.round(row.gridSoldKwh || 0)} kWh
                   </td>
                   <td className="py-3.5 px-3 text-slate-600">
-                    {row.gridPurchasedKwh} kWh
+                    {Math.round(row.gridPurchasedKwh || 0)} kWh
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <button

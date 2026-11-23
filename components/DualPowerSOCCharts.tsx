@@ -423,8 +423,8 @@ export default function DualPowerSOCCharts({
           yAxisIndex: 1,
           showSymbol: false,
           data: feedInTariffData || [],
-          itemStyle: { color: "#2563eb" },
-          lineStyle: { width: 1.5, color: "#2563eb", type: "dotted" },
+          itemStyle: { color: "#0284c7" },
+          lineStyle: { width: 1.5, color: "#0284c7", type: "dotted" },
         },
       ],
     };
