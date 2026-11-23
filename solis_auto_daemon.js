@@ -700,18 +700,29 @@ async function runMissingDataAudit() {
   }
 }
 
+let isSyncInProgress = false;
+
 async function runLiveSyncWithRetry(maxRetries = 3) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      await runLiveSync();
-      return;
-    } catch (err) {
-      console.error(`[Daemon 10m Sync Error (Attempt ${attempt}/${maxRetries})]:`, err.message || err);
-      if (attempt < maxRetries) {
-        console.log(`Retrying live sync in 15 seconds...`);
-        await new Promise((r) => setTimeout(r, 15000));
+  if (isSyncInProgress) {
+    console.log(`[Sync Busy] Previous live sync is still active. Skipping overlapping tick to prevent connection congestion.`);
+    return;
+  }
+  isSyncInProgress = true;
+  try {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await runLiveSync();
+        return;
+      } catch (err) {
+        console.error(`[Daemon 10m Sync Error (Attempt ${attempt}/${maxRetries})]:`, err.message || err);
+        if (attempt < maxRetries) {
+          console.log(`Retrying live sync in 15 seconds...`);
+          await new Promise((r) => setTimeout(r, 15000));
+        }
       }
     }
+  } finally {
+    isSyncInProgress = false;
   }
 }
 
