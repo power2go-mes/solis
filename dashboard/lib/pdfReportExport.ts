@@ -48,7 +48,7 @@ export function exportPlantReportToPdf({
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text("POWER2G-cloud Fleet Plant Performance Report", 14, 11);
+  doc.text("P2G-CLOUD Fleet Plant Performance Report", 14, 11);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -206,7 +206,7 @@ export function exportPlantReportToPdf({
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
       doc.text(
-        `Page ${data.pageNumber} of ${pageCount} | POWER2G-cloud Intelligent Energy Monitoring`,
+        `Page ${data.pageNumber} of ${pageCount} | P2G-CLOUD Intelligent Energy Monitoring`,
         pageWidth / 2,
         doc.internal.pageSize.getHeight() - 7,
         { align: "center" }
@@ -231,7 +231,7 @@ export function exportPlantReportToPdf({
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(`POWER2G-cloud Plant Performance - ${period} Visual Curves & Timeline Chart`, 14, 10);
+        doc.text(`P2G-CLOUD Plant Performance - ${period} Visual Curves & Timeline Chart`, 14, 10);
 
         // Section Title
         doc.setTextColor(30, 41, 59);
@@ -255,5 +255,5 @@ export function exportPlantReportToPdf({
   }
 
   const cleanDate = reportDate.replace(/[^0-9-]/g, "");
-  doc.save(`POWER2G_Plant_Report_${period}_${cleanDate}.pdf`);
+  doc.save(`P2G_CLOUD_Plant_Report_${period}_${cleanDate}.pdf`);
 }

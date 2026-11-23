@@ -419,7 +419,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
           ? [{ sheetName: "Timeline Telemetry", data: chartTimeline }]
           : []),
       ],
-      `SolisCloud_Plant_Report_${activeDateTab}_${reportDate}`
+      `P2G_CLOUD_Plant_Report_${activeDateTab}_${reportDate}`
     );
   };
 

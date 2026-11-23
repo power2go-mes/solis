@@ -674,8 +674,8 @@ export default function SolisSidebar({
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100 text-center text-[11px] text-slate-400">
-              SolisCloud • Power2Go Edition
+            <div className="pt-4 border-t border-gray-100 text-center text-[11px] text-slate-400 font-medium">
+              P2G-CLOUD • Intelligent Fleet Monitoring
             </div>
           </div>
         </div>

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SolisCloud — Solar, Battery & BMS Monitoring Dashboard",
-  description: "Real-time monitoring, telemetry, BMS diagnostics, and fault forensics for Solis Hybrid PV systems.",
+  title: "P2G-CLOUD — Solar, Battery & BMS Monitoring Platform",
+  description: "Real-time monitoring, telemetry, BMS diagnostics, and fault forensics for P2G-CLOUD Hybrid PV systems.",
 };
 
 export default function RootLayout({

@@ -57,13 +57,16 @@ export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack }: S
         <div className="flex items-center">
           <Image
             src="/power2go-logo.png"
-            alt="Power2Go - Power Your Future With Clean Energy"
+            alt="P2G-CLOUD - Power Your Future With Clean Energy"
             width={280}
             height={68}
             className="h-9 sm:h-10 w-auto object-contain"
             priority
             unoptimized
           />
+          <span className="hidden lg:inline-block ml-2 px-2 py-0.5 text-[11px] font-bold tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md">
+            P2G-CLOUD
+          </span>
         </div>
       </div>
 
@@ -114,7 +117,7 @@ export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack }: S
           className="p-1.5 text-slate-500 hover:text-slate-800 rounded-full hover:bg-white/80 transition-colors relative"
           title="User Manual & Documentation"
           onClick={() =>
-            alert("SolisCloud User Guide & System Documentation (Power2Go Edition)")
+            alert("P2G-CLOUD User Guide & System Documentation")
           }
         >
           <BookOpen className="w-4 h-4 text-slate-600" />
