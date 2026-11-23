@@ -72,68 +72,6 @@ export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack }: S
 
       {/* Right Controls matching SolisCloud Screenshot */}
       <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto">
-        {/* Theme Pill Button: "Light ∨" */}
-        <div className="relative">
-          <button
-            onClick={() => setIsThemeOpen(!isThemeOpen)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200/90 bg-white text-xs text-slate-700 hover:border-gray-300 shadow-2xs transition-colors"
-          >
-            <Sun className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-normal">{selectedTheme}</span>
-            <ChevronDown className="w-3 h-3 text-gray-400 ml-0.5" />
-          </button>
-
-          {isThemeOpen && (
-            <div className="absolute right-0 mt-1.5 w-28 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-xs z-30">
-              <button
-                onClick={() => {
-                  setSelectedTheme("Light");
-                  setIsThemeOpen(false);
-                }}
-                className={`w-full text-left px-3 py-1.5 flex items-center gap-2 ${
-                  selectedTheme === "Light"
-                    ? "text-[#f37021] font-medium bg-orange-50/50"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>Light</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Message / Chat Bubble Icon with lines */}
-        <button
-          className="p-1.5 text-slate-500 hover:text-slate-800 rounded-full hover:bg-white/80 transition-colors"
-          title="Messages"
-          onClick={() => alert("No new messages.")}
-        >
-          <MessageSquare className="w-4 h-4 text-slate-600" />
-        </button>
-
-        {/* Book / Help Guide Icon with Red Notification Dot */}
-        <button
-          className="p-1.5 text-slate-500 hover:text-slate-800 rounded-full hover:bg-white/80 transition-colors relative"
-          title="User Manual & Documentation"
-          onClick={() =>
-            alert("P2G-CLOUD User Guide & System Documentation")
-          }
-        >
-          <BookOpen className="w-4 h-4 text-slate-600" />
-          {/* Solis red notification dot at top right */}
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full ring-2 ring-white" />
-        </button>
-
-        {/* Tray / Download / Inbox Icon */}
-        <button
-          className="p-1.5 text-slate-500 hover:text-slate-800 rounded-full hover:bg-white/80 transition-colors"
-          title="Downloads & Exports"
-          onClick={() => alert("Export tray is empty.")}
-        >
-          <Inbox className="w-4 h-4 text-slate-600" />
-        </button>
-
         {/* User Account Avatar & Name: "Qasim Moo... ∨" */}
         <div className="relative pl-1">
           <button

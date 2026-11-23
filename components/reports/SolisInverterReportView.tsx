@@ -168,15 +168,15 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
   // Aggregate KPIs
   const kpiData = useMemo(() => {
     const totalYield = filteredInverters.reduce((acc, inv) => acc + inv.dailyYieldKwh, 0);
-    const maxPower = Math.max(...filteredInverters.map((inv) => inv.ratedPowerKw), 49.6);
+    const maxPower = Math.max(...filteredInverters.map((inv) => inv.ratedPowerKw), 50);
     const avgTemp = (
       filteredInverters.reduce((acc, inv) => acc + inv.temperatureC, 0) /
       Math.max(filteredInverters.length, 1)
-    ).toFixed(2);
+    ).toFixed(1);
 
     return {
-      activeYield: totalYield.toFixed(2),
-      maxAcPower: maxPower.toFixed(2),
+      activeYield: `${Math.round(totalYield)}`,
+      maxAcPower: `${Math.round(maxPower)}`,
       avgEfficiency: "98.2%",
       peakThermal: `${avgTemp}°C`,
     };

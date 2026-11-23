@@ -51,11 +51,10 @@ export default function ClientTiles({
             <button
               key={plant.id}
               onClick={() => onSelectPlant(plant.id)}
-              className={`text-left p-4 rounded-xl border transition-all duration-300 relative flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg active:scale-[0.99] ${
-                isSelected
-                  ? "bg-white border-2 border-sky-500 ring-4 ring-sky-500/15 shadow-md"
-                  : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs"
-              }`}
+              className={`text-left p-4 rounded-xl border transition-all duration-300 relative flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg active:scale-[0.99] ${isSelected
+                ? "bg-white border-2 border-sky-500 ring-4 ring-sky-500/15 shadow-md"
+                : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs"
+                }`}
             >
               {/* Active Selection Badge */}
               {isSelected && (
@@ -93,35 +92,32 @@ export default function ClientTiles({
 
                 {/* Battery SOC & Flow */}
                 <div
-                  className={`p-2.5 rounded-lg border flex flex-col justify-between transition-colors ${
-                    isCharging
-                      ? "bg-emerald-50/70 border-emerald-200"
-                      : isDischarging
+                  className={`p-2.5 rounded-lg border flex flex-col justify-between transition-colors ${isCharging
+                    ? "bg-emerald-50/70 border-emerald-200"
+                    : isDischarging
                       ? "bg-amber-50/70 border-amber-200"
                       : "bg-slate-50 border-slate-100"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
                     <div className="flex items-center gap-1">
                       <Battery
-                        className={`w-3.5 h-3.5 ${
-                          isCharging
-                            ? "text-emerald-600 animate-pulse"
-                            : isDischarging
+                        className={`w-3.5 h-3.5 ${isCharging
+                          ? "text-emerald-600 animate-pulse"
+                          : isDischarging
                             ? "text-amber-600"
                             : "text-slate-400"
-                        }`}
+                          }`}
                       />
                       <span>Battery</span>
                     </div>
                     <span
-                      className={`text-[9px] font-black uppercase px-1 py-0.2 rounded ${
-                        isCharging
-                          ? "bg-emerald-100 text-emerald-800"
-                          : isDischarging
+                      className={`text-[9px] font-black uppercase px-1 py-0.2 rounded ${isCharging
+                        ? "bg-emerald-100 text-emerald-800"
+                        : isDischarging
                           ? "bg-amber-100 text-amber-800"
                           : "bg-slate-200 text-slate-600"
-                      }`}
+                        }`}
                     >
                       {isCharging ? "Chg" : isDischarging ? "Dis" : "Idle"}
                     </span>
@@ -134,19 +130,18 @@ export default function ClientTiles({
                       <span className="text-[10px] text-slate-500 font-medium">%</span>
                     </div>
                     <span
-                      className={`font-mono text-[10px] font-bold ${
-                        isCharging
-                          ? "text-emerald-700"
-                          : isDischarging
+                      className={`font-mono text-[10px] font-bold ${isCharging
+                        ? "text-emerald-700"
+                        : isDischarging
                           ? "text-amber-700"
                           : "text-slate-400"
-                      }`}
+                        }`}
                     >
                       {isCharging
                         ? `+${batKwDisplay}kW`
                         : isDischarging
-                        ? `-${batKwDisplay}kW`
-                        : "0kW"}
+                          ? `-${batKwDisplay}kW`
+                          : "0kW"}
                     </span>
                   </div>
                 </div>
@@ -154,13 +149,12 @@ export default function ClientTiles({
 
               {/* Dedicated High-Contrast Battery Charging / Discharging Flow Bar (No truncation) */}
               <div
-                className={`mt-2.5 px-3 py-1.5 rounded-lg border flex items-center justify-between text-xs font-semibold transition-all ${
-                  isCharging
-                    ? "bg-emerald-50 text-emerald-950 border-emerald-300 shadow-2xs"
-                    : isDischarging
+                className={`mt-2.5 px-3 py-1.5 rounded-lg border flex items-center justify-between text-xs font-semibold transition-all ${isCharging
+                  ? "bg-emerald-50 text-emerald-950 border-emerald-300 shadow-2xs"
+                  : isDischarging
                     ? "bg-amber-50 text-amber-950 border-amber-300 shadow-2xs"
                     : "bg-slate-50 text-slate-600 border-slate-200"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   {isCharging ? (
@@ -174,16 +168,16 @@ export default function ClientTiles({
                     {isCharging
                       ? "Charging Battery"
                       : isDischarging
-                      ? "Discharging"
-                      : "Battery Idle"}
+                        ? "Discharging"
+                        : "Battery Idle"}
                   </span>
                 </div>
                 <span className="font-mono text-xs font-black shrink-0 ml-1">
                   {isCharging
                     ? `+${batKwDisplay} kW`
                     : isDischarging
-                    ? `-${batKwDisplay} kW`
-                    : "0 kW"}
+                      ? `-${batKwDisplay} kW`
+                      : "0 kW"}
                 </span>
               </div>
 
@@ -195,23 +189,21 @@ export default function ClientTiles({
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     )}
                     <span
-                      className={`relative inline-flex rounded-full h-2 w-2 ${
-                        isOffline
-                          ? "bg-slate-400"
-                          : isGenerating
+                      className={`relative inline-flex rounded-full h-2 w-2 ${isOffline
+                        ? "bg-slate-400"
+                        : isGenerating
                           ? "bg-emerald-500"
                           : "bg-amber-400"
-                      }`}
+                        }`}
                     ></span>
                   </span>
                   <span
-                    className={`font-bold ${
-                      isOffline
-                        ? "text-slate-500"
-                        : isGenerating
+                    className={`font-bold ${isOffline
+                      ? "text-slate-500"
+                      : isGenerating
                         ? "text-emerald-700"
                         : "text-amber-800"
-                    }`}
+                      }`}
                   >
                     {isOffline ? "Offline" : isGenerating ? "Generating" : "Standby"}
                   </span>
@@ -228,11 +220,10 @@ export default function ClientTiles({
                   Data:
                 </span>
                 <span
-                  className={`font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors ${
-                    isOffline
-                      ? "bg-slate-100 text-slate-600 border-slate-200"
-                      : "bg-sky-50 text-sky-800 border-sky-200"
-                  }`}
+                  className={`font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors ${isOffline
+                    ? "bg-slate-100 text-slate-600 border-slate-200"
+                    : "bg-sky-50 text-sky-800 border-sky-200"
+                    }`}
                   title={
                     isOffline
                       ? `Plant was last seen on ${plant.latestDataDate || "yesterday"} at ${plant.latestDataTime || "--:--"}`

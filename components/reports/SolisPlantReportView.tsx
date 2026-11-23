@@ -193,7 +193,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
   }, [filteredStations, activeDateTab]);
 
   const totalCapacity = useMemo(() => {
-    return filteredStations.reduce((acc, st) => acc + st.capacityKwp, 0).toFixed(2);
+    return Math.round(filteredStations.reduce((acc, st) => acc + st.capacityKwp, 0));
   }, [filteredStations]);
 
   const periodYieldDisplay = useMemo(() => {
