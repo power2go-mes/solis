@@ -4,8 +4,8 @@
   "description": "Solar, Battery & BMS Monitoring Platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "transparent",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/favicon-16x16.png",
