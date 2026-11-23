@@ -1247,9 +1247,21 @@ export default function SolisClientDashboard({
     }
     // Day view totals: Live database values from solis_daily_energy or curve integration
     if (dayDailyEnergy) {
-      const pvVal = Number(dayDailyEnergy.solar_pv_kwh || 0);
-      const consVal = Number(dayDailyEnergy.house_load_kwh || 0);
-      const gridLoadVal = Number(dayDailyEnergy.grid_purchased_kwh || 0);
+      let pvVal = Number(dayDailyEnergy.solar_pv_kwh || 0);
+      let consVal = Number(dayDailyEnergy.house_load_kwh || 0);
+      let gridLoadVal = Number(dayDailyEnergy.grid_purchased_kwh || 0);
+
+      // If pvVal is 0 but live curve has integrated PV generation (e.g. earlier today), fallback to curve sum
+      if (pvVal === 0 && dayCurveData && dayCurveData.pvData && dayCurveData.pvData.length > 0) {
+        const pvSum = dayCurveData.pvData.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0);
+        if (pvSum > 0) pvVal = Number(pvSum.toFixed(2));
+      }
+      // If consVal is 0, fallback to load curve sum
+      if (consVal === 0 && dayCurveData && dayCurveData.loadData && dayCurveData.loadData.length > 0) {
+        const loadSum = dayCurveData.loadData.reduce((acc: number, v: number | null) => acc + (Number(v) || 0) * (5 / 60), 0);
+        if (loadSum > 0) consVal = Number(loadSum.toFixed(2));
+      }
+
       const backupVal = Number(
         dayDailyEnergy.backup_load_kwh || (consVal > gridLoadVal ? consVal - gridLoadVal : 0)
       );
@@ -1358,9 +1370,9 @@ export default function SolisClientDashboard({
     ? Number(telemetry.load_power_kw)
     : (curveLoad !== null ? curveLoad : 0);
 
-  const liveBatterySoc = telemetry && telemetry.battery_soc !== undefined && telemetry.battery_soc !== null
+  const liveBatterySoc = telemetry && telemetry.battery_soc !== undefined && telemetry.battery_soc !== null && Number(telemetry.battery_soc) > 0
     ? Number(telemetry.battery_soc)
-    : (curveSoc !== null ? curveSoc : 100);
+    : (curveSoc !== null && curveSoc > 0 ? curveSoc : (Number((telemetry as any)?.raw_data?.batteryPercent || 0) || 100));
 
   const liveBatteryKw = telemetry && telemetry.battery_power_kw !== undefined && telemetry.battery_power_kw !== null
     ? Number(telemetry.battery_power_kw)
@@ -1368,17 +1380,21 @@ export default function SolisClientDashboard({
 
   const liveBatteryState = telemetry?.battery_direction
     ? telemetry.battery_direction
-    : (liveBatteryKw > 0 ? "Charging" : liveBatteryKw < 0 ? "Discharging" : "Idle");
+    : (liveBatteryKw > 0.05 ? "Charging" : liveBatteryKw < -0.05 ? "Discharging" : "Idle");
 
-  const liveGridKw = telemetry && telemetry.grid_power_kw !== undefined && telemetry.grid_power_kw !== null
+  // Live grid power: ensure negative psum (import) or curveGrid is respected and not masked to 0
+  const rawPsum = (telemetry as any)?.raw_data?.psum !== undefined ? Number((telemetry as any).raw_data.psum) : null;
+  const rawPsumV2 = (telemetry as any)?.raw_data?.psumV2 !== undefined ? Number((telemetry as any).raw_data.psumV2) : null;
+  const liveGridKw = telemetry && telemetry.grid_power_kw !== undefined && telemetry.grid_power_kw !== null && Number(telemetry.grid_power_kw) !== 0
     ? Number(telemetry.grid_power_kw)
-    : (curveGrid !== null ? curveGrid : 0);
+    : (curveGrid !== null && curveGrid !== 0 ? curveGrid : (rawPsum !== null && rawPsum !== 0 ? rawPsum : (rawPsumV2 !== null && rawPsumV2 !== 0 ? rawPsumV2 : 0)));
 
   // Live daily yield, charge, and discharge (synchronized with plant overview & real-time telemetry)
   const isViewingToday = currentDate === getPktDateStr();
   const rawData = (telemetry as any)?.raw_data;
-  const liveDailyYield = isViewingToday && rawData?.dayEnergy !== undefined && rawData?.dayEnergy !== null
-    ? Number(rawData.dayEnergy)
+  const rawDayEnergy = Number(rawData?.dayEnergy ?? rawData?.doubleAmmeterStorageDayEnergy ?? 0);
+  const liveDailyYield = isViewingToday && rawDayEnergy > 0
+    ? rawDayEnergy
     : Number(totals.pv || 0);
 
   const liveDailyCharge = isViewingToday && rawData?.batteryTodayChargeEnergy !== undefined && rawData?.batteryTodayChargeEnergy !== null

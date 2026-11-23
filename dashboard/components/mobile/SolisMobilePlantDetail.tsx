@@ -360,10 +360,11 @@ export default function SolisMobilePlantDetail({
   // Live telemetry metrics
   const liveSolar = Number(telemetry?.solar_power_kw ?? 0);
   const liveLoad = Number(telemetry?.load_power_kw ?? 0);
-  const liveBatterySoc = Number(telemetry?.battery_soc ?? 0);
+  const liveBatterySoc = Number(telemetry?.battery_soc && Number(telemetry.battery_soc) > 0 ? telemetry.battery_soc : ((telemetry as any)?.raw_data?.batteryPercent || 0));
   const liveBatteryKw = Number(telemetry?.battery_power_kw ?? 0);
   const liveBatteryState = telemetry?.battery_direction ?? "—";
-  const liveGridKw = Number(telemetry?.grid_power_kw ?? 0.0);
+  const rawPsum = (telemetry as any)?.raw_data?.psum !== undefined ? Number((telemetry as any).raw_data.psum) : 0;
+  const liveGridKw = Number(telemetry?.grid_power_kw && Number(telemetry.grid_power_kw) !== 0 ? telemetry.grid_power_kw : rawPsum);
   const powerSeriesControls = [
     { key: "pv", label: "PV", color: "#eab308" },
     { key: "grid", label: "Grid", color: "#3b82f6" },
