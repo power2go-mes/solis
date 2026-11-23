@@ -66,7 +66,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : Number(summary.dailyChargeKwh || 0).toFixed(2)}
+                {loading ? "..." : Math.round(Number(summary.dailyChargeKwh || 0))}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWh</span>
             </div>
@@ -77,7 +77,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {loading ? "..." : Number(summary.dailyDischargeKwh || 0).toFixed(2)}
+                {loading ? "..." : Math.round(Number(summary.dailyDischargeKwh || 0))}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWh</span>
             </div>
