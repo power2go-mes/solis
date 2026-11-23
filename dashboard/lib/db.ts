@@ -1506,6 +1506,7 @@ export async function getPlantOverviewData(): Promise<SolisOverviewResponse> {
         plantType: p.plantType,
         investmentType: p.investmentType,
         latestDataTime: curveRow?.time_str ? curveRow.time_str.slice(0, 5) : undefined,
+        latestTime: curveRow?.time_str ? curveRow.time_str.slice(0, 5) : (dbRow?.updated_at ? new Date(dbRow.updated_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Karachi" }) : undefined),
       };
     });
 
