@@ -537,15 +537,15 @@ async function runLiveSync() {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
         ) ON CONFLICT (station_id, energy_date) DO UPDATE SET
-          solar_pv_kwh = COALESCE(EXCLUDED.solar_pv_kwh, solis_daily_energy.solar_pv_kwh),
-          house_load_kwh = COALESCE(EXCLUDED.house_load_kwh, solis_daily_energy.house_load_kwh),
-          battery_charge_kwh = COALESCE(EXCLUDED.battery_charge_kwh, solis_daily_energy.battery_charge_kwh),
-          battery_discharge_kwh = COALESCE(EXCLUDED.battery_discharge_kwh, solis_daily_energy.battery_discharge_kwh),
-          grid_purchased_kwh = COALESCE(EXCLUDED.grid_purchased_kwh, solis_daily_energy.grid_purchased_kwh),
-          grid_sold_kwh = COALESCE(EXCLUDED.grid_sold_kwh, solis_daily_energy.grid_sold_kwh),
-          backup_load_kwh = COALESCE(EXCLUDED.backup_load_kwh, solis_daily_energy.backup_load_kwh),
-          self_consumption_kwh = COALESCE(EXCLUDED.self_consumption_kwh, solis_daily_energy.self_consumption_kwh),
-          peak_sun_hours = COALESCE(EXCLUDED.peak_sun_hours, solis_daily_energy.peak_sun_hours),
+          solar_pv_kwh = GREATEST(COALESCE(EXCLUDED.solar_pv_kwh, 0), COALESCE(solis_daily_energy.solar_pv_kwh, 0)),
+          house_load_kwh = GREATEST(COALESCE(EXCLUDED.house_load_kwh, 0), COALESCE(solis_daily_energy.house_load_kwh, 0)),
+          battery_charge_kwh = GREATEST(COALESCE(EXCLUDED.battery_charge_kwh, 0), COALESCE(solis_daily_energy.battery_charge_kwh, 0)),
+          battery_discharge_kwh = GREATEST(COALESCE(EXCLUDED.battery_discharge_kwh, 0), COALESCE(solis_daily_energy.battery_discharge_kwh, 0)),
+          grid_purchased_kwh = GREATEST(COALESCE(EXCLUDED.grid_purchased_kwh, 0), COALESCE(solis_daily_energy.grid_purchased_kwh, 0)),
+          grid_sold_kwh = GREATEST(COALESCE(EXCLUDED.grid_sold_kwh, 0), COALESCE(solis_daily_energy.grid_sold_kwh, 0)),
+          backup_load_kwh = GREATEST(COALESCE(EXCLUDED.backup_load_kwh, 0), COALESCE(solis_daily_energy.backup_load_kwh, 0)),
+          self_consumption_kwh = GREATEST(COALESCE(EXCLUDED.self_consumption_kwh, 0), COALESCE(solis_daily_energy.self_consumption_kwh, 0)),
+          peak_sun_hours = GREATEST(COALESCE(EXCLUDED.peak_sun_hours, 0), COALESCE(solis_daily_energy.peak_sun_hours, 0)),
           currency = EXCLUDED.currency,
           raw = EXCLUDED.raw,
           updated_at = NOW();
