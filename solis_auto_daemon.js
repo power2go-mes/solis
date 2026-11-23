@@ -17,6 +17,10 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { Pool } = require("pg");
+const { sendWebPushNotification } = require("./lib/webPushNotifier");
+
+// Plant Telemetry Staleness Tracking: { [plantId]: { lastTimeStr: string, staleCount: number, alerted: boolean } }
+const plantStaleTracker = {};
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return {};
@@ -565,6 +569,44 @@ async function runLiveSync() {
         String(todayRecord?.moneyStr || mix.money || "PKR"),
         JSON.stringify(todayRecord || mix),
       ]);
+
+      // 5. Staleness & Offline Detector (Trigger Web Push after 3 consecutive stale/no-data syncs)
+      if (!plantStaleTracker[p.id]) {
+        plantStaleTracker[p.id] = { lastTimeStr: "", staleCount: 0, alerted: false };
+      }
+      const tracker = plantStaleTracker[p.id];
+      const curDataTime = latestCurvePoint ? latestCurvePoint.timeStr : "";
+
+      if (!curDataTime || curDataTime === tracker.lastTimeStr) {
+        // No new telemetry data arrived in this active polling cycle
+        tracker.staleCount += 1;
+        console.warn(`[Stale Warning] ${p.name}: Consecutive stale count = ${tracker.staleCount}/3 (Last seen: ${curDataTime || tracker.lastTimeStr || "Never"})`);
+
+        if (tracker.staleCount >= 3 && !tracker.alerted) {
+          tracker.alerted = true;
+          console.error(`🚨 [OFFLINE ALERT] ${p.name} has had NO new telemetry for 3 consecutive sync cycles! Dispatching Web Push...`);
+          sendWebPushNotification({
+            title: `⚠️ Plant Offline Alert: ${p.name}`,
+            body: `${p.name} has stopped sending telemetry data (last packet: ${curDataTime || tracker.lastTimeStr || "N/A"} PKT). Checked 3 consecutive times with no new data.`,
+            url: `/?plantId=${p.id}`,
+            tag: `stale-${p.id}`,
+          }).catch(err => console.error(`[Push Error] Failed to send push for ${p.name}:`, err));
+        }
+      } else {
+        // Telemetry is healthy and advancing!
+        if (tracker.alerted) {
+          console.log(`✅ [RECOVERED] ${p.name} resumed telemetry data (New time: ${curDataTime}). Dispatching recovery push...`);
+          sendWebPushNotification({
+            title: `✅ Plant Online: ${p.name}`,
+            body: `${p.name} has resumed normal telemetry communication at ${curDataTime} PKT.`,
+            url: `/?plantId=${p.id}`,
+            tag: `recovery-${p.id}`,
+          }).catch(err => console.error(`[Push Error] Recovery push failed:`, err));
+        }
+        tracker.lastTimeStr = curDataTime;
+        tracker.staleCount = 0;
+        tracker.alerted = false;
+      }
     } catch (err) {
       console.error(`[Error] Updating ${p.name}:`, err.message || err);
     }

@@ -1361,6 +1361,23 @@ export default function SolisClientDashboard({
   const curveGrid = latestCurveIdx >= 0 && dayCurveData?.gridData ? Number(dayCurveData.gridData[latestCurveIdx] || 0) : null;
   const curveSoc = latestCurveIdx >= 0 && dayCurveData?.socData ? Number(dayCurveData.socData[latestCurveIdx] || 0) : null;
 
+  // Live daily yield, charge, and discharge (synchronized with plant overview & real-time telemetry)
+  const isViewingToday = currentDate === getPktDateStr();
+
+  // Extract the latest telemetry time string (e.g., "15:35")
+  const latestDataTimeStr = latestCurveIdx >= 0 && dayCurveData?.timeLabels ? dayCurveData.timeLabels[latestCurveIdx] : null;
+
+  // Check if plant telemetry is stale (e.g. older than 35 mins during today's operating hours)
+  const isPlantOffline = (() => {
+    if (!isViewingToday) return false;
+    if (!latestDataTimeStr) return false;
+    const nowPkt = new Date(Date.now() + 5 * 3600 * 1000);
+    const [h, m] = latestDataTimeStr.split(":").map(Number);
+    const nowMinutes = nowPkt.getUTCHours() * 60 + nowPkt.getUTCMinutes();
+    const dataMinutes = h * 60 + m;
+    return (nowMinutes - dataMinutes) > 35;
+  })();
+
   // Live telemetry metrics for the 3D House - seamlessly synchronized with live curve graph data
   const liveSolar = telemetry && telemetry.solar_power_kw !== undefined && telemetry.solar_power_kw !== null
     ? Number(telemetry.solar_power_kw)
@@ -1389,8 +1406,6 @@ export default function SolisClientDashboard({
     ? Number(telemetry.grid_power_kw)
     : (curveGrid !== null && curveGrid !== 0 ? curveGrid : (rawPsum !== null && rawPsum !== 0 ? rawPsum : (rawPsumV2 !== null && rawPsumV2 !== 0 ? rawPsumV2 : 0)));
 
-  // Live daily yield, charge, and discharge (synchronized with plant overview & real-time telemetry)
-  const isViewingToday = currentDate === getPktDateStr();
   const rawData = (telemetry as any)?.raw_data;
   const rawDayEnergy = Number(rawData?.dayEnergy ?? rawData?.doubleAmmeterStorageDayEnergy ?? 0);
   const liveDailyYield = isViewingToday && rawDayEnergy > 0
@@ -1505,8 +1520,14 @@ export default function SolisClientDashboard({
             <span>|</span>
             <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>{formatPktDisplayTime()}</span>
-              <span className="text-slate-500 font-medium ml-1">4Min Ago</span>
+              <span>{latestDataTimeStr ? `${latestDataTimeStr}:00` : formatPktDisplayTime()}</span>
+              {isPlantOffline ? (
+                <span className="text-amber-600 font-semibold ml-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                  Data Stopped (Last Seen: {latestDataTimeStr} PKT)
+                </span>
+              ) : (
+                <span className="text-slate-500 font-medium ml-1">Live Sync</span>
+              )}
             </div>
           </div>
         </div>
@@ -1938,10 +1959,17 @@ export default function SolisClientDashboard({
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-gray-50">
                   <span className="text-slate-400">Status</span>
-                  <span className="font-semibold text-emerald-600 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Online
-                  </span>
+                  {isPlantOffline ? (
+                    <span className="font-semibold text-amber-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      Offline (No Telemetry)
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Online
+                    </span>
+                  )}
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-gray-50">
                   <span className="text-slate-400">PV Capacity</span>
