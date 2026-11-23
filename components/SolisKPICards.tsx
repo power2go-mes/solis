@@ -36,7 +36,7 @@ export default function SolisKPICards({ summary, loading = false }: SolisKPICard
           <div>
             <div className="flex items-baseline">
               <span className="text-2xl font-semibold text-slate-800 tracking-tight">
-                {Number(displayKwp || 0).toFixed(2)}
+                {Math.round(Number(displayKwp || 0))}
               </span>
               <span className="text-xs font-normal text-slate-500 ml-1">kWp</span>
             </div>

@@ -71,7 +71,7 @@ export default function ClientTiles({
                   {plant.name}
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5 truncate font-medium">
-                  {plant.location} • {plant.capacityKwp} kWp
+                  {plant.location} • {Math.round(Number(plant.capacityKwp || 0))} kWp
                 </p>
               </div>
 

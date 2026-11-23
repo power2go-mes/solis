@@ -410,7 +410,7 @@ export default function SolisMobilePlantList({
                     {/* Stat 1: Daily Yield */}
                     <div>
                       <div className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                        {plant.dailyYieldKwh}
+                        {Math.round(Number(plant.dailyYieldKwh || 0))}
                         <span className="text-[10px] font-normal text-slate-500 ml-0.5">
                           kWh
                         </span>
@@ -423,7 +423,7 @@ export default function SolisMobilePlantList({
                     {/* Stat 2: Power */}
                     <div>
                       <div className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                        {plant.powerKw}
+                        {Math.round(Number(plant.powerKw || 0))}
                         <span className="text-[10px] font-normal text-slate-500 ml-0.5">
                           kW
                         </span>
@@ -434,7 +434,7 @@ export default function SolisMobilePlantList({
                     {/* Stat 3: Capacity */}
                     <div>
                       <div className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                        {plant.capacityKwp}
+                        {Math.round(Number(plant.capacityKwp || 0))}
                         <span className="text-[10px] font-normal text-slate-500 ml-0.5">
                           kWp
                         </span>
