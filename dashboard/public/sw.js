@@ -21,8 +21,10 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: '/icon-192.png',
     badge: '/favicon-32x32.png',
-    vibrate: [200, 100, 200, 100, 200],
-    tag: data.tag || 'p2g-alarm',
+    vibrate: [300, 100, 300, 100, 300],
+    silent: false,
+    requireInteraction: true,
+    tag: data.tag || 'p2g-alarm-' + Date.now(),
     renotify: true,
     data: {
       url: data.url || '/'
