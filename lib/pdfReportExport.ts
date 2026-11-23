@@ -136,17 +136,20 @@ export function exportPlantReportToPdf({
     `${r.gridPurchasedKwh.toFixed(1)} kWh`,
   ]);
 
-  // Add Summary row at bottom
-  tableData.push([
-    "Total / Fleet Summary",
-    `${totalCapacity.toFixed(1)} kWp`,
-    `${totalYield.toFixed(1)} kWh`,
-    `${totalCharge.toFixed(1)} kWh`,
-    `${totalDischarge.toFixed(1)} kWh`,
-    `${totalConsumption.toFixed(1)} kWh`,
-    `${totalExport.toFixed(1)} kWh`,
-    `${totalImport.toFixed(1)} kWh`,
-  ]);
+  // Only add "Total / Fleet Summary" row when viewing multiple plants (Fleet View)
+  const isMultiPlant = rows.length > 1;
+  if (isMultiPlant) {
+    tableData.push([
+      "Total / Fleet Summary",
+      `${totalCapacity.toFixed(1)} kWp`,
+      `${totalYield.toFixed(1)} kWh`,
+      `${totalCharge.toFixed(1)} kWh`,
+      `${totalDischarge.toFixed(1)} kWh`,
+      `${totalConsumption.toFixed(1)} kWh`,
+      `${totalExport.toFixed(1)} kWh`,
+      `${totalImport.toFixed(1)} kWh`,
+    ]);
+  }
 
   autoTable(doc, {
     startY: 54,
@@ -190,8 +193,8 @@ export function exportPlantReportToPdf({
       7: { cellWidth: 31, halign: "right" },
     },
     didParseCell: (data) => {
-      // Highlight summary row in green highlight
-      if (data.row.index === tableData.length - 1) {
+      // Highlight summary row in green highlight if multi-plant fleet view
+      if (isMultiPlant && data.row.index === tableData.length - 1) {
         data.cell.styles.fontStyle = "bold";
         data.cell.styles.fillColor = [220, 252, 231]; // Emerald 100
         data.cell.styles.textColor = [20, 83, 45]; // Emerald 900
