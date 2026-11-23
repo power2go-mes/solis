@@ -258,7 +258,7 @@ export default function SolisClientDashboard({
         const arr = JSON.parse(stored);
         return Array.isArray(arr) && arr.includes(selectedPlantId);
       }
-    } catch {}
+    } catch { }
     return false;
   });
 
@@ -277,15 +277,15 @@ export default function SolisClientDashboard({
         setIsFavorite(true);
       }
       localStorage.setItem("solis_fav_plants", JSON.stringify(arr));
-    } catch {}
+    } catch { }
   };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
+      document.documentElement.requestFullscreen?.().catch(() => { });
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen?.().catch(() => {});
+      document.exitFullscreen?.().catch(() => { });
       setIsFullscreen(false);
     }
   };
@@ -890,16 +890,20 @@ export default function SolisClientDashboard({
         ...(visiblePowerSeries.PV ? [{
           name: "PV", type: "line", smooth: true, showSymbol: false, data: solarKw,
           lineStyle: { color: "#f5e026", width: 2 },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: "rgba(245, 224, 38, 0.25)" }, { offset: 1, color: "rgba(245, 224, 38, 0.0)" },
-          ]) },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "rgba(245, 224, 38, 0.25)" }, { offset: 1, color: "rgba(245, 224, 38, 0.0)" },
+            ])
+          },
         }] : []),
         ...(visiblePowerSeries.Grid ? [{
           name: "Grid", type: "line", smooth: true, showSymbol: false, data: gridKw,
           lineStyle: { color: "#0284c7", width: 2 },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: "rgba(2, 132, 199, 0.2)" }, { offset: 1, color: "rgba(2, 132, 199, 0.0)" },
-          ]) },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "rgba(2, 132, 199, 0.2)" }, { offset: 1, color: "rgba(2, 132, 199, 0.0)" },
+            ])
+          },
         }] : []),
         ...(visiblePowerSeries.Battery ? [{ name: "Battery", type: "line", smooth: true, showSymbol: false, data: batKw, lineStyle: { color: "#10b981", width: 2 } }] : []),
         ...(visiblePowerSeries["Total Load"] ? [{ name: "Total Load", type: "line", smooth: true, showSymbol: false, data: loadKw, lineStyle: { color: "#8b5cf6", width: 2 } }] : []),
@@ -1406,6 +1410,7 @@ export default function SolisClientDashboard({
     ? Number(telemetry.grid_power_kw)
     : (curveGrid !== null && curveGrid !== 0 ? curveGrid : (rawPsum !== null && rawPsum !== 0 ? rawPsum : (rawPsumV2 !== null && rawPsumV2 !== 0 ? rawPsumV2 : 0)));
 
+  // Live daily yield, charge, and discharge (synchronized with plant overview & real-time telemetry)
   const rawData = (telemetry as any)?.raw_data;
   const rawDayEnergy = Number(rawData?.dayEnergy ?? rawData?.doubleAmmeterStorageDayEnergy ?? 0);
   const liveDailyYield = isViewingToday && rawDayEnergy > 0
@@ -1474,8 +1479,8 @@ export default function SolisClientDashboard({
                         setIsPlantDropdownOpen(false);
                       }}
                       className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-emerald-50 transition-colors ${p.id === selectedPlantId
-                          ? "text-[#10b981] font-bold bg-emerald-50/50"
-                          : "text-slate-700 font-medium"
+                        ? "text-[#10b981] font-bold bg-emerald-50/50"
+                        : "text-slate-700 font-medium"
                         }`}
                     >
                       <span>{p.name}</span>
@@ -1497,9 +1502,8 @@ export default function SolisClientDashboard({
               </button>
               <button
                 onClick={toggleFavorite}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                  isFavorite ? "text-rose-500 bg-rose-50" : "hover:text-rose-500 hover:bg-rose-50"
-                }`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${isFavorite ? "text-rose-500 bg-rose-50" : "hover:text-rose-500 hover:bg-rose-50"
+                  }`}
                 title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
               >
                 <Heart className={`w-3.5 h-3.5 ${isFavorite ? "fill-rose-500" : ""}`} />
@@ -1552,13 +1556,12 @@ export default function SolisClientDashboard({
           <button
             key={item}
             onClick={() => setActiveSubnav(item)}
-            className={`px-3 py-1 rounded-md font-medium transition-all ${
-              activeSubnav === item
-                ? item === "Overview" || item === "Layout"
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
-                  : "bg-emerald-50 text-[#10b981] border border-emerald-300 font-semibold shadow-2xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-gray-100/70"
-            }`}
+            className={`px-3 py-1 rounded-md font-medium transition-all ${activeSubnav === item
+              ? item === "Overview" || item === "Layout"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-2xs"
+                : "bg-emerald-50 text-[#10b981] border border-emerald-300 font-semibold shadow-2xs"
+              : "text-slate-600 hover:text-slate-900 hover:bg-gray-100/70"
+              }`}
           >
             {item}
           </button>
@@ -1627,8 +1630,8 @@ export default function SolisClientDashboard({
                         data-tab={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${activeTab === tab
-                            ? "bg-white text-emerald-600 font-semibold shadow-2xs border border-emerald-200"
-                            : "text-slate-600 hover:text-slate-900"
+                          ? "bg-white text-emerald-600 font-semibold shadow-2xs border border-emerald-200"
+                          : "text-slate-600 hover:text-slate-900"
                           }`}
                       >
                         {tab}
@@ -2106,74 +2109,74 @@ export default function SolisClientDashboard({
         </div>
       )}
 
-          {/* Card 2: Layout Tab (Single Line Diagram) */}
-          {activeSubnav === "Layout" && (
-            <SolisLayoutTab plantName={plantMeta.name} capacityKwp={plantMeta.capacityKwp} />
-          )}
+      {/* Card 2: Layout Tab (Single Line Diagram) */}
+      {activeSubnav === "Layout" && (
+        <SolisLayoutTab plantName={plantMeta.name} capacityKwp={plantMeta.capacityKwp} />
+      )}
 
-          {/* Card 3: Info Tab (Full Station & Owner Specifications) */}
-          {activeSubnav === "Info" && (
-            <SolisPlantInfoTab info={plantDetailsData?.plantInfo} isLoading={isDetailsLoading} />
-          )}
+      {/* Card 3: Info Tab (Full Station & Owner Specifications) */}
+      {activeSubnav === "Info" && (
+        <SolisPlantInfoTab info={plantDetailsData?.plantInfo} isLoading={isDetailsLoading} />
+      )}
 
-          {/* Card 4: Device Tab (Inverter, Battery, Datalogger, Meter) */}
-          {activeSubnav === "Device" && (
-            <SolisDevicesTab
-              devices={plantDetailsData?.devices}
+      {/* Card 4: Device Tab (Inverter, Battery, Datalogger, Meter) */}
+      {activeSubnav === "Device" && (
+        <SolisDevicesTab
+          devices={plantDetailsData?.devices}
+          isLoading={isDetailsLoading}
+          onSelectPlantByName={(name) => {
+            const match = plantsList.find((p) => p.name.toLowerCase() === name.toLowerCase());
+            if (match) onSelectPlant(match.id);
+          }}
+        />
+      )}
+
+      {/* Full Page Alarm/Alert Details View if drilled in */}
+      {activeAlarmDetail ? (
+        <SolisAlarmDetailsView
+          alarm={activeAlarmDetail}
+          onBack={() => setActiveAlarmDetail(null)}
+          onSelectPlantByName={(name) => {
+            const match = plantsList.find((p) => p.name.toLowerCase() === name.toLowerCase());
+            if (match) onSelectPlant(match.id);
+            setActiveAlarmDetail(null);
+          }}
+          onSelectDevice={(sn) => {
+            setActiveSubnav("Device");
+            setActiveAlarmDetail(null);
+          }}
+        />
+      ) : (
+        <>
+          {/* Card 5: Alarm Tab (SolisCloud Fault & Recovery Audit) */}
+          {activeSubnav === "Alarm" && (
+            <SolisAlarmsTab
+              alarmsData={plantDetailsData?.alarms}
               isLoading={isDetailsLoading}
-              onSelectPlantByName={(name) => {
-                const match = plantsList.find((p) => p.name.toLowerCase() === name.toLowerCase());
-                if (match) onSelectPlant(match.id);
-              }}
-            />
-          )}
-
-          {/* Full Page Alarm/Alert Details View if drilled in */}
-          {activeAlarmDetail ? (
-            <SolisAlarmDetailsView
-              alarm={activeAlarmDetail}
-              onBack={() => setActiveAlarmDetail(null)}
-              onSelectPlantByName={(name) => {
-                const match = plantsList.find((p) => p.name.toLowerCase() === name.toLowerCase());
-                if (match) onSelectPlant(match.id);
-                setActiveAlarmDetail(null);
-              }}
-              onSelectDevice={(sn) => {
+              onViewDevice={(sn) => {
                 setActiveSubnav("Device");
-                setActiveAlarmDetail(null);
+              }}
+              onViewAlarmDetail={(alarm) => {
+                setActiveAlarmDetail(alarm);
               }}
             />
-          ) : (
-            <>
-              {/* Card 5: Alarm Tab (SolisCloud Fault & Recovery Audit) */}
-              {activeSubnav === "Alarm" && (
-                <SolisAlarmsTab
-                  alarmsData={plantDetailsData?.alarms}
-                  isLoading={isDetailsLoading}
-                  onViewDevice={(sn) => {
-                    setActiveSubnav("Device");
-                  }}
-                  onViewAlarmDetail={(alarm) => {
-                    setActiveAlarmDetail(alarm);
-                  }}
-                />
-              )}
-
-              {/* Card 6: Alert Tab (Operational & Diagnostic Notifications) */}
-              {activeSubnav === "Alert" && (
-                <SolisAlertsTab
-                  alertsData={plantDetailsData?.alerts}
-                  isLoading={isDetailsLoading}
-                  onViewDevice={(sn) => {
-                    setActiveSubnav("Device");
-                  }}
-                  onViewAlarmDetail={(alarm) => {
-                    setActiveAlarmDetail(alarm);
-                  }}
-                />
-              )}
-            </>
           )}
+
+          {/* Card 6: Alert Tab (Operational & Diagnostic Notifications) */}
+          {activeSubnav === "Alert" && (
+            <SolisAlertsTab
+              alertsData={plantDetailsData?.alerts}
+              isLoading={isDetailsLoading}
+              onViewDevice={(sn) => {
+                setActiveSubnav("Device");
+              }}
+              onViewAlarmDetail={(alarm) => {
+                setActiveAlarmDetail(alarm);
+              }}
+            />
+          )}
+        </>
+      )}
 
       {/* Modify Information Modal */}
       <SolisModifyPlantModal

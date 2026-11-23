@@ -17,6 +17,44 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { Pool } = require("pg");
+const { sendWebPushNotification } = require("./lib/webPushNotifier");
+
+// NOC Incident Creator & Deduplicator Helper
+async function triggerNocIncident({ stationId, stationName, severity, category, title, description }) {
+  try {
+    const existing = await pool.query(
+      "SELECT id FROM noc_incidents WHERE station_id = $1 AND category = $2 AND status IN ('OPEN', 'ACKNOWLEDGED') LIMIT 1",
+      [stationId, category]
+    );
+    if (existing.rowCount === 0) {
+      await pool.query(
+        `INSERT INTO noc_incidents (station_id, station_name, severity, category, title, description, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'OPEN', NOW(), NOW())`,
+        [stationId, stationName, severity, category, title, description]
+      );
+      console.log(`🚨 [NOC ${severity}] Logged new incident for ${stationName}: ${title}`);
+    }
+  } catch (err) {
+    console.error(`[NOC Incident Error] Failed to log incident for ${stationName}:`, err.message);
+  }
+}
+
+async function autoResolveNocIncident({ stationId, category, resolutionNotes }) {
+  try {
+    await pool.query(
+      `UPDATE noc_incidents
+       SET status = 'RESOLVED',
+           resolved_by = 'System Auto-Recovery',
+           resolved_at = NOW(),
+           resolution_notes = $1,
+           updated_at = NOW()
+       WHERE station_id = $2 AND category = $3 AND status IN ('OPEN', 'ACKNOWLEDGED')`,
+      [resolutionNotes, stationId, category]
+    );
+  } catch (err) {
+    console.error(`[NOC Resolve Error]:`, err.message);
+  }
+}
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return {};
@@ -565,6 +603,107 @@ async function runLiveSync() {
         String(todayRecord?.moneyStr || mix.money || "PKR"),
         JSON.stringify(todayRecord || mix),
       ]);
+
+      // 5. Staleness & Offline Detector (P1 Major Alert)
+      if (!plantStaleTracker[p.id]) {
+        plantStaleTracker[p.id] = { lastTimeStr: "", staleCount: 0, alerted: false };
+      }
+      const tracker = plantStaleTracker[p.id];
+      const curDataTime = latestCurvePoint ? latestCurvePoint.timeStr : "";
+
+      if (!curDataTime || curDataTime === tracker.lastTimeStr) {
+        tracker.staleCount += 1;
+        console.warn(`[Stale Warning] ${p.name}: Consecutive stale count = ${tracker.staleCount}/3 (Last seen: ${curDataTime || tracker.lastTimeStr || "Never"})`);
+
+        if (tracker.staleCount >= 3 && !tracker.alerted) {
+          tracker.alerted = true;
+          console.error(`🚨 [OFFLINE ALERT] ${p.name} has had NO new telemetry for 3 consecutive sync cycles!`);
+
+          // 1. Log P1 Incident in NOC table
+          await triggerNocIncident({
+            stationId: p.id,
+            stationName: p.name,
+            severity: "P1",
+            category: "OFFLINE_STALE",
+            title: "Plant Offline / Telemetry Lost",
+            description: `No new telemetry received for 3 consecutive cycles (>30m). Last seen: ${curDataTime || tracker.lastTimeStr || "N/A"} PKT.`
+          });
+
+          // 2. Dispatch Web Push
+          sendWebPushNotification({
+            title: `⚠️ Plant Offline Alert: ${p.name}`,
+            body: `${p.name} has stopped sending telemetry data (last packet: ${curDataTime || tracker.lastTimeStr || "N/A"} PKT). Checked 3 consecutive times with no new data.`,
+            url: `/?plantId=${p.id}`,
+            tag: `stale-${p.id}`,
+          }).catch(err => console.error(`[Push Error] Failed to send push for ${p.name}:`, err));
+        }
+      } else {
+        // Telemetry is healthy and advancing!
+        if (tracker.alerted) {
+          console.log(`✅ [RECOVERED] ${p.name} resumed telemetry data (New time: ${curDataTime}).`);
+          await autoResolveNocIncident({
+            stationId: p.id,
+            category: "OFFLINE_STALE",
+            resolutionNotes: `Telemetry automatically resumed at ${curDataTime} PKT.`
+          });
+
+          sendWebPushNotification({
+            title: `✅ Plant Online: ${p.name}`,
+            body: `${p.name} has resumed normal telemetry communication at ${curDataTime} PKT.`,
+            url: `/?plantId=${p.id}`,
+            tag: `recovery-${p.id}`,
+          }).catch(err => console.error(`[Push Error] Recovery push failed:`, err));
+        }
+        tracker.lastTimeStr = curDataTime;
+        tracker.staleCount = 0;
+        tracker.alerted = false;
+      }
+
+      // 6. 🔴 P0 Critical: Battery Deep Discharge Protection (SOC < 10% during Grid Outage)
+      if (liveSoc > 0 && liveSoc < 10 && liveGridKw <= 0) {
+        await triggerNocIncident({
+          stationId: p.id,
+          stationName: p.name,
+          severity: "P0",
+          category: "BATTERY_CRITICAL",
+          title: "Critical Battery Deep Discharge Risk",
+          description: `Battery SOC has reached ${liveSoc}% with no grid power. Imminent BMS shutdown & lockout risk.`
+        });
+        sendWebPushNotification({
+          title: `🔴 Critical Battery Alert: ${p.name}`,
+          body: `Battery SOC is critically low at ${liveSoc}% with 0 grid power! Protect system from deep discharge blackout.`,
+          url: `/?plantId=${p.id}`,
+          tag: `bat-crit-${p.id}`,
+        }).catch(() => {});
+      } else if (liveSoc >= 15) {
+        await autoResolveNocIncident({
+          stationId: p.id,
+          category: "BATTERY_CRITICAL",
+          resolutionNotes: `Battery recovered to ${liveSoc}%.`
+        });
+      }
+
+      // 7. 🔵 P2 Minor: Midday Generation Loss / Clipping Detector (11:00 AM - 02:00 PM PKT)
+      const nowPktHours = new Date(Date.now() + 5 * 3600 * 1000).getUTCHours();
+      if (nowPktHours >= 11 && nowPktHours <= 14 && p.capacityKwp > 5) {
+        const expectedMinKw = p.capacityKwp * 0.30; // 30% of installed capacity
+        if (liveSolarKw < expectedMinKw && tracker.staleCount === 0) {
+          await triggerNocIncident({
+            stationId: p.id,
+            stationName: p.name,
+            severity: "P2",
+            category: "UNDERPERFORMANCE",
+            title: "Midday Solar Generation Anomaly",
+            description: `Midday generation is only ${liveSolarKw.toFixed(1)} kW (Expected > ${expectedMinKw.toFixed(1)} kW for ${p.capacityKwp} kWp capacity). Check strings or DC isolators.`
+          });
+        } else if (liveSolarKw >= expectedMinKw) {
+          await autoResolveNocIncident({
+            stationId: p.id,
+            category: "UNDERPERFORMANCE",
+            resolutionNotes: `Generation normal at ${liveSolarKw.toFixed(1)} kW.`
+          });
+        }
+      }
     } catch (err) {
       console.error(`[Error] Updating ${p.name}:`, err.message || err);
     }
