@@ -423,10 +423,25 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
         ? "All Plants (Fleet View)"
         : selectedStationObj?.name || selectedFleetFilter;
 
+    // Capture chart as high-resolution PNG data URL
+    let chartDataUrl: string | null = null;
+    if (chartInstance.current && !chartInstance.current.isDisposed()) {
+      try {
+        chartDataUrl = chartInstance.current.getDataURL({
+          type: "png",
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
+      } catch (err) {
+        console.warn("Could not capture chart data URL:", err);
+      }
+    }
+
     exportPlantReportToPdf({
       period: activeDateTab,
       reportDate,
       selectedStationName,
+      chartDataUrl,
       rows: filteredStations.map((st) => ({
         id: st.id,
         name: st.name,

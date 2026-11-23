@@ -11,8 +11,10 @@ import {
   DollarSign,
   ChevronDown,
   FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excelExport";
+import { exportPlantReportToPdf } from "@/lib/pdfReportExport";
 
 interface StationTelemetryItem {
   id: string;
@@ -20,6 +22,9 @@ interface StationTelemetryItem {
   capacityKwp: number;
   dailyYieldKwh: number;
   monthlyTotalMwh: number;
+  chargeKwh: number;
+  dischargeKwh: number;
+  consumptionKwh: number;
   gridSoldKwh: number;
   gridPurchasedKwh: number;
   selfConsumptionPct: number;
@@ -33,6 +38,9 @@ const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
     capacityKwp: 80.0,
     dailyYieldKwh: 207.2,
     monthlyTotalMwh: 4.82,
+    chargeKwh: 73.5,
+    dischargeKwh: 42.8,
+    consumptionKwh: 192.1,
     gridSoldKwh: 0,
     gridPurchasedKwh: 26.2,
     selfConsumptionPct: 100,
@@ -44,6 +52,9 @@ const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
     capacityKwp: 32.0,
     dailyYieldKwh: 105.0,
     monthlyTotalMwh: 2.45,
+    chargeKwh: 15.6,
+    dischargeKwh: 9.8,
+    consumptionKwh: 12.1,
     gridSoldKwh: 17.1,
     gridPurchasedKwh: 17.5,
     selfConsumptionPct: 84,
@@ -55,6 +66,9 @@ const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
     capacityKwp: 25.155,
     dailyYieldKwh: 89.7,
     monthlyTotalMwh: 2.15,
+    chargeKwh: 17.7,
+    dischargeKwh: 9.2,
+    consumptionKwh: 31.9,
     gridSoldKwh: 58.2,
     gridPurchasedKwh: 6.7,
     selfConsumptionPct: 32,
@@ -66,6 +80,9 @@ const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
     capacityKwp: 55.5,
     dailyYieldKwh: 142.3,
     monthlyTotalMwh: 3.32,
+    chargeKwh: 13.9,
+    dischargeKwh: 2.6,
+    consumptionKwh: 6.6,
     gridSoldKwh: 33.0,
     gridPurchasedKwh: 0,
     selfConsumptionPct: 77,
@@ -77,6 +94,9 @@ const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
     capacityKwp: 20.0,
     dailyYieldKwh: 54.2,
     monthlyTotalMwh: 1.28,
+    chargeKwh: 0,
+    dischargeKwh: 0,
+    consumptionKwh: 0,
     gridSoldKwh: 8.5,
     gridPurchasedKwh: 4.2,
     selfConsumptionPct: 84,
@@ -88,6 +108,9 @@ const DEFAULT_FLEET_STATIONS: StationTelemetryItem[] = [
     capacityKwp: 20.0,
     dailyYieldKwh: 48.0,
     monthlyTotalMwh: 1.12,
+    chargeKwh: 0,
+    dischargeKwh: 0,
+    consumptionKwh: 0,
     gridSoldKwh: 0,
     gridPurchasedKwh: 12.0,
     selfConsumptionPct: 100,
@@ -100,10 +123,12 @@ interface SolisPlantReportViewProps {
 }
 
 export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReportViewProps) {
-  const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Month");
+  const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
   const [selectedFleetFilter, setSelectedFleetFilter] = useState("All");
-  const [reportDate, setReportDate] = useState("2026-11-20");
-  const [stationRows, setStationRows] = useState<StationTelemetryItem[]>(DEFAULT_FLEET_STATIONS);
+  const [reportDate, setReportDate] = useState(() => {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date());
+  });
+  const [stationRows, setStationRows] = useState<StationTelemetryItem[]>([]);
   const [chartTimeline, setChartTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -125,6 +150,9 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
               capacityKwp: r.capacityKwp,
               dailyYieldKwh: r.yieldKwh,
               monthlyTotalMwh: r.monthlyTotalMwh,
+              chargeKwh: r.chargeKwh || 0,
+              dischargeKwh: r.dischargeKwh || 0,
+              consumptionKwh: r.consumptionKwh || 0,
               gridSoldKwh: r.gridSoldKwh,
               gridPurchasedKwh: r.gridPurchasedKwh,
               selfConsumptionPct: r.selfConsumptionPct,
@@ -387,6 +415,49 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
     );
   };
 
+  // Export to PDF
+  const handleExportPdf = () => {
+    const selectedStationObj = stationRows.find((s) => s.id === selectedFleetFilter);
+    const selectedStationName =
+      selectedFleetFilter === "All"
+        ? "All Plants (Fleet View)"
+        : selectedStationObj?.name || selectedFleetFilter;
+
+    // Capture chart as high-resolution PNG data URL
+    let chartDataUrl: string | null = null;
+    if (chartInstance.current && !chartInstance.current.isDisposed()) {
+      try {
+        chartDataUrl = chartInstance.current.getDataURL({
+          type: "png",
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
+      } catch (err) {
+        console.warn("Could not capture chart data URL:", err);
+      }
+    }
+
+    exportPlantReportToPdf({
+      period: activeDateTab,
+      reportDate,
+      selectedStationName,
+      chartDataUrl,
+      rows: filteredStations.map((st) => ({
+        id: st.id,
+        name: st.name,
+        capacityKwp: st.capacityKwp,
+        yieldKwh: st.dailyYieldKwh,
+        chargeKwh: st.chargeKwh || 0,
+        dischargeKwh: st.dischargeKwh || 0,
+        consumptionKwh: st.consumptionKwh || 0,
+        gridSoldKwh: st.gridSoldKwh,
+        gridPurchasedKwh: st.gridPurchasedKwh,
+        selfConsumptionPct: st.selfConsumptionPct,
+        specificYieldH: st.specificYieldH,
+      })),
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       {/* 1. Top Header Bar */}
@@ -413,11 +484,10 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
               <button
                 key={tab}
                 onClick={() => setActiveDateTab(tab)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                  activeDateTab === tab
-                    ? "bg-white text-slate-800 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeDateTab === tab
+                  ? "bg-white text-slate-800 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-700"
+                  }`}
               >
                 {tab}
               </button>
@@ -443,6 +513,15 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Export Excel</span>
+          </button>
+
+          {/* Export PDF Button */}
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-lg text-xs font-semibold active:scale-95 transition-all shadow-2xs hover:shadow-sm"
+          >
+            <FileText className="w-4 h-4 text-white" />
+            <span>Export PDF</span>
           </button>
         </div>
       </div>
@@ -575,11 +654,11 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
                 <th className="py-3 px-4">Station Name</th>
                 <th className="py-3 px-3">Capacity</th>
                 <th className="py-3 px-3">{activeDateTab} Yield</th>
-                <th className="py-3 px-3">Period Total</th>
+                <th className="py-3 px-3">Charge</th>
+                <th className="py-3 px-3">Discharge</th>
+                <th className="py-3 px-3">Consumption</th>
                 <th className="py-3 px-3">Grid Sold</th>
                 <th className="py-3 px-3">Grid Purchased</th>
-                <th className="py-3 px-3">Self-Consumption</th>
-                <th className="py-3 px-3">Specific Yield</th>
                 <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
@@ -591,8 +670,14 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
                   <td className="py-3.5 px-3 font-semibold text-slate-900">
                     {row.dailyYieldKwh} kWh
                   </td>
-                  <td className="py-3.5 px-3 text-slate-600">
-                    {row.monthlyTotalMwh} MWh
+                  <td className="py-3.5 px-3 text-emerald-600 font-medium">
+                    {row.chargeKwh || 0} kWh
+                  </td>
+                  <td className="py-3.5 px-3 text-amber-600 font-medium">
+                    {row.dischargeKwh || 0} kWh
+                  </td>
+                  <td className="py-3.5 px-3 text-slate-700 font-medium">
+                    {row.consumptionKwh || 0} kWh
                   </td>
                   <td className="py-3.5 px-3 font-medium text-blue-600">
                     {row.gridSoldKwh} kWh
@@ -600,12 +685,6 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
                   <td className="py-3.5 px-3 text-slate-600">
                     {row.gridPurchasedKwh} kWh
                   </td>
-                  <td className="py-3.5 px-3">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                      {row.selfConsumptionPct}%
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-3 text-slate-600">{row.specificYieldH} h</td>
                   <td className="py-3.5 px-4 text-center">
                     <button
                       onClick={() => onSelectPlant && onSelectPlant(row.id)}

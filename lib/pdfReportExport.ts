@@ -20,6 +20,7 @@ export interface ExportPlantReportPdfOptions {
   reportDate: string;
   selectedStationName: string;
   rows: PlantPdfRow[];
+  chartDataUrl?: string | null;
 }
 
 export function exportPlantReportToPdf({
@@ -27,6 +28,7 @@ export function exportPlantReportToPdf({
   reportDate,
   selectedStationName,
   rows,
+  chartDataUrl,
 }: ExportPlantReportPdfOptions) {
   // Landscape orientation to comfortably fit all energy telemetry columns
   const doc = new jsPDF({
@@ -36,6 +38,7 @@ export function exportPlantReportToPdf({
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
   // Top header background banner: Deep Emerald Green
   doc.setFillColor(16, 122, 67); // #107a43 Rich Green
@@ -210,6 +213,46 @@ export function exportPlantReportToPdf({
       );
     },
   });
+
+  // If a chart image was captured, embed it cleanly on the page or on page 2
+  if (chartDataUrl) {
+    try {
+      const finalY = (doc as any).lastAutoTable?.finalY || 100;
+      const chartWidth = pageWidth - 28;
+      const chartHeight = 85;
+
+      // If remaining height on page 1 is too small (< 95mm), add a fresh page
+      if (pageHeight - finalY < 95) {
+        doc.addPage("a4", "landscape");
+
+        // Top header banner on Page 2
+        doc.setFillColor(16, 122, 67);
+        doc.rect(0, 0, pageWidth, 15, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(`POWER2G-cloud Plant Performance - ${period} Visual Curves & Timeline Chart`, 14, 10);
+
+        // Section Title
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${period} Performance & Generation Curves (${selectedStationName})`, 14, 25);
+
+        doc.addImage(chartDataUrl, "PNG", 14, 28, chartWidth, chartHeight);
+      } else {
+        // Draw chart directly below the table on page 1
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${period} Performance & Generation Curves (${selectedStationName})`, 14, finalY + 8);
+
+        doc.addImage(chartDataUrl, "PNG", 14, finalY + 11, chartWidth, Math.min(chartHeight, pageHeight - finalY - 22));
+      }
+    } catch (chartErr) {
+      console.warn("Could not embed chart image in PDF:", chartErr);
+    }
+  }
 
   const cleanDate = reportDate.replace(/[^0-9-]/g, "");
   doc.save(`POWER2G_Plant_Report_${period}_${cleanDate}.pdf`);
