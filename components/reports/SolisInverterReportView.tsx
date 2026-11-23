@@ -231,7 +231,16 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
         type: "category",
         data: timeLabels,
         axisLine: { lineStyle: { color: "#f1f5f9" } },
-        axisLabel: { color: "#94a3b8", fontSize: 10 },
+        axisTick: { alignWithLabel: true },
+        axisLabel: {
+          color: "#94a3b8",
+          fontSize: isMobile ? 9 : 10,
+          hideOverlap: true,
+          interval: (index: number, value: string) => {
+            if (!value) return false;
+            return value.endsWith(":00") && (parseInt(value.slice(0, 2), 10) % (isMobile ? 4 : 2) === 0);
+          },
+        },
       },
       yAxis: [
         {

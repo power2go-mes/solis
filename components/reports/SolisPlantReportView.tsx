@@ -260,10 +260,18 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
           type: "category",
           data: times,
           axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisTick: { alignWithLabel: true },
           axisLabel: {
             color: "#64748b",
-            fontSize: isMobile ? 8 : 10,
-            interval: isMobile ? 3 : 0,
+            fontSize: isMobile ? 9 : 10,
+            hideOverlap: true,
+            interval: (index: number, value: string) => {
+              // Smart interval formatting: show clean hourly intervals (e.g. 00:00, 03:00, 06:00, ...)
+              // Or on mobile every 4-6 hours, on desktop every 2-3 hours
+              if (!value) return false;
+              const isEvenHour = value.endsWith(":00") && (parseInt(value.slice(0, 2), 10) % (isMobile ? 4 : 2) === 0);
+              return isEvenHour;
+            },
           },
         },
         yAxis: {

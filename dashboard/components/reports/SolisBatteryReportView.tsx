@@ -257,10 +257,15 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         data: timeLabels,
         boundaryGap: true,
         axisLine: { lineStyle: { color: "#f1f5f9" } },
+        axisTick: { alignWithLabel: true },
         axisLabel: {
           color: "#94a3b8",
-          fontSize: isMobile ? 9 : 11,
-          interval: isMobile ? 2 : "auto",
+          fontSize: isMobile ? 9 : 10,
+          hideOverlap: true,
+          interval: (index: number, value: string) => {
+            if (!value) return false;
+            return value.endsWith(":00") && (parseInt(value.slice(0, 2), 10) % (isMobile ? 4 : 2) === 0);
+          },
         },
       },
       yAxis: [
