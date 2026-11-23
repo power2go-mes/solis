@@ -86,7 +86,10 @@ export function exportPlantReportToPdf({
   }).format(new Date());
   doc.text(genTime, 245, 30);
 
-  // Summary KPI Cards Box
+  // Check if viewing multiple plants (Fleet View) or a single plant
+  const isMultiPlant = rows.length > 1;
+
+  // Summary KPI Calculations
   const totalCapacity = rows.reduce((acc, r) => acc + (r.capacityKwp || 0), 0);
   const totalYield = rows.reduce((acc, r) => acc + (r.yieldKwh || 0), 0);
   const totalCharge = rows.reduce((acc, r) => acc + (r.chargeKwh || 0), 0);
@@ -95,34 +98,39 @@ export function exportPlantReportToPdf({
   const totalExport = rows.reduce((acc, r) => acc + (r.gridSoldKwh || 0), 0);
   const totalImport = rows.reduce((acc, r) => acc + (r.gridPurchasedKwh || 0), 0);
 
-  // Border & background for KPIs: Clean light green tint
-  doc.setDrawColor(187, 247, 208); // Emerald 200
-  doc.setFillColor(240, 253, 244); // Emerald 50
-  doc.roundedRect(14, 34, pageWidth - 28, 16, 2, 2, "FD");
+  // Render KPI Summary Box ONLY for Multi-Plant / Fleet View (avoid duplicate identical numbers in single plant)
+  let tableStartY = 35;
+  if (isMultiPlant) {
+    tableStartY = 54;
+    // Border & background for KPIs: Clean light green tint
+    doc.setDrawColor(187, 247, 208); // Emerald 200
+    doc.setFillColor(240, 253, 244); // Emerald 50
+    doc.roundedRect(14, 34, pageWidth - 28, 16, 2, 2, "FD");
 
-  const kpis = [
-    { label: "Plants Count", val: `${rows.length}` },
-    { label: "Total Capacity", val: `${totalCapacity.toFixed(1)} kWp` },
-    { label: "Total Yield (PV)", val: `${totalYield.toFixed(1)} kWh` },
-    { label: "Total Charge", val: `${totalCharge.toFixed(1)} kWh` },
-    { label: "Total Discharge", val: `${totalDischarge.toFixed(1)} kWh` },
-    { label: "Total Consumption", val: `${totalConsumption.toFixed(1)} kWh` },
-    { label: "Grid Export", val: `${totalExport.toFixed(1)} kWh` },
-    { label: "Grid Import", val: `${totalImport.toFixed(1)} kWh` },
-  ];
+    const kpis = [
+      { label: "Plants Count", val: `${rows.length}` },
+      { label: "Total Capacity", val: `${totalCapacity.toFixed(1)} kWp` },
+      { label: "Total Yield (PV)", val: `${totalYield.toFixed(1)} kWh` },
+      { label: "Total Charge", val: `${totalCharge.toFixed(1)} kWh` },
+      { label: "Total Discharge", val: `${totalDischarge.toFixed(1)} kWh` },
+      { label: "Total Consumption", val: `${totalConsumption.toFixed(1)} kWh` },
+      { label: "Grid Export", val: `${totalExport.toFixed(1)} kWh` },
+      { label: "Grid Import", val: `${totalImport.toFixed(1)} kWh` },
+    ];
 
-  const colWidth = (pageWidth - 28) / kpis.length;
-  kpis.forEach((kpi, idx) => {
-    const x = 14 + idx * colWidth + 2;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(71, 85, 105);
-    doc.text(kpi.label, x, 40);
-    doc.setFontSize(8.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(16, 122, 67); // Deep Green
-    doc.text(kpi.val, x, 46);
-  });
+    const colWidth = (pageWidth - 28) / kpis.length;
+    kpis.forEach((kpi, idx) => {
+      const x = 14 + idx * colWidth + 2;
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(71, 85, 105);
+      doc.text(kpi.label, x, 40);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(16, 122, 67); // Deep Green
+      doc.text(kpi.val, x, 46);
+    });
+  }
 
   // Table Data (without Self-Cons. and Specific Yield)
   const tableData = rows.map((r) => [
@@ -137,7 +145,6 @@ export function exportPlantReportToPdf({
   ]);
 
   // Only add "Total / Fleet Summary" row when viewing multiple plants (Fleet View)
-  const isMultiPlant = rows.length > 1;
   if (isMultiPlant) {
     tableData.push([
       "Total / Fleet Summary",
@@ -152,7 +159,7 @@ export function exportPlantReportToPdf({
   }
 
   autoTable(doc, {
-    startY: 54,
+    startY: tableStartY,
     head: [
       [
         "Plant Name",
