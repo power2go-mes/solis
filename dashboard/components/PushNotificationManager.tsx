@@ -26,18 +26,34 @@ export function PushNotificationManager() {
 
       // Register SW
       navigator.serviceWorker.register("/sw.js").then((reg) => {
-        reg.pushManager.getSubscription().then((sub) => {
+        reg.pushManager.getSubscription().then(async (sub) => {
           if (sub) {
             setIsSubscribed(true);
-            // Sync with backend
+            // Sync existing subscription with backend
             fetch("/api/push/subscribe", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ subscription: sub, userAgent: navigator.userAgent })
             }).catch(() => {});
+          } else if (Notification.permission === "granted") {
+            // Already granted permission! Subscribe immediately without needing a prompt click
+            try {
+              const newSub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+              });
+              setIsSubscribed(true);
+              fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscription: newSub, userAgent: navigator.userAgent })
+              }).catch(() => {});
+            } catch (subErr) {
+              console.error("Auto subscribe failed:", subErr);
+            }
           } else if (Notification.permission === "default") {
             // Prompt after short delay for user friendliness
-            setTimeout(() => setShowPrompt(true), 2500);
+            setTimeout(() => setShowPrompt(true), 1500);
           }
         });
       });
