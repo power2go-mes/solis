@@ -75,6 +75,9 @@ function SolisCloudDashboard() {
   const [selectedPlantId, setSelectedPlantId] = useState<string>(
     stationIdParam || "1298491919450873747"
   );
+  const [deviceInitialTab, setDeviceInitialTab] = useState<"Inverter" | "Battery" | "Datalogger" | "Meter">("Inverter");
+  const [deviceInitialSn, setDeviceInitialSn] = useState<string>("");
+  const [deviceInitialDetailMode, setDeviceInitialDetailMode] = useState<"inverter" | "battery" | "meter" | null>(null);
 
   // Layout UI State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -330,7 +333,8 @@ function SolisCloudDashboard() {
               <SolisPlantReportView
                 onSelectPlant={(plantId) => {
                   setSelectedPlantId(plantId);
-                  setActiveView("device_overview");
+                  loadTelemetry(plantId);
+                  setActiveView("plant_detail");
                 }}
               />
             ) : activeView === "report_inverter" ? (
@@ -339,6 +343,9 @@ function SolisCloudDashboard() {
               /* ============================================================== */
               <SolisInverterReportView
                 onSelectInverter={(sn) => {
+                  setDeviceInitialTab("Inverter");
+                  setDeviceInitialSn(sn);
+                  setDeviceInitialDetailMode("inverter");
                   setActiveView("device_overview");
                 }}
               />
@@ -348,6 +355,9 @@ function SolisCloudDashboard() {
               /* ============================================================== */
               <SolisBatteryReportView
                 onSelectBattery={(sn) => {
+                  setDeviceInitialTab("Battery");
+                  setDeviceInitialSn(sn);
+                  setDeviceInitialDetailMode("battery");
                   setActiveView("device_overview");
                 }}
               />
@@ -356,6 +366,9 @@ function SolisCloudDashboard() {
               /* EXACT SOLISCLOUD DEVICE OVERVIEW PAGE (MEDIA_1795195322999)     */
               /* ============================================================== */
               <SolisDeviceOverviewPage
+                initialTab={deviceInitialTab}
+                initialSn={deviceInitialSn}
+                initialDetailMode={deviceInitialDetailMode}
                 onSelectPlant={(plantId) => {
                   setSelectedPlantId(plantId);
                   loadTelemetry(plantId);
@@ -369,8 +382,9 @@ function SolisCloudDashboard() {
                     setSelectedPlantId(match.id);
                     loadTelemetry(match.id);
                     setActiveView("plant_detail");
+                  } else {
+                    setActiveView("plant_detail");
                   }
-                  setActiveView("plant_detail");
                 }}
               />
             ) : (
@@ -439,7 +453,8 @@ function SolisCloudDashboard() {
               <SolisPlantReportView
                 onSelectPlant={(plantId) => {
                   setSelectedPlantId(plantId);
-                  navigateToView("device_overview");
+                  loadTelemetry(plantId);
+                  navigateToView("plant_detail");
                 }}
               />
             </div>
@@ -454,7 +469,12 @@ function SolisCloudDashboard() {
                 </button>
               </div>
               <SolisInverterReportView
-                onSelectInverter={() => navigateToView("device_overview")}
+                onSelectInverter={(sn) => {
+                  setDeviceInitialTab("Inverter");
+                  setDeviceInitialSn(sn);
+                  setDeviceInitialDetailMode("inverter");
+                  navigateToView("device_overview");
+                }}
               />
             </div>
           ) : activeView === "report_battery" ? (
@@ -468,7 +488,12 @@ function SolisCloudDashboard() {
                 </button>
               </div>
               <SolisBatteryReportView
-                onSelectBattery={() => navigateToView("device_overview")}
+                onSelectBattery={(sn) => {
+                  setDeviceInitialTab("Battery");
+                  setDeviceInitialSn(sn);
+                  setDeviceInitialDetailMode("battery");
+                  navigateToView("device_overview");
+                }}
               />
             </div>
           ) : activeView === "device_overview" ? (
@@ -482,16 +507,25 @@ function SolisCloudDashboard() {
                 </button>
               </div>
               <SolisDeviceOverviewPage
+                initialTab={deviceInitialTab}
+                initialSn={deviceInitialSn}
+                initialDetailMode={deviceInitialDetailMode}
                 onSelectPlant={(plantId) => {
                   setSelectedPlantId(plantId);
+                  loadTelemetry(plantId);
                   navigateToView("plant_detail");
                 }}
                 onSelectPlantByName={(name) => {
                   const match = plantsList.find((p) =>
                     p.name.toLowerCase().includes(name.toLowerCase())
                   );
-                  if (match) setSelectedPlantId(match.id);
-                  navigateToView("plant_detail");
+                  if (match) {
+                    setSelectedPlantId(match.id);
+                    loadTelemetry(match.id);
+                    navigateToView("plant_detail");
+                  } else {
+                    navigateToView("plant_detail");
+                  }
                 }}
               />
             </div>

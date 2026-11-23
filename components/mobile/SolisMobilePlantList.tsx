@@ -58,7 +58,9 @@ export default function SolisMobilePlantList({
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Sort & Filter dropdowns state
-  const [sortBy, setSortBy] = useState<"Default" | "Capacity" | "Power" | "Yield">("Default");
+  const [sortBy, setSortBy] = useState<
+    "Default" | "Capacity" | "Power" | "Yield" | "LowestPV" | "LowestConsumption" | "HighestPV" | "HighestConsumption"
+  >("Default");
   const [selectedParam, setSelectedParam] = useState<"All" | "WithBattery" | "GridTied">("All");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [isParamDropdownOpen, setIsParamDropdownOpen] = useState(false);
@@ -127,8 +129,21 @@ export default function SolisMobilePlantList({
     if (sortBy === "Power") {
       return (b.powerKw || 0) - (a.powerKw || 0);
     }
-    if (sortBy === "Yield") {
+    if (sortBy === "Yield" || sortBy === "HighestPV") {
       return (b.dailyYieldKwh || 0) - (a.dailyYieldKwh || 0);
+    }
+    if (sortBy === "LowestPV") {
+      return (a.dailyYieldKwh || 0) - (b.dailyYieldKwh || 0);
+    }
+    if (sortBy === "LowestConsumption") {
+      const consA = (a as any).dailyConsumptionKwh || a.dailyYieldKwh || 0;
+      const consB = (b as any).dailyConsumptionKwh || b.dailyYieldKwh || 0;
+      return consA - consB;
+    }
+    if (sortBy === "HighestConsumption") {
+      const consA = (a as any).dailyConsumptionKwh || a.dailyYieldKwh || 0;
+      const consB = (b as any).dailyConsumptionKwh || b.dailyYieldKwh || 0;
+      return consB - consA;
     }
     const idxA = MOBILE_DISPLAY_ORDER.indexOf(a.id);
     const idxB = MOBILE_DISPLAY_ORDER.indexOf(b.id);
@@ -150,58 +165,28 @@ export default function SolisMobilePlantList({
       </div>
 
       {/* ======================================================== */}
-      {/* 1. TOP BAR: Category Tabs & Search / Add Icons            */}
+      {/* 1. TOP BAR: Clean Prominent Search Bar                     */}
       {/* ======================================================== */}
-      <div className="bg-white px-4 pt-3 pb-2 flex items-center justify-between border-b border-gray-100">
-        {/* Category Tabs: Plant, Inverter, Battery, Data */}
-        <div className="flex items-center gap-4 text-sm font-semibold">
-          {["Plant", "Inverter", "Battery", "Data"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTopTab(tab)}
-              className={`transition-colors ${
-                activeTopTab === tab
-                  ? "text-xl font-bold text-emerald-600"
-                  : "text-slate-500 font-medium hover:text-slate-800"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Right Action Icons: Search & Add */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="w-8 h-8 rounded-full border border-gray-200 bg-white flex items-center justify-center text-slate-600 hover:bg-gray-50 active:scale-95 transition-all shadow-2xs"
-            title="Search Plants"
-          >
-            <Search className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onCreatePlant}
-            className="w-8 h-8 rounded-full border border-gray-200 bg-white flex items-center justify-center text-slate-600 hover:bg-gray-50 active:scale-95 transition-all shadow-2xs"
-            title="Add Plant"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Collapsible Search Input */}
-      {isSearchOpen && (
-        <div className="bg-white px-4 py-2 border-b border-gray-100 animate-in fade-in duration-150">
+      <div className="bg-white px-4 py-2.5 border-b border-gray-100">
+        <div className="relative flex items-center w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search for Plant / Address / ID..."
+            placeholder="Search plant, address or station ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-[#10b981] bg-gray-50/50"
-            autoFocus
+            className="w-full pl-9 pr-8 py-2 rounded-xl border border-gray-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-gray-50/70 transition-all"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 text-xs text-slate-400 hover:text-slate-600 p-0.5"
+            >
+              ✕
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="px-3 space-y-3 mt-3">
         {/* ======================================================== */}
@@ -262,101 +247,68 @@ export default function SolisMobilePlantList({
         </div>
 
         {/* ======================================================== */}
-        {/* 3. FILTER PILLS ROW: Default, Parameter Selection...      */}
+        {/* 3. SORT FILTER ROW: Default with Lowest PV, Consumption    */}
         {/* ======================================================== */}
-        <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-0.5 relative">
+        <div className="flex items-center justify-between text-xs pb-0.5 relative">
           {/* Sort Dropdown */}
           <div className="relative">
             <button
-              onClick={() => {
-                setIsSortDropdownOpen(!isSortDropdownOpen);
-                setIsParamDropdownOpen(false);
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50/50 text-[#10b981] font-semibold whitespace-nowrap cursor-pointer active:scale-95 transition-all"
+              onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50/50 text-[#10b981] font-semibold whitespace-nowrap cursor-pointer active:scale-95 transition-all"
             >
-              <span>{sortBy === "Default" ? "Default" : `Sort: ${sortBy}`}</span>
-              <ChevronDown className="w-3 h-3 text-[#10b981]" />
+              <span>
+                {sortBy === "Default"
+                  ? "Default"
+                  : sortBy === "LowestPV"
+                  ? "Lowest PV Yield"
+                  : sortBy === "LowestConsumption"
+                  ? "Lowest Consumption"
+                  : sortBy === "HighestPV"
+                  ? "Highest PV Yield"
+                  : sortBy === "HighestConsumption"
+                  ? "Highest Consumption"
+                  : `Sort: ${sortBy}`}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-[#10b981]" />
             </button>
             {isSortDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 text-xs animate-in fade-in zoom-in-95">
-                {(["Default", "Capacity", "Power", "Yield"] as const).map((s) => (
+              <div className="absolute left-0 mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-xl z-50 py-1.5 text-xs animate-in fade-in zoom-in-95">
+                {[
+                  { id: "Default", label: "Default Order" },
+                  { id: "LowestPV", label: "Lowest PV Yield (Underperforming)" },
+                  { id: "HighestPV", label: "Highest PV Yield" },
+                  { id: "LowestConsumption", label: "Lowest Consumption" },
+                  { id: "HighestConsumption", label: "Highest Consumption" },
+                  { id: "Capacity", label: "Highest Capacity" },
+                  { id: "Power", label: "Highest Current Power" },
+                ].map((s) => (
                   <button
-                    key={s}
+                    key={s.id}
                     onClick={() => {
-                      setSortBy(s);
+                      setSortBy(s.id as any);
                       setIsSortDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-emerald-50/50 ${
-                      sortBy === s ? "text-emerald-600 font-bold" : "text-slate-700"
+                    className={`w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-emerald-50/50 transition-colors ${
+                      sortBy === s.id ? "text-emerald-600 font-bold bg-emerald-50/30" : "text-slate-700"
                     }`}
                   >
-                    <span>{s}</span>
-                    {sortBy === s && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                    <span>{s.label}</span>
+                    {sortBy === s.id && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Parameter Selection Dropdown */}
-          <div className="relative">
+          {/* Reset Sort Button */}
+          {sortBy !== "Default" && (
             <button
-              onClick={() => {
-                setIsParamDropdownOpen(!isParamDropdownOpen);
-                setIsSortDropdownOpen(false);
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap cursor-pointer active:scale-95 transition-all"
+              onClick={() => setSortBy("Default")}
+              className="text-[11px] font-semibold text-slate-400 hover:text-emerald-600 px-2 py-1"
             >
-              <span>{selectedParam === "All" ? "Parameter Selection" : selectedParam === "WithBattery" ? "With Battery" : "Grid-Tied"}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              Reset Sort
             </button>
-            {isParamDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 text-xs animate-in fade-in zoom-in-95">
-                {[
-                  { id: "All", label: "All Systems" },
-                  { id: "WithBattery", label: "With Battery Storage" },
-                  { id: "GridTied", label: "Grid-Tied Only" },
-                ].map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setSelectedParam(p.id as any);
-                      setIsParamDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-emerald-50/50 ${
-                      selectedParam === p.id ? "text-emerald-600 font-bold" : "text-slate-700"
-                    }`}
-                  >
-                    <span>{p.label}</span>
-                    {selectedParam === p.id && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Distance Filter */}
-          <button
-            onClick={() => alert("Distance sorting active: sorted by nearest plants (Karachi & Lahore hubs).")}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-700 font-medium whitespace-nowrap cursor-pointer active:scale-95 transition-all"
-          >
-            <span>Distance</span>
-            <ChevronDown className="w-3 h-3 text-slate-400" />
-          </button>
-
-          {/* Filter Reset / Modal trigger */}
-          <button
-            onClick={() => {
-              setSortBy("Default");
-              setSelectedParam("All");
-              setActiveFilterTab("All");
-              setSearchQuery("");
-            }}
-            className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-slate-600 hover:text-emerald-600 hover:bg-gray-50 flex-shrink-0 shadow-2xs cursor-pointer active:scale-95 transition-all"
-            title="Reset Filters"
-          >
-            <Filter className="w-3.5 h-3.5" />
-          </button>
+          )}
         </div>
 
         {/* ======================================================== */}

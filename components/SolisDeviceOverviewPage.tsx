@@ -79,6 +79,9 @@ interface SolisDeviceOverviewPageProps {
   onSelectInverter?: (sn: string) => void;
   onSelectBattery?: (sn: string) => void;
   onSelectMeter?: (sn: string) => void;
+  initialTab?: DeviceCategoryTab;
+  initialSn?: string;
+  initialDetailMode?: "inverter" | "battery" | "meter" | null;
 }
 
 type DeviceCategoryTab =
@@ -524,14 +527,17 @@ export default function SolisDeviceOverviewPage({
   onSelectInverter,
   onSelectBattery,
   onSelectMeter,
+  initialTab = "Inverter",
+  initialSn = "",
+  initialDetailMode = null,
 }: SolisDeviceOverviewPageProps) {
   // Active detail view mode: null (shows table) | "inverter" | "battery" | "meter"
-  const [detailMode, setDetailMode] = useState<"inverter" | "battery" | "meter" | null>(null);
-  const [activeSn, setActiveSn] = useState<string>("");
+  const [detailMode, setDetailMode] = useState<"inverter" | "battery" | "meter" | null>(initialDetailMode);
+  const [activeSn, setActiveSn] = useState<string>(initialSn);
   const [activePlantName, setActivePlantName] = useState<string>("");
 
   // Subtab selection
-  const [activeTab, setActiveTab] = useState<DeviceCategoryTab>("Inverter");
+  const [activeTab, setActiveTab] = useState<DeviceCategoryTab>(initialTab);
 
   // Status Filter: "Total" | "Online" | "Alarm" | "Offline"
   const [statusFilter, setStatusFilter] = useState<"Total" | "Online" | "Alarm" | "Offline">("Total");
