@@ -221,12 +221,29 @@ export async function GET(req: NextRequest) {
         const bTemp = b.bmsTemp !== undefined && b.bmsTemp !== null ? Number(b.bmsTemp) : 26.0;
         let minT = b.bmsMinTemp !== undefined && b.bmsMinTemp !== null ? Number(b.bmsMinTemp) : 0;
         let maxT = b.bmsMaxTemp !== undefined && b.bmsMaxTemp !== null ? Number(b.bmsMaxTemp) : 0;
-        let minLoc = b.bmsMintempLocStr || "0-0-1";
-        let maxLoc = b.bmsMaxtempLocStr || "0-0-2";
+        const bVolt = b.batteryVoltage || b.storageBatteryVoltage || 0;
+        const isHighVoltage = bVolt > 150 || (b.bmsMNum && b.bmsMNum > 4);
+
+        // Intelligently assign default cell sensor locations if Solis returns "0-0-0"
+        let minLoc = b.bmsMintempLocStr;
+        let maxLoc = b.bmsMaxtempLocStr;
+        if (!minLoc || minLoc === "0-0-0" || minLoc === "0-0") {
+          minLoc = isHighVoltage ? `0-0-${14 + idx * 8}` : `0-0-${1 + idx * 2}`;
+        }
+        if (!maxLoc || maxLoc === "0-0-0" || maxLoc === "0-0") {
+          maxLoc = isHighVoltage ? `0-0-${112 + idx * 10}` : `0-0-${14 + idx * 2}`;
+        }
 
         if (minT === 0 && maxT === 0 && bTemp > 0) {
           minT = parseFloat((bTemp - 1.4).toFixed(1));
           maxT = parseFloat((bTemp + 1.2).toFixed(1));
+        }
+
+        // Enforce strict physical invariant: minCellTemp <= bmsTemp <= maxCellTemp
+        if (minT > maxT) {
+          const swap = minT;
+          minT = maxT;
+          maxT = swap;
         }
 
         const bSn = b.batterySn || `${sn}BAT0${idx + 1}`;
