@@ -421,42 +421,11 @@ export async function GET(req: NextRequest) {
         }
 
         const prefix = `${rack.rackName} (${rack.batterySn.slice(-8)})`;
-        const parseBaseCellIndex = (loc: string, fallbackIdx: number) => {
-          if (!loc) return fallbackIdx;
-          const parts = loc.split("-");
-          const lastPart = parts[parts.length - 1];
-          const n = parseInt(lastPart, 10);
-          return !isNaN(n) && n > 0 ? n : fallbackIdx;
-        };
+        const minCellLocStr = rack.liveMinCellLoc || "0-0-1";
+        const maxCellLocStr = rack.liveMaxCellLoc || "0-0-2";
 
-        const liveMinIdx = parseBaseCellIndex(rack.liveMinCellLoc, 14);
-        const liveMaxIdx = parseBaseCellIndex(rack.liveMaxCellLoc, 112);
-
-        let cellMinIdx: number;
-        let cellMaxIdx: number;
-
-        if (isToday) {
-          cellMinIdx = liveMinIdx;
-          cellMaxIdx = liveMaxIdx;
-        } else {
-          const rackOffset = rIdx * 12;
-          const baseRackMin = liveMinIdx > 150 ? Math.max(150, liveMinIdx - rackOffset) : liveMinIdx;
-          const baseRackMax = liveMaxIdx;
-
-          const minDelta = ((dayIdx * (rIdx + 3) + 2) % 5) - 2;
-          const maxDelta = ((dayIdx * (rIdx + 4) + 1) % 5) - 2;
-
-          const maxCapacityCells = Math.max(baseRackMin, baseRackMax, 240);
-          cellMinIdx = Math.max(1, Math.min(maxCapacityCells, baseRackMin + minDelta));
-          cellMaxIdx = Math.max(1, Math.min(maxCapacityCells, baseRackMax + maxDelta));
-
-          if (cellMinIdx === cellMaxIdx) {
-            cellMaxIdx = Math.min(maxCapacityCells, cellMinIdx + 1);
-          }
-        }
-
-        rowObj[`${prefix} - Min Cell Temp (°C)`] = `${minC}°C (Cell #${cellMinIdx})`;
-        rowObj[`${prefix} - Max Cell Temp (°C)`] = `${maxC}°C (Cell #${cellMaxIdx})`;
+        rowObj[`${prefix} - Min Cell Temp (°C)`] = `${minC}°C (${minCellLocStr})`;
+        rowObj[`${prefix} - Max Cell Temp (°C)`] = `${maxC}°C (${maxCellLocStr})`;
         rowObj[`${prefix} - BMS Temp (°C)`] = bmsT;
       });
 

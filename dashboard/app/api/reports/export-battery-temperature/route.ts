@@ -374,48 +374,12 @@ export async function GET(req: NextRequest) {
           maxC = parseFloat((bmsT + 1.1).toFixed(1));
         }
 
-        // Extract base cell indices from Solis BMS telemetry
-        const parseBaseCellIndex = (loc: string, fallbackIdx: number) => {
-          if (!loc) return fallbackIdx;
-          const parts = loc.split("-");
-          const lastPart = parts[parts.length - 1];
-          const n = parseInt(lastPart, 10);
-          return !isNaN(n) && n > 0 ? n : fallbackIdx;
-        };
+        // Exact Solis raw coordinate string (e.g. "0-0-220", "0-0-112")
+        const minCellLocStr = rack.liveMinCellLoc || "0-0-1";
+        const maxCellLocStr = rack.liveMaxCellLoc || "0-0-2";
 
-        const liveMinIdx = parseBaseCellIndex(rack.liveMinCellLoc, 14);
-        const liveMaxIdx = parseBaseCellIndex(rack.liveMaxCellLoc, 112);
-
-        // Historical dynamic cell variation:
-        // Each physical rack occupies its own hardware bank and distinct thermal channel,
-        // preventing cross-rack cell index collisions.
-        let cellMinIdx: number;
-        let cellMaxIdx: number;
-
-        if (isToday) {
-          cellMinIdx = liveMinIdx;
-          cellMaxIdx = liveMaxIdx;
-        } else {
-          // Dedicated channel separation per rack (e.g. Rack 1: base ~220, Rack 2: base ~208, Rack 3: base ~196)
-          const rackOffset = rIdx * 12;
-          const baseRackMin = liveMinIdx > 150 ? Math.max(150, liveMinIdx - rackOffset) : liveMinIdx;
-          const baseRackMax = liveMaxIdx;
-
-          // Unique prime multiplier and cycle per rack to eliminate cross-rack collisions
-          const minDelta = ((dayIdx * (rIdx + 3) + 2) % 5) - 2; // -2 to +2
-          const maxDelta = ((dayIdx * (rIdx + 4) + 1) % 5) - 2; // -2 to +2
-
-          const maxCapacityCells = Math.max(baseRackMin, baseRackMax, 240);
-          cellMinIdx = Math.max(1, Math.min(maxCapacityCells, baseRackMin + minDelta));
-          cellMaxIdx = Math.max(1, Math.min(maxCapacityCells, baseRackMax + maxDelta));
-
-          if (cellMinIdx === cellMaxIdx) {
-            cellMaxIdx = Math.min(maxCapacityCells, cellMinIdx + 1);
-          }
-        }
-
-        rowCols.push(`${minC.toFixed(1)}°C\n(Cell #${cellMinIdx})`);
-        rowCols.push(`${maxC.toFixed(1)}°C\n(Cell #${cellMaxIdx})`);
+        rowCols.push(`${minC.toFixed(1)}°C\n(${minCellLocStr})`);
+        rowCols.push(`${maxC.toFixed(1)}°C\n(${maxCellLocStr})`);
         rowCols.push(`${bmsT.toFixed(1)}°C`);
       });
 
