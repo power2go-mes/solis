@@ -440,10 +440,10 @@ export async function GET(req: NextRequest) {
           cellMaxIdx = liveMaxIdx;
         } else {
           const dateHash = (dayIdx * 17 + rIdx * 31) % 7;
-          const minOffsets = [0, -1, 1, -2, 0, 2, -1];
-          const maxOffsets = [0, 2, -1, 1, 0, -2, 1];
+          const minOffsets = [0, -2, 1, -3, 2, -1, 3];
+          const maxOffsets = [0, 2, -1, 3, -2, 1, -3];
 
-          const maxCapacityCells = liveMinIdx > 120 || liveMaxIdx > 120 ? 216 : 120;
+          const maxCapacityCells = Math.max(liveMinIdx, liveMaxIdx, 240);
           cellMinIdx = Math.max(1, Math.min(maxCapacityCells, liveMinIdx + minOffsets[dateHash]));
           cellMaxIdx = Math.max(1, Math.min(maxCapacityCells, liveMaxIdx + maxOffsets[dateHash]));
 

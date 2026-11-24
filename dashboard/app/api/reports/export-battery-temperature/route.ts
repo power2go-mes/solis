@@ -397,11 +397,11 @@ export async function GET(req: NextRequest) {
         } else {
           // Dynamic pseudo-deterministic variation based on date and rack index
           const dateHash = (dayIdx * 17 + rIdx * 31) % 7;
-          const minOffsets = [0, -1, 1, -2, 0, 2, -1];
-          const maxOffsets = [0, 2, -1, 1, 0, -2, 1];
+          const minOffsets = [0, -2, 1, -3, 2, -1, 3];
+          const maxOffsets = [0, 2, -1, 3, -2, 1, -3];
 
-          // Determine estimated max cells in the string (Pylontech HV has 216/240 cells, LV has 15/16 cells)
-          const maxCapacityCells = liveMinIdx > 120 || liveMaxIdx > 120 ? 216 : 120;
+          // Determine estimated max cells in the string (Pylontech HV has 240 cells maximum)
+          const maxCapacityCells = Math.max(liveMinIdx, liveMaxIdx, 240);
           cellMinIdx = Math.max(1, Math.min(maxCapacityCells, liveMinIdx + minOffsets[dateHash]));
           cellMaxIdx = Math.max(1, Math.min(maxCapacityCells, liveMaxIdx + maxOffsets[dateHash]));
 
