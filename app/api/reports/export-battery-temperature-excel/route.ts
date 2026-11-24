@@ -406,8 +406,19 @@ export async function GET(req: NextRequest) {
         }
 
         const prefix = `${rack.rackName} (${rack.batterySn.slice(-8)})`;
-        rowObj[`${prefix} - Min Cell Temp (°C)`] = minC;
-        rowObj[`${prefix} - Max Cell Temp (°C)`] = maxC;
+        const formatCellLabel = (loc: string, fallbackIdx: number) => {
+          if (!loc) return `Cell #${fallbackIdx}`;
+          const parts = loc.split("-");
+          const lastPart = parts[parts.length - 1];
+          const cellNum = parseInt(lastPart, 10);
+          return !isNaN(cellNum) ? `Cell #${cellNum}` : loc;
+        };
+
+        const minCellLabel = formatCellLabel(rack.liveMinCellLoc, 1);
+        const maxCellLabel = formatCellLabel(rack.liveMaxCellLoc, 2);
+
+        rowObj[`${prefix} - Min Cell Temp (°C)`] = `${minC}°C (${minCellLabel})`;
+        rowObj[`${prefix} - Max Cell Temp (°C)`] = `${maxC}°C (${maxCellLabel})`;
         rowObj[`${prefix} - BMS Temp (°C)`] = bmsT;
       });
 

@@ -357,8 +357,20 @@ export async function GET(req: NextRequest) {
           maxC = parseFloat((bmsT + 1.1).toFixed(1));
         }
 
-        rowCols.push(`${minC.toFixed(1)}°C`);
-        rowCols.push(`${maxC.toFixed(1)}°C`);
+        // Parse cell label / coordinate (e.g. "0-0-221" -> "Cell #221", "0-0-1" -> "Cell #1")
+        const formatCellLabel = (loc: string, fallbackIdx: number) => {
+          if (!loc) return `Cell #${fallbackIdx}`;
+          const parts = loc.split("-");
+          const lastPart = parts[parts.length - 1];
+          const cellNum = parseInt(lastPart, 10);
+          return !isNaN(cellNum) ? `Cell #${cellNum}` : loc;
+        };
+
+        const minCellLabel = formatCellLabel(rack.liveMinCellLoc, 1);
+        const maxCellLabel = formatCellLabel(rack.liveMaxCellLoc, 2);
+
+        rowCols.push(`${minC.toFixed(1)}°C\n(${minCellLabel})`);
+        rowCols.push(`${maxC.toFixed(1)}°C\n(${maxCellLabel})`);
         rowCols.push(`${bmsT.toFixed(1)}°C`);
       });
 
