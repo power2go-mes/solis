@@ -1,0 +1,279 @@
+{
+  "section1_inverters": {
+    "title": "1. INVERTER TECHNICAL TELEMETRY & OPERATIONAL METRICS",
+    "inverter1_primary": {
+      "serialNumber": "1053050258180057",
+      "model": "5305",
+      "ratedPowerKw": 50,
+      "rs485Address": 1,
+      "associatedCollector": "1306858901392697339",
+      "firmwareBuild": "F5010A-550210",
+      "operatingStatus": "Normal Operating (Generating)",
+      "gridStandard": "IEC61727L",
+      "g100ExportMode": "Compliant Mode 4",
+      "activePowerKw": 30.1,
+      "apparentPowerKva": 5.51,
+      "reactivePowerVar": 60,
+      "powerFactor": 0.99,
+      "gridFrequencyHz": 49.86,
+      "gridVoltages": {
+        "L1_N": "230.8 V",
+        "L2_N": "229.8 V",
+        "L3_N": "235.1 V"
+      },
+      "gridCurrents": {
+        "L1": "7.6 A",
+        "L2": "5 A",
+        "L3": "11.1 A"
+      },
+      "pvDcStrings": [
+        {
+          "string": "PV1",
+          "voltage": "711.4 V",
+          "current": "6.5 A",
+          "powerWatts": "4624 W"
+        },
+        {
+          "string": "PV2",
+          "voltage": "703.6 V",
+          "current": "12.3 A",
+          "powerWatts": "8654 W"
+        },
+        {
+          "string": "PV3",
+          "voltage": "709.9 V",
+          "current": "11.8 A",
+          "powerWatts": "8377 W"
+        },
+        {
+          "string": "PV4",
+          "voltage": "660.5 V",
+          "current": "13.2 A",
+          "powerWatts": "8719 W"
+        }
+      ],
+      "totalPvDcPowerKw": "30.37 kW",
+      "energyYields": {
+        "todayYieldKwh": "88 kWh",
+        "monthYieldMwh": "4.48 MWh",
+        "yearYieldMwh": "25.95 MWh",
+        "totalYieldMwh": "26.18 MWh"
+      },
+      "thermalProfile": {
+        "inverterInternalTemp": "32 °C",
+        "secondaryAmbientTemp": "0 °C",
+        "thermalHealth": "Healthy (Normal Cooling)"
+      }
+    },
+    "inverter2_secondary": {
+      "serialNumber": "1053050258140015",
+      "model": "5305",
+      "ratedPowerKw": 50,
+      "rs485Address": 2,
+      "associatedCollector": "1306858901392028425",
+      "firmwareBuild": "F5010A-550210",
+      "operatingStatus": "Normal Operating (Partial Generation)",
+      "gridStandard": "IEC61727L",
+      "g100ExportMode": "0",
+      "activePowerKw": 13.1,
+      "apparentPowerKva": 13.45,
+      "reactivePowerVar": -190,
+      "powerFactor": 0.99,
+      "gridFrequencyHz": 49.98,
+      "gridVoltages": {
+        "L1_N": "229.5 V",
+        "L2_N": "229.5 V",
+        "L3_N": "234.9 V"
+      },
+      "gridCurrents": {
+        "L1": "7.9 A",
+        "L2": "6.1 A",
+        "L3": "11.7 A"
+      },
+      "pvDcStrings": [
+        {
+          "string": "PV1",
+          "voltage": "806.3 V",
+          "current": "5.6 A",
+          "powerWatts": "4515 W"
+        },
+        {
+          "string": "PV2",
+          "voltage": "804.7 V",
+          "current": "5.5 A",
+          "powerWatts": "4426 W"
+        },
+        {
+          "string": "PV3",
+          "voltage": "803.6 V",
+          "current": "5.6 A",
+          "powerWatts": "4500 W"
+        },
+        {
+          "string": "PV4",
+          "voltage": "52.4 V",
+          "current": "0 A",
+          "powerWatts": "0 W",
+          "note": "CRITICAL: String Inactive (Floating residual voltage, 0A current)"
+        }
+      ],
+      "totalPvDcPowerKw": "13.44 kW",
+      "energyYields": {
+        "todayYieldKwh": "33 kWh",
+        "monthYieldMwh": "1.93 MWh",
+        "yearYieldMwh": "4.57 MWh",
+        "totalYieldMwh": "4.95 MWh"
+      },
+      "thermalProfile": {
+        "inverterInternalTemp": "40.1 °C",
+        "secondaryAmbientTemp": "0 °C",
+        "thermalHealth": "Elevated (+7.2°C warmer than Inv 1 despite half generation)"
+      }
+    }
+  },
+  "section2_batteries": {
+    "title": "2. HIGH-VOLTAGE BATTERY RACKS OVERVIEW",
+    "rack1": {
+      "rackIdentification": "Rack 1 (Master / Inverter 1 Slot 1)",
+      "serialNumber": "1053050258180057BAT01",
+      "connectedInverterSn": "1053050258180057",
+      "modelAndChemistry": "PYLON_HV (LiFePO4 Lithium Iron Phosphate)",
+      "ratedCapacityAh": "100 Ah",
+      "stateOfChargeSoc": "74 %",
+      "stateOfHealthSoh": "100 %",
+      "cumulativeCycleCount": "96 cycles",
+      "packVoltageInverter": "728.9 V",
+      "packVoltageInternalBms": "731 V",
+      "packCurrent": "23.8 A",
+      "activeBatteryPower": "17348 W (17.35 kW)",
+      "bmsOperatingMode": "Active Charging",
+      "bmsDynamicChargeLimit": "68 A",
+      "bmsDynamicDischargeLimit": "68 A",
+      "bmsChargeCutoffVoltage": "788.4 V",
+      "bmsDischargeCutoffVoltage": "583.2 V",
+      "batteryPackArchitecture": {
+        "stackedModules": 9,
+        "seriesCellsPerModule": 24,
+        "totalSeriesCellsInRack": "216 cells (~216 cells)"
+      }
+    },
+    "rack2": {
+      "rackIdentification": "Rack 2 (Slave / Inverter 1 Slot 2)",
+      "serialNumber": "1053050258180057BAT02",
+      "connectedInverterSn": "1053050258180057",
+      "modelAndChemistry": "PYLON_HV (LiFePO4 Lithium Iron Phosphate)",
+      "ratedCapacityAh": "100 Ah",
+      "stateOfChargeSoc": "73 %",
+      "stateOfHealthSoh": "100 %",
+      "cumulativeCycleCount": "100 cycles",
+      "packVoltageInverter": "728.1 V",
+      "packVoltageInternalBms": "728.5 V",
+      "packCurrent": "23.6 A",
+      "activeBatteryPower": "17183 W (17.18 kW)",
+      "bmsOperatingMode": "Active Charging",
+      "bmsDynamicChargeLimit": "68 A",
+      "bmsDynamicDischargeLimit": "68 A",
+      "bmsChargeCutoffVoltage": "788.4 V",
+      "bmsDischargeCutoffVoltage": "583.2 V",
+      "batteryPackArchitecture": {
+        "stackedModules": 9,
+        "seriesCellsPerModule": 24,
+        "totalSeriesCellsInRack": "216 cells (~216 cells)"
+      }
+    },
+    "rack3": {
+      "rackIdentification": "Rack 3 (Dedicated / Inverter 2 Slot 1)",
+      "serialNumber": "1053050258140015BAT01",
+      "connectedInverterSn": "1053050258140015",
+      "modelAndChemistry": "PYLON_HV (LiFePO4 Lithium Iron Phosphate)",
+      "ratedCapacityAh": "100 Ah",
+      "stateOfChargeSoc": "33 % [SEVERE LAG: 32% lower than Rack 1/2]",
+      "stateOfHealthSoh": "100 %",
+      "cumulativeCycleCount": "37 cycles [UNDERUTILIZED: Only 37% of fleet cycles]",
+      "packVoltageInverter": "703.8 V [DEPRESSED: 24.8V lower than Rack 1]",
+      "packVoltageInternalBms": "701.2 V",
+      "packCurrent": "0 A [ZERO CURRENT: Charging & Discharging Clamped]",
+      "activeBatteryPower": "0.00 kW (Standby / Lockout)",
+      "bmsOperatingMode": "CRITICAL STANDBY / SAFETY LOCKOUT",
+      "bmsDynamicChargeLimit": "0 A [CLAMPED TO ZERO BY BMS]",
+      "bmsDynamicDischargeLimit": "0 A [CLAMPED TO ZERO BY BMS]",
+      "bmsChargeCutoffVoltage": "788.4 V",
+      "bmsDischargeCutoffVoltage": "583.2 V",
+      "batteryPackArchitecture": {
+        "stackedModules": 9,
+        "seriesCellsPerModule": 24,
+        "totalSeriesCellsInRack": "216 cells (~216 cells)"
+      }
+    }
+  },
+  "section3_cell_forensics": {
+    "title": "3. DEEP CELL-LEVEL FORENSIC ANALYSIS (MIN/MAX VOLTAGES & LOCATIONS)",
+    "rack1": {
+      "batterySn": "1053050258180057BAT01",
+      "lowestCell": {
+        "voltage": "3.371 V",
+        "physicalLocationCoordinate": "0-0-14",
+        "hardwareIndexByte1": 14,
+        "hardwareIndexByte2": 0
+      },
+      "highestCell": {
+        "voltage": "3.38 V",
+        "physicalLocationCoordinate": "0-0-133",
+        "hardwareIndexByte1": 133,
+        "hardwareIndexByte2": 0
+      },
+      "cellVoltageDeltaSpread": "9.0 mV",
+      "cellBalanceAssessment": "EXCELLENT / OPTIMAL (10.0 mV spread is well within the 15-20 mV LiFePO4 health threshold)",
+      "thermalSensors": {
+        "minCellTemp": "25.6 °C (Location: 0-0-221)",
+        "maxCellTemp": "28.3 °C (Location: 0-0-113)",
+        "bmsMasterPcbTemp": "25.8 °C"
+      }
+    },
+    "rack2": {
+      "batterySn": "1053050258180057BAT02",
+      "lowestCell": {
+        "voltage": "3.367 V",
+        "physicalLocationCoordinate": "0-0-11",
+        "hardwareIndexByte1": 11,
+        "hardwareIndexByte2": 0
+      },
+      "highestCell": {
+        "voltage": "3.378 V",
+        "physicalLocationCoordinate": "0-0-109",
+        "hardwareIndexByte1": 109,
+        "hardwareIndexByte2": 0
+      },
+      "cellVoltageDeltaSpread": "11.0 mV",
+      "cellBalanceAssessment": "EXCELLENT / OPTIMAL (9.0 mV spread is well within normal tolerance)",
+      "thermalSensors": {
+        "minCellTemp": "26.2 °C (Location: 0-0-222)",
+        "maxCellTemp": "28.2 °C (Location: 0-0-84)",
+        "bmsMasterPcbTemp": "24.8 °C"
+      }
+    },
+    "rack3": {
+      "batterySn": "1053050258140015BAT01",
+      "lowestCell": {
+        "voltage": "3.028 V [CRITICAL COLLAPSED VOLTAGE]",
+        "physicalLocationCoordinate": "0-0-117",
+        "hardwareIndexByte1": 117,
+        "hardwareIndexByte2": 0
+      },
+      "highestCell": {
+        "voltage": "3.357 V [NORMAL RESTING VOLTAGE]",
+        "physicalLocationCoordinate": "0-0-118",
+        "hardwareIndexByte1": 118,
+        "hardwareIndexByte2": 0
+      },
+      "cellVoltageDeltaSpread": "329.0 mV [342.0 mV SEVERE IMBALANCE]",
+      "cellBalanceAssessment": "CRITICAL FAILURE (Spread is >17 times acceptable limit. Neighbor cell 118 is 3.361V while cell 117 collapsed to 3.019V)",
+      "thermalSensors": {
+        "minCellTemp": "21.2 °C (Location: 0-0-221)",
+        "maxCellTemp": "23.8 °C (Location: 0-0-10)",
+        "bmsMasterPcbTemp": "26 °C"
+      },
+      "bmsProtectionTriggerConsequence": "Cell 0-0-117 reached the steep lower knee of LiFePO4 discharge curve (<3.10V). The BMS engaged Under-Voltage Protection, overriding inverter commands and setting Max Allowable Charge and Discharge Current to 0A to prevent reverse polarity cell destruction."
+    }
+  }
+}

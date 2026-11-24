@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Sun,
   X,
+  Settings,
 } from "lucide-react";
 
 export type SidebarViewType =
@@ -19,7 +20,8 @@ export type SidebarViewType =
   | "om_alerts"
   | "report_plant"
   | "report_inverter"
-  | "report_battery";
+  | "report_battery"
+  | "settings";
 
 interface SolisSidebarProps {
   activeView: string;
@@ -510,6 +512,37 @@ export default function SolisSidebar({
               )}
             </div>
           )}
+
+          {/* 4. SETTINGS MENU (Direct Link to System Settings & Compulsory Day-One Report) */}
+          {isCollapsed ? (
+            <div className="relative group">
+              <button
+                onClick={() => onSelectView("settings")}
+                className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
+                  activeView === "settings"
+                    ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                }`}
+                title="Settings"
+              >
+                <Settings className={`w-5 h-5 transition-transform duration-200 ${activeView === "settings" ? "text-emerald-600" : "text-slate-400"}`} />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <button
+                onClick={() => onSelectView("settings")}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                  activeView === "settings"
+                    ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                <Settings className={`w-4 h-4 transition-transform duration-200 group-hover:rotate-45 ${activeView === "settings" ? "text-emerald-600" : "text-slate-500"}`} />
+                <span>Settings</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Bottom Toggle Control: SolisCloud 3 horizontal bars + arrow (≡→) */}
@@ -669,6 +702,27 @@ export default function SolisSidebar({
                     }`}
                   >
                     Battery Report
+                  </button>
+                </div>
+
+                {/* 4. Settings (Mobile) */}
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1">
+                    Administration
+                  </div>
+                  <button
+                    onClick={() => {
+                      onSelectView("settings");
+                      onCloseMobile();
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 ${
+                      activeView === "settings"
+                        ? "bg-orange-50 text-[#10b981] border border-orange-300 font-bold"
+                        : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    <span>Settings</span>
                   </button>
                 </div>
               </div>
