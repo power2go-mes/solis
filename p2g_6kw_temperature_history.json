@@ -1,0 +1,834 @@
+[
+  {
+    "date": "2026-08-13",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-14",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-15",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-16",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-17",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-18",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-19",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-20",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-21",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-22",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-23",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-24",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-25",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-26",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-27",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-28",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-29",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-30",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-08-31",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-01",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-02",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-03",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-04",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-05",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-06",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-07",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-08",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-09",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-10",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-11",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-12",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-13",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-14",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-15",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-16",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-17",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-18",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-19",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-20",
+    "points": 288,
+    "minTempC": 46.2,
+    "maxTempC": 51.1,
+    "avgTempC": 48.7,
+    "peakTime": "18:01:52 PKT"
+  },
+  {
+    "date": "2026-09-21",
+    "points": 288,
+    "minTempC": 45.8,
+    "maxTempC": 50.9,
+    "avgTempC": 48.5,
+    "peakTime": "04:32:05 PKT"
+  },
+  {
+    "date": "2026-09-22",
+    "points": 287,
+    "minTempC": 46.5,
+    "maxTempC": 57.1,
+    "avgTempC": 50.6,
+    "peakTime": "07:57:06 PKT"
+  },
+  {
+    "date": "2026-09-23",
+    "points": 289,
+    "minTempC": 47.4,
+    "maxTempC": 51.1,
+    "avgTempC": 48.9,
+    "peakTime": "02:36:28 PKT"
+  },
+  {
+    "date": "2026-09-24",
+    "points": 289,
+    "minTempC": 44.2,
+    "maxTempC": 50.9,
+    "avgTempC": 48.6,
+    "peakTime": "11:25:30 PKT"
+  },
+  {
+    "date": "2026-09-25",
+    "points": 288,
+    "minTempC": 46.7,
+    "maxTempC": 51.6,
+    "avgTempC": 48.8,
+    "peakTime": "17:15:25 PKT"
+  },
+  {
+    "date": "2026-09-26",
+    "points": 287,
+    "minTempC": 46,
+    "maxTempC": 51,
+    "avgTempC": 48.5,
+    "peakTime": "04:53:30 PKT"
+  },
+  {
+    "date": "2026-09-27",
+    "points": 288,
+    "minTempC": 36,
+    "maxTempC": 50.4,
+    "avgTempC": 46,
+    "peakTime": "14:32:06 PKT"
+  },
+  {
+    "date": "2026-09-28",
+    "points": 220,
+    "minTempC": 31.7,
+    "maxTempC": 36,
+    "avgTempC": 34.1,
+    "peakTime": "00:02:32 PKT"
+  },
+  {
+    "date": "2026-09-29",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-09-30",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-01",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-02",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-03",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-04",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-05",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-06",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-07",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-08",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-09",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-10",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-11",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-12",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-13",
+    "points": 0,
+    "minTempC": null,
+    "maxTempC": null,
+    "avgTempC": null,
+    "peakTime": "--"
+  },
+  {
+    "date": "2026-10-14",
+    "points": 97,
+    "minTempC": 31.8,
+    "maxTempC": 47,
+    "avgTempC": 43,
+    "peakTime": "23:59:19 PKT"
+  },
+  {
+    "date": "2026-10-15",
+    "points": 288,
+    "minTempC": 44.4,
+    "maxTempC": 48.6,
+    "avgTempC": 46.8,
+    "peakTime": "12:09:33 PKT"
+  },
+  {
+    "date": "2026-10-16",
+    "points": 287,
+    "minTempC": 42.8,
+    "maxTempC": 46.3,
+    "avgTempC": 44.2,
+    "peakTime": "11:09:58 PKT"
+  },
+  {
+    "date": "2026-10-17",
+    "points": 289,
+    "minTempC": 42.9,
+    "maxTempC": 45.9,
+    "avgTempC": 44.1,
+    "peakTime": "03:35:12 PKT"
+  },
+  {
+    "date": "2026-10-18",
+    "points": 252,
+    "minTempC": 44.4,
+    "maxTempC": 51.5,
+    "avgTempC": 48.4,
+    "peakTime": "19:33:54 PKT"
+  },
+  {
+    "date": "2026-10-19",
+    "points": 243,
+    "minTempC": 44.1,
+    "maxTempC": 51.4,
+    "avgTempC": 47.2,
+    "peakTime": "01:44:32 PKT"
+  },
+  {
+    "date": "2026-10-20",
+    "points": 287,
+    "minTempC": 42.8,
+    "maxTempC": 48.5,
+    "avgTempC": 46.1,
+    "peakTime": "04:04:44 PKT"
+  },
+  {
+    "date": "2026-10-21",
+    "points": 288,
+    "minTempC": 41.8,
+    "maxTempC": 45.8,
+    "avgTempC": 42.9,
+    "peakTime": "11:20:23 PKT"
+  },
+  {
+    "date": "2026-10-22",
+    "points": 288,
+    "minTempC": 42,
+    "maxTempC": 44.8,
+    "avgTempC": 43,
+    "peakTime": "19:25:49 PKT"
+  },
+  {
+    "date": "2026-10-23",
+    "points": 288,
+    "minTempC": 41.4,
+    "maxTempC": 45.3,
+    "avgTempC": 43.3,
+    "peakTime": "20:51:59 PKT"
+  },
+  {
+    "date": "2026-10-24",
+    "points": 288,
+    "minTempC": 43,
+    "maxTempC": 46.5,
+    "avgTempC": 44.2,
+    "peakTime": "11:12:11 PKT"
+  },
+  {
+    "date": "2026-10-25",
+    "points": 289,
+    "minTempC": 42.3,
+    "maxTempC": 45.4,
+    "avgTempC": 43.3,
+    "peakTime": "01:52:25 PKT"
+  },
+  {
+    "date": "2026-10-26",
+    "points": 286,
+    "minTempC": 41.2,
+    "maxTempC": 43.6,
+    "avgTempC": 42.8,
+    "peakTime": "00:33:09 PKT"
+  },
+  {
+    "date": "2026-10-27",
+    "points": 290,
+    "minTempC": 41.5,
+    "maxTempC": 45,
+    "avgTempC": 42.6,
+    "peakTime": "11:22:42 PKT"
+  },
+  {
+    "date": "2026-10-28",
+    "points": 288,
+    "minTempC": 42,
+    "maxTempC": 47.8,
+    "avgTempC": 44.1,
+    "peakTime": "07:22:57 PKT"
+  },
+  {
+    "date": "2026-10-29",
+    "points": 287,
+    "minTempC": 42.9,
+    "maxTempC": 48.5,
+    "avgTempC": 45.2,
+    "peakTime": "05:03:24 PKT"
+  },
+  {
+    "date": "2026-10-30",
+    "points": 290,
+    "minTempC": 41.4,
+    "maxTempC": 45.9,
+    "avgTempC": 43.2,
+    "peakTime": "11:17:13 PKT"
+  },
+  {
+    "date": "2026-10-31",
+    "points": 289,
+    "minTempC": 41.1,
+    "maxTempC": 44.8,
+    "avgTempC": 42.2,
+    "peakTime": "11:13:02 PKT"
+  },
+  {
+    "date": "2026-11-01",
+    "points": 288,
+    "minTempC": 41.5,
+    "maxTempC": 47.1,
+    "avgTempC": 43.8,
+    "peakTime": "17:48:28 PKT"
+  },
+  {
+    "date": "2026-11-02",
+    "points": 287,
+    "minTempC": 41.5,
+    "maxTempC": 45.8,
+    "avgTempC": 42.7,
+    "peakTime": "11:08:54 PKT"
+  },
+  {
+    "date": "2026-11-03",
+    "points": 288,
+    "minTempC": 41.6,
+    "maxTempC": 48.6,
+    "avgTempC": 44.2,
+    "peakTime": "11:20:24 PKT"
+  },
+  {
+    "date": "2026-11-04",
+    "points": 288,
+    "minTempC": 40.8,
+    "maxTempC": 45.8,
+    "avgTempC": 43.1,
+    "peakTime": "11:31:03 PKT"
+  },
+  {
+    "date": "2026-11-05",
+    "points": 288,
+    "minTempC": 41.7,
+    "maxTempC": 44.9,
+    "avgTempC": 42.7,
+    "peakTime": "19:51:42 PKT"
+  },
+  {
+    "date": "2026-11-06",
+    "points": 289,
+    "minTempC": 42.3,
+    "maxTempC": 45.8,
+    "avgTempC": 43.4,
+    "peakTime": "23:42:08 PKT"
+  },
+  {
+    "date": "2026-11-07",
+    "points": 288,
+    "minTempC": 43,
+    "maxTempC": 48,
+    "avgTempC": 45.2,
+    "peakTime": "04:22:08 PKT"
+  },
+  {
+    "date": "2026-11-08",
+    "points": 289,
+    "minTempC": 43.3,
+    "maxTempC": 49.8,
+    "avgTempC": 46.7,
+    "peakTime": "20:38:01 PKT"
+  },
+  {
+    "date": "2026-11-09",
+    "points": 286,
+    "minTempC": 46.8,
+    "maxTempC": 50,
+    "avgTempC": 47.9,
+    "peakTime": "22:18:27 PKT"
+  },
+  {
+    "date": "2026-11-10",
+    "points": 288,
+    "minTempC": 42.6,
+    "maxTempC": 49.4,
+    "avgTempC": 45.8,
+    "peakTime": "01:43:28 PKT"
+  },
+  {
+    "date": "2026-11-11",
+    "points": 288,
+    "minTempC": 42.6,
+    "maxTempC": 48.1,
+    "avgTempC": 45,
+    "peakTime": "04:13:53 PKT"
+  },
+  {
+    "date": "2026-11-12",
+    "points": 289,
+    "minTempC": 42.1,
+    "maxTempC": 47.4,
+    "avgTempC": 44.7,
+    "peakTime": "01:14:20 PKT"
+  },
+  {
+    "date": "2026-11-13",
+    "points": 287,
+    "minTempC": 43.3,
+    "maxTempC": 47.8,
+    "avgTempC": 45.3,
+    "peakTime": "11:44:59 PKT"
+  },
+  {
+    "date": "2026-11-14",
+    "points": 288,
+    "minTempC": 43.3,
+    "maxTempC": 48.1,
+    "avgTempC": 45.5,
+    "peakTime": "05:20:11 PKT"
+  },
+  {
+    "date": "2026-11-15",
+    "points": 288,
+    "minTempC": 46.4,
+    "maxTempC": 49.4,
+    "avgTempC": 47.3,
+    "peakTime": "21:11:06 PKT"
+  },
+  {
+    "date": "2026-11-16",
+    "points": 288,
+    "minTempC": 42.1,
+    "maxTempC": 49.2,
+    "avgTempC": 45.1,
+    "peakTime": "00:31:03 PKT"
+  },
+  {
+    "date": "2026-11-17",
+    "points": 288,
+    "minTempC": 41.9,
+    "maxTempC": 48.6,
+    "avgTempC": 44.5,
+    "peakTime": "11:26:42 PKT"
+  },
+  {
+    "date": "2026-11-18",
+    "points": 288,
+    "minTempC": 41.8,
+    "maxTempC": 46.9,
+    "avgTempC": 44,
+    "peakTime": "03:18:19 PKT"
+  },
+  {
+    "date": "2026-11-19",
+    "points": 287,
+    "minTempC": 41.8,
+    "maxTempC": 46.7,
+    "avgTempC": 44,
+    "peakTime": "03:17:10 PKT"
+  },
+  {
+    "date": "2026-11-20",
+    "points": 288,
+    "minTempC": 42.8,
+    "maxTempC": 46.8,
+    "avgTempC": 44.1,
+    "peakTime": "01:52:36 PKT"
+  },
+  {
+    "date": "2026-11-21",
+    "points": 290,
+    "minTempC": 42.1,
+    "maxTempC": 46,
+    "avgTempC": 43.6,
+    "peakTime": "03:42:09 PKT"
+  },
+  {
+    "date": "2026-11-22",
+    "points": 287,
+    "minTempC": 43.3,
+    "maxTempC": 46.6,
+    "avgTempC": 44.5,
+    "peakTime": "20:55:04 PKT"
+  },
+  {
+    "date": "2026-11-23",
+    "points": 287,
+    "minTempC": 41.3,
+    "maxTempC": 46.6,
+    "avgTempC": 43.6,
+    "peakTime": "00:15:04 PKT"
+  },
+  {
+    "date": "2026-11-24",
+    "points": 195,
+    "minTempC": 41,
+    "maxTempC": 45.6,
+    "avgTempC": 43.4,
+    "peakTime": "00:45:46 PKT"
+  }
+]

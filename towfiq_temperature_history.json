@@ -1,0 +1,50 @@
+[
+  {
+    "date": "2026-11-19",
+    "points": 291,
+    "minTempC": 28.8,
+    "maxTempC": 45.5,
+    "avgTempC": 35.2,
+    "peakTime": "16:06:56 PKT"
+  },
+  {
+    "date": "2026-11-20",
+    "points": 287,
+    "minTempC": 26.9,
+    "maxTempC": 45.2,
+    "avgTempC": 32.8,
+    "peakTime": "20:16:02 PKT"
+  },
+  {
+    "date": "2026-11-21",
+    "points": 288,
+    "minTempC": 24.7,
+    "maxTempC": 41,
+    "avgTempC": 31.8,
+    "peakTime": "19:41:29 PKT"
+  },
+  {
+    "date": "2026-11-22",
+    "points": 289,
+    "minTempC": 25.6,
+    "maxTempC": 47.1,
+    "avgTempC": 33.4,
+    "peakTime": "20:08:54 PKT"
+  },
+  {
+    "date": "2026-11-23",
+    "points": 288,
+    "minTempC": 26.2,
+    "maxTempC": 42.4,
+    "avgTempC": 32.7,
+    "peakTime": "16:08:07 PKT"
+  },
+  {
+    "date": "2026-11-24",
+    "points": 194,
+    "minTempC": 23.6,
+    "maxTempC": 41.6,
+    "avgTempC": 29.6,
+    "peakTime": "15:17:43 PKT"
+  }
+]

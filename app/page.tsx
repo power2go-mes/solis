@@ -25,6 +25,7 @@ import SolisInverterReportView from "@/components/reports/SolisInverterReportVie
 import SolisBatteryReportView from "@/components/reports/SolisBatteryReportView";
 import SolisDeviceOverviewPage from "@/components/SolisDeviceOverviewPage";
 import SolisAlarmDetailsView, { AlarmDetailRecord } from "@/components/SolisAlarmDetailsView";
+import SolisSettingsPage from "@/components/SolisSettingsPage";
 import { SidebarViewType } from "@/components/SolisSidebar";
 
 // Client Detailed 4-Graph Components
@@ -387,6 +388,11 @@ function SolisCloudDashboard() {
                   }
                 }}
               />
+            ) : activeView === "settings" ? (
+              /* ============================================================== */
+              /* SETTINGS & COMPULSORY DAY-ONE EXPORT VIEW                      */
+              /* ============================================================== */
+              <SolisSettingsPage />
             ) : (
               /* ============================================================== */
               /* EXACT SOLISCLOUD CLIENT DASHBOARD (MATCHING REFERENCE IMAGE 9) */
@@ -528,6 +534,10 @@ function SolisCloudDashboard() {
                   }
                 }}
               />
+            </div>
+          ) : activeView === "settings" ? (
+            <div className="p-3 bg-[#f7f9fa] min-h-screen pb-24">
+              <SolisSettingsPage />
             </div>
           ) : (
             <SolisMobilePlantDetail

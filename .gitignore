@@ -52,3 +52,6 @@ logs/
 scratch/
 
 
+
+dashboard/node_modules/
+*.pdf
