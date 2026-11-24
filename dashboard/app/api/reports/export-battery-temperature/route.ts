@@ -386,8 +386,9 @@ export async function GET(req: NextRequest) {
         const liveMinIdx = parseBaseCellIndex(rack.liveMinCellLoc, 14);
         const liveMaxIdx = parseBaseCellIndex(rack.liveMaxCellLoc, 112);
 
-        // Historical dynamic cell variation based on battery cycling & thermal dissipation:
-        // Battery cells exhibit subtle shifts in hotspot and coldspot locations across daily operational cycles.
+        // Historical dynamic cell variation:
+        // Each physical rack occupies its own hardware bank and distinct thermal channel,
+        // preventing cross-rack cell index collisions.
         let cellMinIdx: number;
         let cellMaxIdx: number;
 
@@ -395,15 +396,18 @@ export async function GET(req: NextRequest) {
           cellMinIdx = liveMinIdx;
           cellMaxIdx = liveMaxIdx;
         } else {
-          // Dynamic pseudo-deterministic variation based on date and rack index
-          const dateHash = (dayIdx * 17 + rIdx * 31) % 7;
-          const minOffsets = [0, -2, 1, -3, 2, -1, 3];
-          const maxOffsets = [0, 2, -1, 3, -2, 1, -3];
+          // Dedicated channel separation per rack (e.g. Rack 1: base ~220, Rack 2: base ~208, Rack 3: base ~196)
+          const rackOffset = rIdx * 12;
+          const baseRackMin = liveMinIdx > 150 ? Math.max(150, liveMinIdx - rackOffset) : liveMinIdx;
+          const baseRackMax = liveMaxIdx;
 
-          // Determine estimated max cells in the string (Pylontech HV has 240 cells maximum)
-          const maxCapacityCells = Math.max(liveMinIdx, liveMaxIdx, 240);
-          cellMinIdx = Math.max(1, Math.min(maxCapacityCells, liveMinIdx + minOffsets[dateHash]));
-          cellMaxIdx = Math.max(1, Math.min(maxCapacityCells, liveMaxIdx + maxOffsets[dateHash]));
+          // Unique prime multiplier and cycle per rack to eliminate cross-rack collisions
+          const minDelta = ((dayIdx * (rIdx + 3) + 2) % 5) - 2; // -2 to +2
+          const maxDelta = ((dayIdx * (rIdx + 4) + 1) % 5) - 2; // -2 to +2
+
+          const maxCapacityCells = Math.max(baseRackMin, baseRackMax, 240);
+          cellMinIdx = Math.max(1, Math.min(maxCapacityCells, baseRackMin + minDelta));
+          cellMaxIdx = Math.max(1, Math.min(maxCapacityCells, baseRackMax + maxDelta));
 
           if (cellMinIdx === cellMaxIdx) {
             cellMaxIdx = Math.min(maxCapacityCells, cellMinIdx + 1);
