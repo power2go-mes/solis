@@ -381,7 +381,7 @@ export async function GET(req: NextRequest) {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 12;
+    const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
 
     const BLACK = [20, 20, 20] as const;
@@ -389,22 +389,24 @@ export async function GET(req: NextRequest) {
       theme: "plain" as const,
       styles: {
         font: "helvetica" as const,
-        fontSize: 7.5,
+        fontSize: 7.0,
         textColor: [20, 20, 20] as [number, number, number],
         lineColor: [215, 220, 228] as [number, number, number],
         lineWidth: 0.2,
-        cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 },
+        cellPadding: { top: 2.8, bottom: 2.8, left: 2.0, right: 2.0 },
         valign: "middle" as const,
+        halign: "center" as const,
       },
       headStyles: {
         fillColor: [243, 244, 246] as [number, number, number],
         textColor: [20, 20, 20] as [number, number, number],
         fontStyle: "bold" as const,
-        fontSize: 7.5,
+        fontSize: 7.2,
         lineWidth: 0.25,
         lineColor: [209, 213, 219] as [number, number, number],
-        cellPadding: { top: 2.8, bottom: 2.8, left: 2.5, right: 2.5 },
+        cellPadding: { top: 3.2, bottom: 3.2, left: 2.0, right: 2.0 },
         valign: "middle" as const,
+        halign: "center" as const,
       },
       alternateRowStyles: {
         fillColor: [250, 251, 252] as [number, number, number],
@@ -458,16 +460,16 @@ export async function GET(req: NextRequest) {
       head: [["Rack", "Battery Serial", "Host Inverter", "Min Cell Temp", "Max Cell Temp", "BMS Avg Temp", "Thermal Delta", "SOC / SOH", "Voltage / Current", "Thermal Status"]],
       body: fleetOverviewRows,
       columnStyles: {
-        0: { cellWidth: 18, fontStyle: "bold" },
-        1: { cellWidth: 38 },
-        2: { cellWidth: 38 },
+        0: { cellWidth: 18, fontStyle: "bold", halign: "center" },
+        1: { cellWidth: 35, halign: "center" },
+        2: { cellWidth: 38, halign: "center" },
         3: { cellWidth: 26, halign: "center" },
         4: { cellWidth: 26, halign: "center" },
         5: { cellWidth: 24, halign: "center", fontStyle: "bold" },
-        6: { cellWidth: 22, halign: "center" },
-        7: { cellWidth: 24, halign: "center" },
-        8: { cellWidth: 26, halign: "center" },
-        9: { cellWidth: 31, halign: "center" },
+        6: { cellWidth: 23, halign: "center" },
+        7: { cellWidth: 26, halign: "center" },
+        8: { cellWidth: 28, halign: "center" },
+        9: { cellWidth: 33, halign: "center" },
       },
     });
     currentY = (doc as any).lastAutoTable.finalY + 7;
@@ -494,12 +496,13 @@ export async function GET(req: NextRequest) {
       headerRow2.push({ content: "BMS Temp", styles: { halign: "center" } });
     });
 
+    const dateColWidth = 26;
     const colStyles: Record<number, any> = {
-      0: { cellWidth: 25, halign: "center", fontStyle: "bold" },
+      0: { cellWidth: dateColWidth, halign: "center", fontStyle: "bold" },
     };
     const colCount = 1 + batteryFleet.length * 3;
-    const remainingWidth = contentWidth - 25;
-    const perColWidth = Math.floor(remainingWidth / (batteryFleet.length * 3));
+    const remainingWidth = contentWidth - dateColWidth;
+    const perColWidth = parseFloat((remainingWidth / (batteryFleet.length * 3)).toFixed(2));
 
     for (let c = 1; c < colCount; c++) {
       colStyles[c] = { cellWidth: perColWidth, halign: "center" };
@@ -513,6 +516,11 @@ export async function GET(req: NextRequest) {
       body: historyRows,
       columnStyles: colStyles,
       showHead: "everyPage",
+      styles: {
+        ...tableTheme.styles,
+        fontSize: 7.0,
+        cellPadding: { top: 2.8, bottom: 2.8, left: 1.5, right: 1.5 },
+      },
     });
 
     // -------------------------------------------------------------
