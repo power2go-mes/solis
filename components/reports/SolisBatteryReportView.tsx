@@ -100,7 +100,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
   const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
   const [selectedSn, setSelectedSn] = useState<string>("All");
   const [reportDate, setReportDate] = useState("2026-11-20");
-  const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>(DEFAULT_BATTERIES);
+  const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>([]);
   const [curveData, setCurveData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -109,8 +109,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     let active = true;
     setLoading(true);
     const periodParam = activeDateTab.toLowerCase();
-    const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
-    fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}`)
+    fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}`)
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;

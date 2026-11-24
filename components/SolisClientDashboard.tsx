@@ -826,10 +826,13 @@ export default function SolisClientDashboard({
     }
     powerChartInstance.current = chart;
 
-    const curve =
-      dayCurveData && dayCurveData.timeLabels && dayCurveData.timeLabels.length > 0
-        ? dayCurveData
-        : getFallbackDayCurve(currentDate);
+    if (!dayCurveData || !dayCurveData.timeLabels || dayCurveData.timeLabels.length === 0) {
+      chart.showLoading({ text: "Loading curve...", color: "#10b981", textColor: "#64748b", maskColor: "rgba(255, 255, 255, 0.8)" });
+      return;
+    }
+    chart.hideLoading();
+
+    const curve = dayCurveData;
 
     const timestamps = curve.timeLabels || (curve as any).timestamps || [];
     const solarKw = curve.pvData || (curve as any).solarKw || [];
@@ -937,10 +940,13 @@ export default function SolisClientDashboard({
     }
     socChartInstance.current = chart;
 
-    const curve =
-      dayCurveData && dayCurveData.timeLabels && dayCurveData.timeLabels.length > 0
-        ? dayCurveData
-        : getFallbackDayCurve(currentDate);
+    if (!dayCurveData || !dayCurveData.timeLabels || dayCurveData.timeLabels.length === 0) {
+      chart.showLoading({ text: "Loading curve...", color: "#10b981", textColor: "#64748b", maskColor: "rgba(255, 255, 255, 0.8)" });
+      return;
+    }
+    chart.hideLoading();
+
+    const curve = dayCurveData;
 
     const timestamps = curve.timeLabels || (curve as any).timestamps || [];
     const batterySoc = curve.socData || (curve as any).batterySoc || [];
@@ -1076,8 +1082,10 @@ export default function SolisClientDashboard({
     else if (activeTab === "Lifetime") currentDataset = lifetimeData;
 
     if (!currentDataset || !currentDataset.labels || currentDataset.labels.length === 0) {
-      currentDataset = getFallbackBreakdown(activeTab as any, currentMonth, currentYear);
+      chart.showLoading({ text: "Loading breakdown...", color: "#10b981", textColor: "#64748b", maskColor: "rgba(255, 255, 255, 0.8)" });
+      return;
     }
+    chart.hideLoading();
 
     const energySeries = [
       { name: "PV", data: currentDataset.pvData, color: "#facc15" },
@@ -1210,42 +1218,42 @@ export default function SolisClientDashboard({
     if (activeTab === "Month") {
       return (
         monthData?.totals || {
-          pv: 1400,
-          inverter: 1400,
+          pv: 0,
+          inverter: 0,
           acCoupled: 0,
-          consumption: 899.6,
-          gridLoadConsumption: 118.2,
-          backupLoad: 781.4,
+          consumption: 0,
+          gridLoadConsumption: 0,
+          backupLoad: 0,
           smartLoad: 0,
-          import: 160.2,
+          import: 0,
         }
       );
     }
     if (activeTab === "Year") {
       return (
         yearData?.totals || {
-          pv: 6889.2,
-          inverter: 6889.2,
+          pv: 0,
+          inverter: 0,
           acCoupled: 0,
-          consumption: 4936.2,
-          gridLoadConsumption: 316.7,
-          backupLoad: 4619.5,
+          consumption: 0,
+          gridLoadConsumption: 0,
+          backupLoad: 0,
           smartLoad: 0,
-          import: 1313.2,
+          import: 0,
         }
       );
     }
     if (activeTab === "Lifetime") {
       return (
         lifetimeData?.totals || {
-          pv: 6933.9,
-          inverter: 6933.9,
+          pv: 0,
+          inverter: 0,
           acCoupled: 0,
-          consumption: 4763.9,
-          gridLoadConsumption: 198.0,
-          backupLoad: 4565.9,
+          consumption: 0,
+          gridLoadConsumption: 0,
+          backupLoad: 0,
           smartLoad: 0,
-          import: 1304.5,
+          import: 0,
         }
       );
     }

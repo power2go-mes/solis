@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import {
   Search,
@@ -70,47 +70,47 @@ export default function SolisMobilePlantList({
 
   // Summary counts
   const totalCount = effectivePlants.length;
-  const onlineCount = effectivePlants.filter((p) => p.status === "Online").length;
-  const alarmCount = effectivePlants.filter((p) => p.status === "Alarm").length;
-  const offlineCount = effectivePlants.filter((p) => p.status === "Offline").length;
+  const onlineCount = useMemo(() => effectivePlants.filter((p) => p.status === "Online").length, [effectivePlants]);
+  const alarmCount = useMemo(() => effectivePlants.filter((p) => p.status === "Alarm").length, [effectivePlants]);
+  const offlineCount = useMemo(() => effectivePlants.filter((p) => p.status === "Offline").length, [effectivePlants]);
 
   // Filter plants based on tab, search, and category parameters
-  const filteredPlants = effectivePlants.filter((p) => {
-    // 1. Filter by status
-    if (activeFilterTab === "Online" && p.status !== "Online") return false;
-    if (activeFilterTab === "Alarm" && p.status !== "Alarm") return false;
-    if (activeFilterTab === "Offline" && p.status !== "Offline") return false;
+  const filteredPlants = useMemo(() => {
+    return effectivePlants.filter((p) => {
+      // 1. Filter by status
+      if (activeFilterTab === "Online" && p.status !== "Online") return false;
+      if (activeFilterTab === "Alarm" && p.status !== "Alarm") return false;
+      if (activeFilterTab === "Offline" && p.status !== "Offline") return false;
 
-    // 2. Filter by Top Tab (Plant vs Inverter vs Battery vs Data)
-    if (activeTopTab === "Inverter") {
-      // Inverter view filters to plants with active inverter units
-      if ((p.inverterTotal || 0) <= 0) return false;
-    } else if (activeTopTab === "Battery") {
-      // Battery view filters to plants with battery storage
-      const hasBattery = p.batterySoc !== undefined && p.batterySoc > 0 || (p.dailyChargeKwh || 0) > 0;
-      if (!hasBattery) return false;
-    }
+      // 2. Filter by Top Tab (Plant vs Inverter vs Battery vs Data)
+      if (activeTopTab === "Inverter") {
+        if ((p.inverterTotal || 0) <= 0) return false;
+      } else if (activeTopTab === "Battery") {
+        const hasBattery = (p.batterySoc !== undefined && p.batterySoc > 0) || (p.dailyChargeKwh || 0) > 0;
+        if (!hasBattery) return false;
+      }
 
-    // 3. Filter by Parameter Selection
-    if (selectedParam === "WithBattery") {
-      const hasBattery = (p.batterySoc !== undefined && p.batterySoc > 0) || (p.dailyChargeKwh || 0) > 0;
-      if (!hasBattery) return false;
-    } else if (selectedParam === "GridTied") {
-      const isGridOnly = (p.batterySoc === undefined || p.batterySoc === 0) && (p.dailyChargeKwh || 0) === 0;
-      if (!isGridOnly) return false;
-    }
+      // 3. Filter by Parameter Selection
+      if (selectedParam === "WithBattery") {
+        const hasBattery = (p.batterySoc !== undefined && p.batterySoc > 0) || (p.dailyChargeKwh || 0) > 0;
+        if (!hasBattery) return false;
+      } else if (selectedParam === "GridTied") {
+        const isGridOnly = (p.batterySoc === undefined || p.batterySoc === 0) && (p.dailyChargeKwh || 0) === 0;
+        if (!isGridOnly) return false;
+      }
 
-    // 4. Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        p.name.toLowerCase().includes(q) ||
-        p.address.toLowerCase().includes(q) ||
-        p.id.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+      // 4. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          p.name.toLowerCase().includes(q) ||
+          p.address.toLowerCase().includes(q) ||
+          p.id.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [effectivePlants, activeFilterTab, activeTopTab, selectedParam, searchQuery]);
 
   const MOBILE_DISPLAY_ORDER = [
     "1298491919450851319", // P2G 20KW
@@ -122,36 +122,38 @@ export default function SolisMobilePlantList({
     "1298491919450958553", // OPL Residence
   ];
 
-  const sortedPlants = [...filteredPlants].sort((a, b) => {
-    if (sortBy === "Capacity") {
-      return (b.capacityKwp || 0) - (a.capacityKwp || 0);
-    }
-    if (sortBy === "Power") {
-      return (b.powerKw || 0) - (a.powerKw || 0);
-    }
-    if (sortBy === "Yield" || sortBy === "HighestPV") {
-      return (b.dailyYieldKwh || 0) - (a.dailyYieldKwh || 0);
-    }
-    if (sortBy === "LowestPV") {
-      return (a.dailyYieldKwh || 0) - (b.dailyYieldKwh || 0);
-    }
-    if (sortBy === "LowestConsumption") {
-      const consA = (a as any).dailyConsumptionKwh || a.dailyYieldKwh || 0;
-      const consB = (b as any).dailyConsumptionKwh || b.dailyYieldKwh || 0;
-      return consA - consB;
-    }
-    if (sortBy === "HighestConsumption") {
-      const consA = (a as any).dailyConsumptionKwh || a.dailyYieldKwh || 0;
-      const consB = (b as any).dailyConsumptionKwh || b.dailyYieldKwh || 0;
-      return consB - consA;
-    }
-    const idxA = MOBILE_DISPLAY_ORDER.indexOf(a.id);
-    const idxB = MOBILE_DISPLAY_ORDER.indexOf(b.id);
-    if (idxA === -1 && idxB === -1) return 0;
-    if (idxA === -1) return 1;
-    if (idxB === -1) return -1;
-    return idxA - idxB;
-  });
+  const sortedPlants = useMemo(() => {
+    return [...filteredPlants].sort((a, b) => {
+      if (sortBy === "Capacity") {
+        return (b.capacityKwp || 0) - (a.capacityKwp || 0);
+      }
+      if (sortBy === "Power") {
+        return (b.powerKw || 0) - (a.powerKw || 0);
+      }
+      if (sortBy === "Yield" || sortBy === "HighestPV") {
+        return (b.dailyYieldKwh || 0) - (a.dailyYieldKwh || 0);
+      }
+      if (sortBy === "LowestPV") {
+        return (a.dailyYieldKwh || 0) - (b.dailyYieldKwh || 0);
+      }
+      if (sortBy === "LowestConsumption") {
+        const consA = (a as any).dailyConsumptionKwh || a.dailyYieldKwh || 0;
+        const consB = (b as any).dailyConsumptionKwh || b.dailyYieldKwh || 0;
+        return consA - consB;
+      }
+      if (sortBy === "HighestConsumption") {
+        const consA = (a as any).dailyConsumptionKwh || a.dailyYieldKwh || 0;
+        const consB = (b as any).dailyConsumptionKwh || b.dailyYieldKwh || 0;
+        return consB - consA;
+      }
+      const idxA = MOBILE_DISPLAY_ORDER.indexOf(a.id);
+      const idxB = MOBILE_DISPLAY_ORDER.indexOf(b.id);
+      if (idxA === -1 && idxB === -1) return 0;
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [filteredPlants, sortBy]);
 
   return (
     <div className="min-h-screen bg-[#f7f9fa] pb-24 text-slate-800 flex flex-col antialiased relative">

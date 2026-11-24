@@ -112,7 +112,7 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
   const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
   const [selectedSn, setSelectedSn] = useState<string>("All");
   const [reportDate, setReportDate] = useState("2026-11-20");
-  const [inverterRows, setInverterRows] = useState<InverterReportRecord[]>(DEFAULT_INVERTERS);
+  const [inverterRows, setInverterRows] = useState<InverterReportRecord[]>([]);
   const [curveData, setCurveData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -121,8 +121,7 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
     let active = true;
     setLoading(true);
     const periodParam = activeDateTab.toLowerCase();
-    const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
-    fetch(`/api/reports?type=inverter&period=${periodParam}&date=${reportDate}${snParam}`)
+    fetch(`/api/reports?type=inverter&period=${periodParam}&date=${reportDate}`)
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
