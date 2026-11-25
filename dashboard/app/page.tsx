@@ -12,6 +12,7 @@ import SolisKPICards from "@/components/SolisKPICards";
 import SolisPlantTable from "@/components/SolisPlantTable";
 import CreatePlantModal from "@/components/CreatePlantModal";
 import SolisClientDashboard from "@/components/SolisClientDashboard";
+import { NocAlertManager } from "@/components/NocAlertManager";
 
 // SolisCloud Mobile Replicated Components (100% Mobile Parity)
 import SolisMobilePlantList from "@/components/mobile/SolisMobilePlantList";
@@ -264,6 +265,9 @@ function SolisCloudDashboard() {
                   summary={overviewSummary}
                   loading={overviewLoading}
                 />
+
+                {/* Active NOC Alarms & Incident Stream (Between KPI Cards & Plant Table) */}
+                <NocAlertManager embedded={true} />
 
                 {/* 3. Plant List Container & Table */}
                 <SolisPlantTable

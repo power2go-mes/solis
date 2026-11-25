@@ -15,6 +15,29 @@ import {
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excelExport";
 import { exportBatteryReportToPdf } from "@/lib/pdfReportExport";
+import BmsTempHistoryChart from "@/components/BmsTempHistoryChart";
+import BmsCollectorHealth from "@/components/BmsCollectorHealth";
+
+// Plant → inverter SN mapping (authoritative, post-quarantine)
+const PLANT_INVERTER_MAP: Record<string, { sn: string; label: string }[]> = {
+  "1298491919450797504": [
+    { sn: "1053050258180057", label: "Menu Karachi INV1" },
+    { sn: "1053050258140015", label: "Menu Karachi INV2" },
+  ],
+  "1298491919450958553": [{ sn: "1053050258110159", label: "OPL Residence" }],
+  "1298491919450873747": [{ sn: "1053010259280019", label: "36 Chenab" }],
+  "1298491919451014032": [{ sn: "1053050258180112", label: "Towfiq chinoy" }],
+  "1298491919450740581": [{ sn: "1053050255210107", label: "P2G 50KW" }],
+  "1298491919450840394": [{ sn: "1031731257050184", label: "P2G 1ST 6kw" }],
+  "1298491919450851319": [{ sn: "1033161256090193", label: "P2G 20kw" }],
+  "1298491919450734544": [{ sn: "1033320253150969", label: "P2G 15KW" }],
+};
+
+const ALL_INVERTERS = Object.values(PLANT_INVERTER_MAP).flat();
+
+const INVERTER_LABELS: Record<string, string> = Object.fromEntries(
+  ALL_INVERTERS.map(({ sn, label }) => [sn, label])
+);
 
 interface BatteryReportRecord {
   sn: string;
@@ -448,6 +471,13 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             <FileText className="w-4 h-4" />
             <span>Export PDF</span>
           </button>
+
+          {/* BMS Collector Health Badge */}
+          <BmsCollectorHealth
+            compact={true}
+            inverterLabels={INVERTER_LABELS}
+            refreshIntervalSeconds={60}
+          />
         </div>
       </div>
 
@@ -560,6 +590,19 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         {/* EChart Canvas */}
         <div ref={chartRef} className="w-full h-80" />
       </div>
+
+      {/* 4. BMS Cell Temperature History — from our own 5-min logger */}
+      <BmsTempHistoryChart
+        stationId="1298491919450797504"
+        plantName="All Plants"
+        availableInverters={ALL_INVERTERS}
+      />
+
+      {/* 5. BMS Collector Health (full panel) */}
+      <BmsCollectorHealth
+        inverterLabels={INVERTER_LABELS}
+        refreshIntervalSeconds={60}
+      />
 
       {/* 4. Battery Technical Specification Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">

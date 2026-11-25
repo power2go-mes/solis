@@ -9,6 +9,7 @@
  * - Pack voltage, current, power, SOC, SOH, and error codes
  *
  * Saves directly into Supabase table: solis_bms_telemetry
+ * Includes strict single-instance PID protection.
  */
 
 const https = require("https");
@@ -16,6 +17,63 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { Pool } = require("pg");
+
+const ROOT_DIR = __dirname;
+const LOGS_DIR = path.join(ROOT_DIR, "logs");
+const HEARTBEAT_FILE = path.join(LOGS_DIR, "solis_bms_logger.heartbeat");
+const PID_FILE = path.join(LOGS_DIR, "solis_bms_logger.pid");
+// Max age (ms) for the heartbeat — if older than this, the previous instance is considered dead.
+// Set to 3× the collection interval (5 min) = 15 minutes.
+const HEARTBEAT_MAX_AGE_MS = 15 * 60 * 1000;
+
+if (!fs.existsSync(LOGS_DIR)) {
+  fs.mkdirSync(LOGS_DIR, { recursive: true });
+}
+
+// Single-instance protection via heartbeat file (Windows-safe; avoids PID reuse false-positives)
+if (fs.existsSync(HEARTBEAT_FILE)) {
+  try {
+    const hb = JSON.parse(fs.readFileSync(HEARTBEAT_FILE, "utf8").trim());
+    const ageMs = Date.now() - hb.ts;
+    if (ageMs < HEARTBEAT_MAX_AGE_MS) {
+      console.log(`[SingleInstance] BMS Logger heartbeat is fresh (${Math.round(ageMs/1000)}s ago, PID ${hb.pid}). Another instance is running. Exiting.`);
+      process.exit(0);
+    } else {
+      console.log(`[SingleInstance] Stale heartbeat (${Math.round(ageMs/60000)}m old). Previous instance is dead. Taking over.`);
+    }
+  } catch (e) {
+    // Corrupted heartbeat — ignore and continue
+  }
+}
+
+// Write initial heartbeat + PID
+function writeHeartbeat() {
+  try {
+    fs.writeFileSync(HEARTBEAT_FILE, JSON.stringify({ ts: Date.now(), pid: process.pid }), "utf8");
+    fs.writeFileSync(PID_FILE, process.pid.toString(), "utf8");
+  } catch (e) {}
+}
+
+function cleanHeartbeat() {
+  try {
+    // Only remove files if they still record our PID
+    if (fs.existsSync(HEARTBEAT_FILE)) {
+      const hb = JSON.parse(fs.readFileSync(HEARTBEAT_FILE, "utf8"));
+      if (hb.pid === process.pid) fs.unlinkSync(HEARTBEAT_FILE);
+    }
+    if (fs.existsSync(PID_FILE) && fs.readFileSync(PID_FILE, "utf8").trim() === process.pid.toString()) {
+      fs.unlinkSync(PID_FILE);
+    }
+  } catch (e) {}
+}
+
+writeHeartbeat();
+// Refresh heartbeat every 60s so the next instance knows we're alive
+const heartbeatTimer = setInterval(writeHeartbeat, 60_000);
+
+process.on("exit", () => { clearInterval(heartbeatTimer); cleanHeartbeat(); });
+process.on("SIGINT", () => { clearInterval(heartbeatTimer); cleanHeartbeat(); process.exit(0); });
+process.on("SIGTERM", () => { clearInterval(heartbeatTimer); cleanHeartbeat(); process.exit(0); });
 
 const SOLIS_HMAC_SECRET = "5704383536604a8bb94c83ebc059aa8c";
 const SOLIS_KEY_ID = "2424";
@@ -122,7 +180,14 @@ const FLEET_PLANTS = [
   { name: "P2G 15KW", stationId: "1298491919450734544", inverters: ["1033320253150969"] },
 ];
 
+let isCycleRunning = false;
+
 async function collectBmsTelemetryCycle() {
+  if (isCycleRunning) {
+    console.log(`[${new Date().toISOString()}] BMS Collection Cycle already in progress, skipping.`);
+    return;
+  }
+  isCycleRunning = true;
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] --- Starting 5-Minute BMS Telemetry Log Cycle ---`);
 
@@ -140,15 +205,16 @@ async function collectBmsTelemetryCycle() {
           for (const b of bList) {
             const minV = b.bmsMinU !== undefined ? Number(b.bmsMinU) : null;
             const maxV = b.bmsMaxU !== undefined ? Number(b.bmsMaxU) : null;
-            const deltaMv = minV !== null && maxV !== null ? Math.round(Math.abs(maxV - minV) * 1000) : null;
+            const deltaMv = (minV !== null && maxV !== null) ? Math.round((maxV - minV) * 1000) : null;
 
             const query = `
               INSERT INTO solis_bms_telemetry (
-                station_id, inverter_sn, battery_sn, recorded_at,
+                station_id, inverter_sn, battery_sn,
                 soc_percent, soh_percent, bms_state, bms_alarm,
                 failure_info_01, failure_info_02, loop_cycles,
                 battery_voltage, battery_current, bms_power_kw,
-                charging_voltage_target, charge_current_limit, discharge_current_limit, discharge_cutoff_voltage,
+                charging_voltage_target, charge_current_limit,
+                discharge_current_limit, discharge_cutoff_voltage,
                 min_cell_voltage, max_cell_voltage, cell_voltage_delta_mv,
                 min_cell_location, max_cell_location,
                 avg_temp_c, min_temp_c, max_temp_c,
@@ -156,22 +222,13 @@ async function collectBmsTelemetryCycle() {
                 module_count, string_count, capacity_ah, rated_kwh,
                 battery_type, discharge_cutoff_soc, charge_reserve_soc,
                 uvp_protection_v, ovp_protection_v, fcv_float_v, acv_absorption_v,
-                raw
+                raw, recorded_at
               ) VALUES (
-                $1, $2, $3, NOW(),
-                $4, $5, $6, $7,
-                $8, $9, $10,
-                $11, $12, $13,
-                $14, $15, $16, $17,
-                $18, $19, $20,
-                $21, $22,
-                $23, $24, $25,
-                $26, $27,
-                $28, $29, $30, $31,
-                $32, $33, $34,
-                $35, $36, $37, $38,
-                $39
-              );
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+                $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+                $31, $32, $33, $34, $35, $36, $37, $38, $39, NOW()
+              )
             `;
 
             const values = [
@@ -218,7 +275,7 @@ async function collectBmsTelemetryCycle() {
 
             await pool.query(query, values);
             totalRacksLogged++;
-            console.log(`  ✓ Logged: ${plant.name} | Rack: ${b.batterySn} | Min: ${b.bmsMinTemp}°C (${b.bmsMintempLocStr}) | Max: ${b.bmsMaxTemp}°C (${b.bmsMaxtempLocStr}) | Avg: ${b.bmsTemp}°C`);
+            console.log(`  ✓ Logged: ${plant.name} | Rack: ${b.batterySn || sn} | Min: ${b.bmsMinTemp}°C (${b.bmsMintempLocStr}) | Max: ${b.bmsMaxTemp}°C (${b.bmsMaxtempLocStr}) | Avg: ${b.bmsTemp}°C`);
           }
         } catch (invErr) {
           console.error(`  ✗ Error querying inverter ${sn} for ${plant.name}:`, invErr.message);
@@ -229,6 +286,8 @@ async function collectBmsTelemetryCycle() {
     console.log(`[${new Date().toISOString()}] Successfully logged ${totalRacksLogged} battery racks into Supabase solis_bms_telemetry.\n`);
   } catch (err) {
     console.error(`[${new Date().toISOString()}] BMS Collector Cycle Error:`, err.message);
+  } finally {
+    isCycleRunning = false;
   }
 }
 
@@ -239,4 +298,4 @@ collectBmsTelemetryCycle();
 const INTERVAL_MS = 5 * 60 * 1000;
 setInterval(collectBmsTelemetryCycle, INTERVAL_MS);
 
-console.log(`Solis BMS Background Daemon active. Interval: 5 minutes (${INTERVAL_MS} ms). Press Ctrl+C to terminate.`);
+console.log(`Solis BMS Background Daemon active with single-instance protection. Interval: 5 minutes (${INTERVAL_MS} ms). PID: ${process.pid}`);

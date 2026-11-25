@@ -10,11 +10,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
+  // Lazy Resend instantiation — avoids module-load failure when RESEND_API_KEY is missing
+  const resend = new Resend(process.env.RESEND_API_KEY || "");
   try {
     // 1. Fetch all plants and latest telemetry
     const plantsRes = await pool.query(`

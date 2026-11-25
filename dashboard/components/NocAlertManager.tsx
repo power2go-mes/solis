@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { AlertTriangle, CheckCircle2, Volume2, VolumeX, ShieldAlert, X } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { CheckCircle2, X } from "lucide-react";
 
 export interface NocIncident {
   id: string;
@@ -20,16 +20,15 @@ export interface NocIncident {
   resolution_notes?: string;
 }
 
-export function NocAlertManager() {
+interface NocAlertManagerProps {
+  embedded?: boolean;
+}
+
+export function NocAlertManager({ embedded = false }: NocAlertManagerProps) {
   const [incidents, setIncidents] = useState<NocIncident[]>([]);
-  const [isMuted, setIsMuted] = useState(false);
   const [resolvingIncident, setResolvingIncident] = useState<NocIncident | null>(null);
   const [resolutionNote, setResolutionNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const oscillatorRef = useRef<OscillatorNode | null>(null);
-  const isPlayingRef = useRef(false);
 
   // Poll active incidents every 15 seconds
   const fetchIncidents = useCallback(async () => {
@@ -50,79 +49,20 @@ export function NocAlertManager() {
     return () => clearInterval(interval);
   }, [fetchIncidents]);
 
-  // Audio synthesizer logic for P0/P1 siren
-  const startSiren = useCallback(() => {
-    if (isPlayingRef.current || isMuted) return;
-
+  // Handle Ignore (instantly dismisses/resolves the alert)
+  const handleIgnore = async (id: string) => {
+    // Optimistically filter it out immediately
+    setIncidents((prev) => prev.filter((item) => item.id !== id));
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioCtx();
-      }
-
-      if (audioCtxRef.current.state === "suspended") {
-        audioCtxRef.current.resume();
-      }
-
-      const osc = audioCtxRef.current.createOscillator();
-      const gain = audioCtxRef.current.createGain();
-
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(800, audioCtxRef.current.currentTime);
-      // Pulsing frequency between 600Hz and 950Hz
-      const now = audioCtxRef.current.currentTime;
-      osc.frequency.linearRampToValueAtTime(950, now + 0.35);
-      osc.frequency.linearRampToValueAtTime(600, now + 0.7);
-
-      gain.gain.setValueAtTime(0.08, audioCtxRef.current.currentTime); // Gentle non-deafening volume
-
-      osc.connect(gain);
-      gain.connect(audioCtxRef.current.destination);
-
-      osc.start();
-      oscillatorRef.current = osc;
-      isPlayingRef.current = true;
-    } catch (e) {
-      console.warn("Audio Context playback prevented:", e);
-    }
-  }, [isMuted]);
-
-  const stopSiren = useCallback(() => {
-    if (oscillatorRef.current) {
-      try {
-        oscillatorRef.current.stop();
-        oscillatorRef.current.disconnect();
-      } catch (e) {}
-      oscillatorRef.current = null;
-    }
-    isPlayingRef.current = false;
-  }, []);
-
-  // Check if any OPEN critical/major alert exists
-  const openCriticalOrMajor = incidents.some(
-    (inc) => inc.status === "OPEN" && (inc.severity === "P0" || inc.severity === "P1")
-  );
-
-  useEffect(() => {
-    if (openCriticalOrMajor && !isMuted) {
-      startSiren();
-    } else {
-      stopSiren();
-    }
-    return () => stopSiren();
-  }, [openCriticalOrMajor, isMuted, startSiren, stopSiren]);
-
-  const handleAcknowledge = async (id: string) => {
-    try {
-      await fetch("/api/noc/acknowledge", {
+      await fetch("/api/noc/ignore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ incidentId: id, operatorName: "NOC Lead" }),
+        body: JSON.stringify({ incidentId: id, operatorName: "User" }),
       });
       fetchIncidents();
     } catch (err) {
-      console.error("Ack error:", err);
+      console.error("Ignore error:", err);
+      fetchIncidents();
     }
   };
 
@@ -153,13 +93,18 @@ export function NocAlertManager() {
 
   return (
     <>
-      {/* Top Floating NOC Alarm Feed */}
-      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4 pointer-events-none">
-        <div className="pointer-events-auto flex flex-col gap-2">
-          {incidents.slice(0, 3).map((inc) => {
+      {/* NOC Alarm Feed — Embedded inline block or Fixed top banner */}
+      <div
+        className={
+          embedded
+            ? "w-full my-2 animate-in fade-in duration-300"
+            : "fixed top-16 left-1/2 -translate-x-1/2 z-40 w-full max-w-4xl px-4 pointer-events-none"
+        }
+      >
+        <div className={embedded ? "flex flex-col gap-2.5 w-full" : "pointer-events-auto flex flex-col gap-2"}>
+          {incidents.slice(0, embedded ? 5 : 3).map((inc) => {
             const isP0 = inc.severity === "P0";
             const isP1 = inc.severity === "P1";
-            const isP2 = inc.severity === "P2";
 
             const bgClass = isP0
               ? "bg-red-500/95 border-red-600 text-white shadow-red-500/20"
@@ -170,7 +115,7 @@ export function NocAlertManager() {
             return (
               <div
                 key={inc.id}
-                className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border shadow-xl backdrop-blur-md transition-all animate-in slide-in-from-top-3 ${bgClass}`}
+                className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border shadow-md backdrop-blur-md transition-all animate-in slide-in-from-top-2 ${bgClass}`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-black/20">
@@ -196,24 +141,14 @@ export function NocAlertManager() {
                     {inc.status === "ACKNOWLEDGED" ? "Investigating" : "Action Required"}
                   </span>
 
-                  {/* Audio Mute/Unmute */}
+                  {/* Ignore Button — replaces Acknowledge and dismisses the alert */}
                   <button
-                    onClick={() => setIsMuted(!isMuted)}
-                    className="p-1.5 rounded-lg bg-black/15 hover:bg-black/25 transition cursor-pointer"
-                    title={isMuted ? "Unmute Siren" : "Mute Siren"}
+                    onClick={() => handleIgnore(inc.id)}
+                    className="text-xs px-2.5 py-1 rounded-lg bg-white/90 text-slate-800 font-semibold shadow-xs hover:bg-white transition active:scale-95 cursor-pointer"
+                    title="Ignore and dismiss this alert"
                   >
-                    {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    Ignore
                   </button>
-
-                  {/* Acknowledge Button */}
-                  {inc.status === "OPEN" && (
-                    <button
-                      onClick={() => handleAcknowledge(inc.id)}
-                      className="text-xs px-2.5 py-1 rounded-lg bg-white text-slate-800 font-semibold shadow-xs hover:bg-slate-100 transition active:scale-95 cursor-pointer"
-                    >
-                      Acknowledge
-                    </button>
-                  )}
 
                   {/* Resolve & Close Button */}
                   <button

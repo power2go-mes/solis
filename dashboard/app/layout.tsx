@@ -54,7 +54,6 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         {children}
-        <NocAlertManager />
         <PushNotificationManager />
       </body>
     </html>

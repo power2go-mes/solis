@@ -15,14 +15,16 @@ import {
   Settings,
   ArrowLeft,
 } from "lucide-react";
+import { SolisNavAlertBadge } from "@/components/SolisNavAlertBadge";
 
 interface SolisTopNavProps {
   onOpenMobileMenu: () => void;
   canGoBack?: boolean;
   onGoBack?: () => void;
+  onAlertClick?: () => void;
 }
 
-export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack }: SolisTopNavProps) {
+export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack, onAlertClick }: SolisTopNavProps) {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState("Light");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -72,6 +74,9 @@ export default function SolisTopNav({ onOpenMobileMenu, canGoBack, onGoBack }: S
 
       {/* Right Controls matching SolisCloud Screenshot */}
       <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto">
+        {/* Navbar Alert Pill Badge: Red for Serious (P0), Yellow for Medium (P1), Blue for Low (P2) */}
+        <SolisNavAlertBadge onClick={onAlertClick} />
+
         {/* User Account Avatar & Name: "Qasim Moo... ∨" */}
         <div className="relative pl-1">
           <button

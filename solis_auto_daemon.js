@@ -19,11 +19,20 @@ const path = require("path");
 const { Pool } = require("pg");
 const { sendWebPushNotification } = require("./lib/webPushNotifier");
 
+// Plant Telemetry Staleness Tracker Map
+const plantStaleTracker = {};
+
 // NOC Incident Creator & Deduplicator Helper
 async function triggerNocIncident({ stationId, stationName, severity, category, title, description }) {
   try {
+    // Deduplication check:
+    // 1. Do not re-insert if already OPEN or ACKNOWLEDGED
+    // 2. Do not immediately re-create an incident if the user recently IGNORED/RESOLVED it within the last 2 hours
     const existing = await pool.query(
-      "SELECT id FROM noc_incidents WHERE station_id = $1 AND category = $2 AND status IN ('OPEN', 'ACKNOWLEDGED') LIMIT 1",
+      `SELECT id FROM noc_incidents 
+       WHERE station_id = $1 AND category = $2 
+         AND (status IN ('OPEN', 'ACKNOWLEDGED') OR (status = 'RESOLVED' AND updated_at > NOW() - INTERVAL '2 hours'))
+       LIMIT 1`,
       [stationId, category]
     );
     if (existing.rowCount === 0) {
@@ -686,7 +695,11 @@ async function runLiveSync() {
       // 7. 🔵 P2 Minor: Midday Generation Loss / Clipping Detector (11:00 AM - 02:00 PM PKT)
       const nowPktHours = new Date(Date.now() + 5 * 3600 * 1000).getUTCHours();
       if (nowPktHours >= 11 && nowPktHours <= 14 && p.capacityKwp > 5) {
-        const expectedMinKw = p.capacityKwp * 0.30; // 30% of installed capacity
+        // Weather-Aware check: if weather condition is rainy, cloudy, overcast, or foggy, suppress false alarms
+        const weatherDesc = String(mix.condTxtD || mix.condTxtN || mix.weather || "").toLowerCase();
+        const isBadWeather = weatherDesc.includes("rain") || weatherDesc.includes("cloud") || weatherDesc.includes("overcast") || weatherDesc.includes("fog") || weatherDesc.includes("haze");
+
+        const expectedMinKw = p.capacityKwp * (isBadWeather ? 0.10 : 0.30); // 10% on overcast/rainy days, 30% on clear days
         if (liveSolarKw < expectedMinKw && tracker.staleCount === 0) {
           await triggerNocIncident({
             stationId: p.id,
@@ -694,7 +707,7 @@ async function runLiveSync() {
             severity: "P2",
             category: "UNDERPERFORMANCE",
             title: "Midday Solar Generation Anomaly",
-            description: `Midday generation is only ${liveSolarKw.toFixed(1)} kW (Expected > ${expectedMinKw.toFixed(1)} kW for ${p.capacityKwp} kWp capacity). Check strings or DC isolators.`
+            description: `Midday generation is only ${liveSolarKw.toFixed(1)} kW (Expected > ${expectedMinKw.toFixed(1)} kW for ${p.capacityKwp} kWp capacity${isBadWeather ? ' in cloudy weather' : ''}). Check strings or DC isolators.`
           });
         } else if (liveSolarKw >= expectedMinKw) {
           await autoResolveNocIncident({
@@ -703,6 +716,27 @@ async function runLiveSync() {
             resolutionNotes: `Generation normal at ${liveSolarKw.toFixed(1)} kW.`
           });
         }
+      }
+
+      // 8. 🔴 Inverter Hardware Level-1 / Level-2 Alarms Ingestion
+      const rawAlarmLevel = String(mix.alarmLevel || "0");
+      const rawAlarmCount = Number(mix.alarmCount || 0);
+      if (rawAlarmLevel !== "0" && rawAlarmCount > 0) {
+        const isCritical = rawAlarmLevel === "2" || rawAlarmLevel === "3";
+        await triggerNocIncident({
+          stationId: p.id,
+          stationName: p.name,
+          severity: isCritical ? "P0" : "P1",
+          category: "HARDWARE_ALARM",
+          title: `Inverter Hardware Alarm (Level ${rawAlarmLevel})`,
+          description: `Solis inverter has reported ${rawAlarmCount} active hardware protection alarm(s). Immediate inspection recommended.`
+        });
+      } else if (rawAlarmLevel === "0" || rawAlarmCount === 0) {
+        await autoResolveNocIncident({
+          stationId: p.id,
+          category: "HARDWARE_ALARM",
+          resolutionNotes: "Inverter hardware alarm state returned to normal (Level 0)."
+        });
       }
     } catch (err) {
       console.error(`[Error] Updating ${p.name}:`, err.message || err);
@@ -892,11 +926,11 @@ async function startDaemon() {
     }
   }, 120_000);
 
-  // Schedule recurring 1-minute live sync (near real-time delay: 1-2 minutes)
-  const ONE_MINUTE = 60 * 1000;
+  // Schedule recurring 5-minute live sync (balances prompt telemetry freshness with Solis API stability)
+  const FIVE_MINUTES = 5 * 60 * 1000;
   setInterval(async () => {
     await runLiveSyncWithRetry();
-  }, ONE_MINUTE);
+  }, FIVE_MINUTES);
 
   // Schedule recurring 6-hour missing data audit
   const SIX_HOURS = 6 * 60 * 60 * 1000;
