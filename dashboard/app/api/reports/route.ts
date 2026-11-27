@@ -378,16 +378,33 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          // Entire Fleet or Plant Aggregate: query solis_inverter_day_curve or solis_battery_power_curve
+          // Entire Fleet or Plant Aggregate:
+          // Inverters poll at slightly different minutes (e.g. 00:01, 00:02, 00:03).
+          // We MUST bucket them into standard 5-minute intervals (00:00, 00:05, 00:10...)
+          // and SUM the battery power (total charge/discharge kW across the fleet)
+          // while averaging the SOC %!
           return pool.query(`
+            WITH normalized_points AS (
+              SELECT 
+                to_char(
+                  to_timestamp(
+                    floor(extract(epoch from (curve_date + time_str::time)) / 300) * 300
+                  ) AT TIME ZONE 'UTC',
+                  'HH24:MI'
+                ) as time_slot,
+                inverter_sn,
+                battery_power_kw,
+                battery_soc
+              FROM solis_inverter_day_curve
+              WHERE curve_date = $1::date
+            )
             SELECT 
-              SUBSTRING(time_str FROM 1 FOR 5) as time_label,
-              ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
+              time_slot as time_label,
+              ROUND(SUM(COALESCE(battery_power_kw, 0)), 1) as power_kw,
               ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
-            FROM solis_inverter_day_curve
-            WHERE curve_date = $1::date
-            GROUP BY time_label
-            ORDER BY time_label
+            FROM normalized_points
+            GROUP BY time_slot
+            ORDER BY time_slot
           `, [date]);
         })();
       } else {
