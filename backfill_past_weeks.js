@@ -142,10 +142,14 @@ async function backfillDays(daysCount = 14) {
           const rows = res.data;
           const values = [];
           const params = [];
+          const seenTimes = new Set();
           let pIdx = 1;
 
           for (const item of rows) {
             const timeStr = item.time || (item.timeStr ? item.timeStr.split(" ")[1] : "00:00:00");
+            if (seenTimes.has(timeStr)) continue;
+            seenTimes.add(timeStr);
+
             const pacKw = Number((Number(item.pac || 0) / 1000).toFixed(2));
             const batPowerKw = Number((Number(item.batteryPower || 0) / 1000).toFixed(2));
             const soc = Math.round(Number(item.batteryCapacitySoc || 0));
