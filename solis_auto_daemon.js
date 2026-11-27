@@ -745,6 +745,79 @@ async function runLiveSync() {
     await new Promise((r) => setTimeout(r, 1200));
   }
 
+  // 4b. Sync 5-minute Inverter Curves for Individual Battery/Inverter Reports
+  const INVERTER_MAP = {
+    "1053050258180057": "1308675217950425937",
+    "1053050258140015": "1308675217950425397",
+    "1053050258110159": "1308675217950440077",
+    "1053010259280019": "1308675217950513392",
+    "1053050258180112": "1308675217950425926",
+    "1053050255210107": "1308675217949880638",
+    "1031731257050184": "1308675217950080058",
+    "1033161256090193": "1308675217950003743",
+    "1033320253150969": "1308675217949806488"
+  };
+
+  for (const [invSn, invId] of Object.entries(INVERTER_MAP)) {
+    try {
+      let res = await postRequest("/api/chart/inverter/day", {
+        id: invId,
+        time: todayDateStr,
+        timeZone: 5,
+      });
+
+      if (!res.json?.success && res.json?.code === "1000") {
+        await doLogin();
+        res = await postRequest("/api/chart/inverter/day", {
+          id: invId,
+          time: todayDateStr,
+          timeZone: 5,
+        });
+      }
+
+      if (res.json?.success && Array.isArray(res.json.data) && res.json.data.length > 0) {
+        const rows = res.json.data;
+        const values = [];
+        const params = [];
+        let pIdx = 1;
+
+        for (const item of rows) {
+          const timeStr = item.time || (item.timeStr ? item.timeStr.split(" ")[1] : "00:00:00");
+          const pacKw = Number((Number(item.pac || 0) / 1000).toFixed(2));
+          const batPowerKw = Number((Number(item.batteryPower || 0) / 1000).toFixed(2));
+          const soc = Math.round(Number(item.batteryCapacitySoc || 0));
+          const batVolt = Number(item.batteryVoltage || item.storageBatteryVoltage || 0);
+          const tempC = Number(item.inverterTemperature || 0);
+          const eToday = Number(item.eToday || 0);
+
+          values.push(`($${pIdx}, $${pIdx+1}, $${pIdx+2}, $${pIdx+3}, $${pIdx+4}, $${pIdx+5}, $${pIdx+6}, $${pIdx+7}, $${pIdx+8})`);
+          params.push(invSn, todayDateStr, timeStr, pacKw, batPowerKw, soc, batVolt, tempC, eToday);
+          pIdx += 9;
+        }
+
+        if (values.length > 0) {
+          await pool.query(`
+            INSERT INTO solis_inverter_day_curve (
+              inverter_sn, curve_date, time_str, pac_kw,
+              battery_power_kw, battery_soc, battery_voltage,
+              inverter_temp_c, e_today
+            ) VALUES ${values.join(", ")}
+            ON CONFLICT (inverter_sn, curve_date, time_str) DO UPDATE SET
+              pac_kw = EXCLUDED.pac_kw,
+              battery_power_kw = EXCLUDED.battery_power_kw,
+              battery_soc = EXCLUDED.battery_soc,
+              battery_voltage = EXCLUDED.battery_voltage,
+              inverter_temp_c = EXCLUDED.inverter_temp_c,
+              e_today = EXCLUDED.e_today
+          `, params);
+        }
+      }
+      await new Promise((r) => setTimeout(r, 200));
+    } catch (err) {
+      console.warn(`[Warning] Could not sync inverter curve for ${invSn}:`, err.message);
+    }
+  }
+
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(`[SUCCESS] 10m Sync Completed in ${durationSec}s | Curve Points Upserted: ${totalCurvePoints}`);
   console.log(`Latest Live Telemetry Reading: ${maxCurveTime} PKT (${todayDateStr})`);

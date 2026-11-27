@@ -157,18 +157,36 @@ export async function GET(request: NextRequest) {
           ORDER BY t.inverter_sn
         `),
 
-        // Real curve from solis_battery_power_curve (solar power) or aggregated by period
+        // Real curve from solis_inverter_day_curve (if specific inverter selected) or solis_battery_power_curve
         period === "day"
-          ? pool.query(`
-              SELECT 
-                SUBSTRING(time_str FROM 1 FOR 5) as time_label,
-                ROUND(AVG(COALESCE(solar_power_kw, 0)), 1) as ac_power_kw,
-                ROUND(AVG(COALESCE(solar_power_kw * 0.4 + 25, 35)), 1) as temp_c
-              FROM solis_battery_power_curve
-              WHERE curve_date = $1::date ${invStationFilter}
-              GROUP BY time_label
-              ORDER BY time_label
-            `, [date])
+          ? (async () => {
+              if (deviceSn && deviceSn !== "All") {
+                const invDayRes = await pool.query(`
+                  SELECT 
+                    SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+                    ROUND(AVG(COALESCE(pac_kw, 0)), 1) as ac_power_kw,
+                    ROUND(AVG(COALESCE(inverter_temp_c, 35)), 1) as temp_c
+                  FROM solis_inverter_day_curve
+                  WHERE inverter_sn = $1
+                    AND curve_date = $2::date
+                  GROUP BY time_label
+                  ORDER BY time_label
+                `, [deviceSn, date]);
+                if (invDayRes.rows.length >= 5) {
+                  return invDayRes;
+                }
+              }
+              return pool.query(`
+                SELECT 
+                  SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+                  ROUND(AVG(COALESCE(solar_power_kw, 0)), 1) as ac_power_kw,
+                  ROUND(AVG(COALESCE(solar_power_kw * 0.4 + 25, 35)), 1) as temp_c
+                FROM solis_battery_power_curve
+                WHERE curve_date = $1::date ${invStationFilter}
+                GROUP BY time_label
+                ORDER BY time_label
+              `, [date]);
+            })()
           : pool.query(`
               SELECT 
                 TO_CHAR(energy_date, 'YYYY-MM-DD') as time_label,
@@ -256,20 +274,65 @@ export async function GET(request: NextRequest) {
         ORDER BY plant_name, inverter_sn, battery_sn
       `);
 
-      // 2. Fetch Curve Data: If a specific battery pack is selected, fetch its EXACT individual BMS telemetry
+      // 2. Fetch Curve Data: If a specific battery pack or inverter is selected, fetch 5-min curves
       let curvePromise;
       if (deviceSn && deviceSn !== "All" && period === "day") {
-        curvePromise = pool.query(`
-          SELECT 
-            TO_CHAR(recorded_at AT TIME ZONE 'Asia/Karachi', 'HH24:MI') as time_label,
-            ROUND(AVG(COALESCE(bms_power_kw, 0)), 1) as power_kw,
-            ROUND(AVG(COALESCE(soc_percent, 50)), 0) as soc_pct
-          FROM solis_bms_telemetry
-          WHERE battery_sn = $1
-            AND (recorded_at AT TIME ZONE 'Asia/Karachi')::date = $2::date
-          GROUP BY time_label
-          ORDER BY time_label
-        `, [deviceSn, date]);
+        // First try solis_inverter_day_curve for this battery's parent inverter
+        // Inverter SN can be derived by matching the battery or slicing prefix
+        curvePromise = (async () => {
+          // Find inverter_sn for this battery_sn
+          const invLookup = await pool.query(
+            `SELECT inverter_sn FROM solis_bms_telemetry WHERE battery_sn = $1 LIMIT 1`,
+            [deviceSn]
+          );
+          const invSn = invLookup.rows[0]?.inverter_sn || (deviceSn.length >= 16 ? deviceSn.slice(0, 16) : deviceSn);
+
+          // Check if solis_inverter_day_curve has 5-minute points for this inverter and date
+          const invCurveRes = await pool.query(`
+            SELECT 
+              SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+              ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
+              ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
+            FROM solis_inverter_day_curve
+            WHERE inverter_sn = $1
+              AND curve_date = $2::date
+            GROUP BY time_label
+            ORDER BY time_label
+          `, [invSn, date]);
+
+          if (invCurveRes.rows.length >= 5) {
+            return invCurveRes;
+          }
+
+          // Fallback to solis_bms_telemetry points
+          const bmsCurveRes = await pool.query(`
+            SELECT 
+              TO_CHAR(recorded_at AT TIME ZONE 'Asia/Karachi', 'HH24:MI') as time_label,
+              ROUND(AVG(COALESCE(bms_power_kw, 0)), 1) as power_kw,
+              ROUND(AVG(COALESCE(soc_percent, 50)), 0) as soc_pct
+            FROM solis_bms_telemetry
+            WHERE battery_sn = $1
+              AND (recorded_at AT TIME ZONE 'Asia/Karachi')::date = $2::date
+            GROUP BY time_label
+            ORDER BY time_label
+          `, [deviceSn, date]);
+
+          if (bmsCurveRes.rows.length > 0) {
+            return bmsCurveRes;
+          }
+
+          // Fallback to station curve if nothing else found
+          return pool.query(`
+            SELECT 
+              SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+              ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
+              ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
+            FROM solis_battery_power_curve
+            WHERE curve_date = $1::date ${curveStationFilter}
+            GROUP BY time_label
+            ORDER BY time_label
+          `, [date]);
+        })();
       } else if (period === "day") {
         curvePromise = pool.query(`
           SELECT 
