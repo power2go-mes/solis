@@ -13,28 +13,28 @@ import {
   FileSpreadsheet,
   FileText,
   AlertTriangle,
-  Bell,
   CheckCircle,
-  Filter,
+  Building2,
+  Cpu,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excelExport";
 import { exportBatteryReportToPdf } from "@/lib/pdfReportExport";
 import BmsTempHistoryChart from "@/components/BmsTempHistoryChart";
 import BmsCollectorHealth from "@/components/BmsCollectorHealth";
 
-// Plant → inverter SN mapping (authoritative, post-quarantine)
+// Plant → Inverter mapping (Authoritative)
 const PLANT_INVERTER_MAP: Record<string, { sn: string; label: string }[]> = {
   "1298491919450797504": [
     { sn: "1053050258180057", label: "Menu Karachi INV1" },
     { sn: "1053050258140015", label: "Menu Karachi INV2" },
   ],
-  "1298491919450958553": [{ sn: "1053050258110159", label: "OPL Residence" }],
-  "1298491919450873747": [{ sn: "1053010259280019", label: "36 Chenab" }],
-  "1298491919451014032": [{ sn: "1053050258180112", label: "Towfiq chinoy" }],
-  "1298491919450740581": [{ sn: "1053050255210107", label: "P2G 50KW" }],
-  "1298491919450840394": [{ sn: "1031731257050184", label: "P2G 1ST 6kw" }],
-  "1298491919450851319": [{ sn: "1033161256090193", label: "P2G 20kw" }],
-  "1298491919450734544": [{ sn: "1033320253150969", label: "P2G 15KW" }],
+  "1298491919450958553": [{ sn: "1053050258110159", label: "OPL Residence INV" }],
+  "1298491919450873747": [{ sn: "1053010259280019", label: "36 Chenab INV" }],
+  "1298491919451014032": [{ sn: "1053050258180112", label: "Towfiq chinoy INV" }],
+  "1298491919450740581": [{ sn: "1053050255210107", label: "P2G 50KW INV" }],
+  "1298491919450840394": [{ sn: "1031731257050184", label: "P2G 1ST 6kw INV" }],
+  "1298491919450851319": [{ sn: "1033161256090193", label: "P2G 20kw INV" }],
+  "1298491919450734544": [{ sn: "1033320253150969", label: "P2G 15KW INV" }],
 };
 
 const ALL_INVERTERS = Object.values(PLANT_INVERTER_MAP).flat();
@@ -45,6 +45,8 @@ const INVERTER_LABELS: Record<string, string> = Object.fromEntries(
 
 interface BatteryReportRecord {
   sn: string;
+  inverterSn?: string;
+  stationId?: string;
   plantName: string;
   nominalCapacity: string;
   dailyChargeKwh: number;
@@ -54,6 +56,7 @@ interface BatteryReportRecord {
   cellDeltaMv: number;
   cycles: number;
   sohPct: number;
+  tempC?: number;
 }
 
 interface SolisBatteryReportViewProps {
@@ -62,16 +65,16 @@ interface SolisBatteryReportViewProps {
 
 export default function SolisBatteryReportView({ onSelectBattery }: SolisBatteryReportViewProps) {
   const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
-  const [selectedSn, setSelectedSn] = useState<string>("All");
   const [selectedPlant, setSelectedPlant] = useState<string>("All");
-  const [reportDate, setReportDate] = useState("2026-11-20");
+  const [selectedInverter, setSelectedInverter] = useState<string>("All");
+  const [selectedSn, setSelectedSn] = useState<string>("All");
+  const [reportDate, setReportDate] = useState("2026-11-26"); // Default to recent active date with full 5-min curves
   const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>([]);
   const [curveData, setCurveData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Selected Battery Alarms & Alerts
   const [batteryAlarms, setBatteryAlarms] = useState<any[]>([]);
-  const [batteryIncidents, setBatteryIncidents] = useState<any[]>([]);
   const [loadingAlarms, setLoadingAlarms] = useState(false);
 
   // Fetch real data on period, sn, or date change
@@ -79,7 +82,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     let active = true;
     setLoading(true);
     const periodParam = activeDateTab.toLowerCase();
-    fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}`)
+    const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
+
+    fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}`)
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
@@ -87,8 +92,10 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           setBatteryRows(
             data.rows.map((r: any) => ({
               sn: r.sn,
-              plantName: r.plantName,
-              nominalCapacity: r.nominalCapacity,
+              inverterSn: r.inverterSn || "",
+              stationId: r.stationId || "",
+              plantName: r.plantName || "Unknown",
+              nominalCapacity: r.nominalCapacity || "45 kWh",
               dailyChargeKwh: r.dailyChargeKwh,
               dailyDischargeKwh: r.dailyDischargeKwh,
               socPct: r.socPct,
@@ -96,6 +103,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
               cellDeltaMv: r.cellDeltaMv,
               cycles: r.cycles,
               sohPct: r.sohPct,
+              tempC: r.tempC || 26,
             }))
           );
         } else {
@@ -115,13 +123,12 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     return () => {
       active = false;
     };
-  }, [activeDateTab, reportDate]);
+  }, [activeDateTab, reportDate, selectedSn]);
 
   // Fetch alarms & alerts for the selected battery pack
   useEffect(() => {
     if (selectedSn === "All") {
       setBatteryAlarms([]);
-      setBatteryIncidents([]);
       return;
     }
     setLoadingAlarms(true);
@@ -130,17 +137,15 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       .then((data) => {
         if (data.success) {
           setBatteryAlarms(data.alarms || []);
-          setBatteryIncidents(data.incidents || []);
         } else {
           setBatteryAlarms([]);
-          setBatteryIncidents([]);
         }
       })
       .catch((err) => console.error("Error loading battery alarms:", err))
       .finally(() => setLoadingAlarms(false));
   }, [selectedSn]);
 
-  // Unique plants list for plant-level filtering
+  // Distinct plants list
   const uniquePlants = useMemo(() => {
     const set = new Set<string>();
     batteryRows.forEach((r) => {
@@ -149,14 +154,36 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     return Array.from(set).sort();
   }, [batteryRows]);
 
-  // Filtered records by Plant and Battery
+  // Distinct inverters list (filtered by selectedPlant if not "All")
+  const availableInverters = useMemo(() => {
+    const invertersMap = new Map<string, { sn: string; label: string; plantName: string }>();
+    batteryRows.forEach((r) => {
+      if (!r.inverterSn) return;
+      if (selectedPlant !== "All" && r.plantName !== selectedPlant) return;
+      const label = INVERTER_LABELS[r.inverterSn] || r.inverterSn;
+      invertersMap.set(r.inverterSn, { sn: r.inverterSn, label, plantName: r.plantName });
+    });
+    return Array.from(invertersMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [batteryRows, selectedPlant]);
+
+  // Available battery packs (filtered by plant & inverter)
+  const availableBatteryPacks = useMemo(() => {
+    return batteryRows.filter((r) => {
+      const matchPlant = selectedPlant === "All" || r.plantName === selectedPlant;
+      const matchInv = selectedInverter === "All" || r.inverterSn === selectedInverter;
+      return matchPlant && matchInv;
+    });
+  }, [batteryRows, selectedPlant, selectedInverter]);
+
+  // Final filtered records for KPIs and table
   const filteredRecords = useMemo(() => {
     return batteryRows.filter((r) => {
       const matchPlant = selectedPlant === "All" || r.plantName === selectedPlant;
+      const matchInv = selectedInverter === "All" || r.inverterSn === selectedInverter;
       const matchSn = selectedSn === "All" || r.sn === selectedSn;
-      return matchPlant && matchSn;
+      return matchPlant && matchInv && matchSn;
     });
-  }, [selectedPlant, selectedSn, batteryRows]);
+  }, [selectedPlant, selectedInverter, selectedSn, batteryRows]);
 
   // Compute KPIs
   const kpiData = useMemo(() => {
@@ -172,7 +199,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       dailyDischarge: totalDischarge.toFixed(2),
       efficiency: `${eff}%`,
       socSoh: `${avgSoc}% / 100% SOH`,
-      chargeSubtitle: `${filteredRecords.length} Packs Active`,
+      chargeSubtitle: `${filteredRecords.length} Battery Packs`,
       dischargeSubtitle: "Offloaded during peak",
       efficiencySubtitle: "High Coulombic Yield",
       socSohSubtitle: "Healthy Cell Balancing",
@@ -340,10 +367,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     exportToExcel(
       [
         {
-          sheetName: "Battery Health",
+          sheetName: "Battery Storage",
           data: filteredRecords.map((r) => ({
-            "Battery SN": r.sn,
             "Plant Name": r.plantName,
+            "Connected Inverter": INVERTER_LABELS[r.inverterSn || ""] || r.inverterSn || "N/A",
+            "Battery Pack SN": r.sn,
             "Nominal Capacity": r.nominalCapacity,
             [`${activeDateTab} Charge (kWh)`]: r.dailyChargeKwh,
             [`${activeDateTab} Discharge (kWh)`]: r.dailyDischargeKwh,
@@ -391,7 +419,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         dailyCycles: r.cycles,
         currentSocPct: r.socPct,
         healthSohPct: r.sohPct,
-        temperatureC: 32,
+        temperatureC: r.tempC || 26,
         batteryStatus: "Normal",
       })),
       chartDataUrl: chartBase64,
@@ -552,69 +580,100 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         </div>
       </div>
 
-      {/* 3. Battery Filters & Charge/Discharge Profile & SOC % Card */}
+      {/* 3. Hierarchical Filtration Bar: Plant -> Inverter -> Battery Pack */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+            <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
+              <BatteryCharging className="w-4 h-4 text-orange-500" />
               Battery Charge/Discharge Profile &amp; SOC %
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 mt-0.5">
               {selectedSn === "All"
-                ? `Showing fleet aggregate (${filteredRecords.length} units)`
-                : `Active Pack: ${selectedSn} (${filteredRecords[0]?.plantName || ""})`}
+                ? `Fleet Aggregate Scope (${filteredRecords.length} packs)`
+                : `Active Pack: ${selectedSn} — ${filteredRecords[0]?.plantName || ""} (${INVERTER_LABELS[filteredRecords[0]?.inverterSn || ""] || filteredRecords[0]?.inverterSn || ""})`}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Plant Level Filter */}
-            <div className="relative">
-              <select
-                aria-label="Filter Plant"
-                value={selectedPlant}
-                onChange={(e) => {
-                  setSelectedPlant(e.target.value);
-                  setSelectedSn("All");
-                }}
-                className="appearance-none pl-3 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-slate-700 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
-              >
-                <option value="All">All Plants</option>
-                {uniquePlants.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Individual Battery Unit Filter */}
-            <div className="relative">
-              <select
-                aria-label="Filter battery unit"
-                value={selectedSn}
-                onChange={(e) => setSelectedSn(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-orange-200 rounded-lg text-xs font-semibold text-orange-700 hover:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
-              >
-                <option value="All">All Batteries (Fleet View)</option>
-                {batteryRows
-                  .filter((b) => selectedPlant === "All" || b.plantName === selectedPlant)
-                  .map((b) => (
-                    <option key={b.sn} value={b.sn}>
-                      {b.sn} — {b.plantName}
+          {/* Three-Tier Cascading Filter */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* 1. First by Plant */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+              <div className="relative">
+                <select
+                  aria-label="Filter Plant"
+                  value={selectedPlant}
+                  onChange={(e) => {
+                    setSelectedPlant(e.target.value);
+                    setSelectedInverter("All");
+                    setSelectedSn("All");
+                  }}
+                  className="appearance-none bg-transparent pr-6 text-xs font-bold text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
+                >
+                  <option value="All">1. All Plants ({uniquePlants.length})</option>
+                  {uniquePlants.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
                     </option>
                   ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-orange-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </select>
+                <ChevronDown className="w-3 h-3 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
-            {/* Direct Excel Export Button for Selected Battery Pack */}
+            {/* 2. Second by Connected Inverter */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+              <Cpu className="w-3.5 h-3.5 text-slate-400" />
+              <div className="relative">
+                <select
+                  aria-label="Filter Inverter"
+                  value={selectedInverter}
+                  onChange={(e) => {
+                    setSelectedInverter(e.target.value);
+                    setSelectedSn("All");
+                  }}
+                  className="appearance-none bg-transparent pr-6 text-xs font-bold text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
+                >
+                  <option value="All">2. All Inverters ({availableInverters.length})</option>
+                  {availableInverters.map((inv) => (
+                    <option key={inv.sn} value={inv.sn}>
+                      {inv.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3 h-3 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* 3. Third by Specific Battery Pack */}
+            <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-lg">
+              <BatteryCharging className="w-3.5 h-3.5 text-orange-500" />
+              <div className="relative">
+                <select
+                  aria-label="Filter Battery Pack"
+                  value={selectedSn}
+                  onChange={(e) => setSelectedSn(e.target.value)}
+                  className="appearance-none bg-transparent pr-6 text-xs font-bold text-orange-700 hover:text-orange-900 focus:outline-none cursor-pointer"
+                >
+                  <option value="All">3. All Packs ({availableBatteryPacks.length})</option>
+                  {availableBatteryPacks.map((b) => (
+                    <option key={b.sn} value={b.sn}>
+                      {b.sn.slice(-5)} ({INVERTER_LABELS[b.inverterSn || ""] || b.plantName})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3 h-3 text-orange-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Direct Export Pack Log Button */}
             {selectedSn !== "All" && (
               <button
                 onClick={() => handleExportSinglePack(selectedSn)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-bold text-emerald-700 hover:bg-emerald-100 active:scale-95 transition-all shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 active:scale-95 transition-all shadow-2xs"
               >
-                <Download className="w-3.5 h-3.5 text-emerald-600" />
+                <Download className="w-3.5 h-3.5" />
                 <span>Export Pack Log</span>
               </button>
             )}
@@ -625,7 +684,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         <div ref={chartRef} className="w-full h-80" />
       </div>
 
-      {/* 4. Alarms & Alerts Box for Selected Battery Pack (Shows when single pack is chosen or alerts exist) */}
+      {/* 4. Alarms & Alerts Box for Selected Battery Pack */}
       {selectedSn !== "All" && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden transition-all">
           <div className="p-4 border-b border-gray-100 bg-amber-50/40 flex items-center justify-between">
@@ -707,11 +766,16 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       {/* 7. Battery Technical Specification Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-800">
-            Battery Technical Specification Table
-          </h3>
-          <span className="text-xs text-slate-400 font-medium">
-            Showing {filteredRecords.length} Battery Units
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">
+              Battery Technical Specification Table
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Identified first by Plant Name, then by Connected Inverter, then by Battery Pack Rack.
+            </p>
+          </div>
+          <span className="text-xs text-slate-500 font-bold px-2.5 py-1 bg-slate-100 rounded-full">
+            Total {filteredRecords.length} Battery Units
           </span>
         </div>
 
@@ -719,8 +783,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50 text-slate-400 font-medium">
-                <th className="py-3 px-4">Battery SN</th>
-                <th className="py-3 px-3">Plant Name</th>
+                <th className="py-3 px-4">Plant Name</th>
+                <th className="py-3 px-3">Connected Inverter</th>
+                <th className="py-3 px-3">Battery Pack SN</th>
                 <th className="py-3 px-3">Nominal Capacity</th>
                 <th className="py-3 px-3">{activeDateTab} Charge</th>
                 <th className="py-3 px-3">{activeDateTab} Discharge</th>
@@ -735,11 +800,14 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             <tbody className="divide-y divide-gray-100">
               {filteredRecords.map((row) => (
                 <tr key={row.sn} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-medium text-[#f37021]">
-                    {row.sn}
-                  </td>
-                  <td className="py-3.5 px-3 font-medium text-slate-800">
+                  <td className="py-3.5 px-4 font-bold text-slate-800">
                     {row.plantName}
+                  </td>
+                  <td className="py-3.5 px-3 font-semibold text-slate-600">
+                    {INVERTER_LABELS[row.inverterSn || ""] || row.inverterSn || "N/A"}
+                  </td>
+                  <td className="py-3.5 px-3 font-mono font-medium text-[#f37021]">
+                    {row.sn}
                   </td>
                   <td className="py-3.5 px-3 font-medium text-slate-600">
                     {row.nominalCapacity}
@@ -781,6 +849,8 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                       </button>
                       <button
                         onClick={() => {
+                          setSelectedPlant(row.plantName);
+                          setSelectedInverter(row.inverterSn || "All");
                           setSelectedSn(row.sn);
                           if (onSelectBattery) onSelectBattery(row.sn);
                         }}

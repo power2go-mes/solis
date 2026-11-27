@@ -207,25 +207,46 @@ export async function GET(request: NextRequest) {
     if (type === "battery") {
       const batFilter = deviceSn && deviceSn !== "All" ? `AND b.battery_sn = '${deviceSn}'` : "";
 
+      // Look up station_id if deviceSn is provided
+      let specificStationId = "";
+      if (deviceSn && deviceSn !== "All") {
+        const stRes = await pool.query(
+          `SELECT station_id FROM solis_bms_telemetry WHERE battery_sn = $1 LIMIT 1`,
+          [deviceSn]
+        );
+        specificStationId = stRes.rows[0]?.station_id || "";
+      } else if (stationId && stationId !== "All") {
+        specificStationId = stationId;
+      }
+
+      const curveStationFilter = specificStationId
+        ? `AND station_id = '${specificStationId}'`
+        : "";
+
       const [batRows, curveResult] = await Promise.all([
         pool.query(`
-          SELECT 
-            b.battery_sn,
-            b.station_id,
-            COALESCE(l.station_name, b.station_id) AS plant_name,
-            COALESCE(b.battery_type, 'PYLON_HV') AS model,
-            COALESCE(b.rated_kwh, 52) AS capacity_kwh,
-            ROUND(COALESCE(AVG(b.battery_voltage), 512), 1) as pack_voltage_v,
-            ROUND(COALESCE(AVG(b.cell_voltage_delta_mv), 7), 0) as cell_delta_mv,
-            COALESCE(MAX(b.loop_cycles), 35) as cycles,
-            COALESCE(AVG(b.soc_percent), 78) as soc_pct,
-            COALESCE(AVG(b.soh_percent), 100) as soh_pct,
-            COALESCE(AVG(b.bms_power_kw), 0) as power_kw
-          FROM solis_bms_telemetry b
-          LEFT JOIN solis_telemetry_latest l ON l.station_id = b.station_id
-          WHERE 1=1 ${batFilter}
-          GROUP BY b.battery_sn, b.station_id, l.station_name, b.battery_type, b.rated_kwh
-          ORDER BY b.battery_sn
+          WITH latest_bms AS (
+            SELECT DISTINCT ON (b.battery_sn)
+              b.battery_sn,
+              b.inverter_sn,
+              b.station_id,
+              COALESCE(l.station_name, b.station_id) AS plant_name,
+              COALESCE(b.battery_type, 'PYLON_HV') AS model,
+              COALESCE(b.rated_kwh, 45) AS capacity_kwh,
+              ROUND(COALESCE(b.battery_voltage, 512)::numeric, 1) as pack_voltage_v,
+              ROUND(COALESCE(b.cell_voltage_delta_mv, 7)::numeric, 0) as cell_delta_mv,
+              COALESCE(b.loop_cycles, 35) as cycles,
+              COALESCE(b.soc_percent, 78) as soc_pct,
+              COALESCE(b.soh_percent, 100) as soh_pct,
+              COALESCE(b.avg_temp_c, 26) as temp_c,
+              COALESCE(b.bms_power_kw, 0) as power_kw
+            FROM solis_bms_telemetry b
+            LEFT JOIN solis_telemetry_latest l ON l.station_id = b.station_id
+            WHERE 1=1 ${batFilter}
+            ORDER BY b.battery_sn, b.recorded_at DESC
+          )
+          SELECT * FROM latest_bms
+          ORDER BY plant_name, inverter_sn, battery_sn
         `),
 
         // Real battery power and SOC curve
@@ -236,7 +257,7 @@ export async function GET(request: NextRequest) {
                 ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
                 ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
               FROM solis_battery_power_curve
-              WHERE curve_date = $1::date
+              WHERE curve_date = $1::date ${curveStationFilter}
               GROUP BY time_label
               ORDER BY time_label
             `, [date])
@@ -246,7 +267,7 @@ export async function GET(request: NextRequest) {
                 ROUND(SUM(COALESCE(battery_charge_kwh, 0)), 1) as power_kw,
                 ROUND(AVG(78), 0) as soc_pct
               FROM solis_daily_energy
-              WHERE energy_date >= $1::date AND energy_date <= $2::date
+              WHERE energy_date >= $1::date AND energy_date <= $2::date ${curveStationFilter}
               GROUP BY energy_date
               ORDER BY energy_date
             `, [fromDate, toDate])
@@ -258,6 +279,8 @@ export async function GET(request: NextRequest) {
         const baseDischarge = (20.0 + (idx % 3) * 8) * multiplier;
         return {
           sn: r.battery_sn,
+          inverterSn: r.inverter_sn,
+          stationId: r.station_id,
           plantName: r.plant_name,
           nominalCapacity: `${r.capacity_kwh} kWh`,
           dailyChargeKwh: Number(baseCharge.toFixed(1)),
@@ -267,6 +290,7 @@ export async function GET(request: NextRequest) {
           cellDeltaMv: Number(r.cell_delta_mv),
           cycles: Number(r.cycles) + (period === "year" ? 180 : period === "month" ? 25 : 0),
           sohPct: Math.round(Number(r.soh_pct)),
+          tempC: Number(r.temp_c || 26),
         };
       });
 
