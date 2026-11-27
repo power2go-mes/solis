@@ -333,15 +333,27 @@ export async function GET(request: NextRequest) {
           if (targetInvSn) {
             // Specific inverter / battery pack selected
             let invCurveRes = await pool.query(`
+              WITH normalized AS (
+                SELECT 
+                  to_char(
+                    to_timestamp(
+                      floor(extract(epoch from (curve_date + time_str::time)) / 300) * 300
+                    ) AT TIME ZONE 'UTC',
+                    'HH24:MI'
+                  ) as time_slot,
+                  battery_power_kw,
+                  battery_soc
+                FROM solis_inverter_day_curve
+                WHERE inverter_sn = $1
+                  AND curve_date = $2::date
+              )
               SELECT 
-                SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+                time_slot as time_label,
                 ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
                 ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
-              FROM solis_inverter_day_curve
-              WHERE inverter_sn = $1
-                AND curve_date = $2::date
-              GROUP BY time_label
-              ORDER BY time_label
+              FROM normalized
+              GROUP BY time_slot
+              ORDER BY time_slot
             `, [targetInvSn, date]);
 
             if (invCurveRes.rows.length < 5 || isToday) {
@@ -349,15 +361,27 @@ export async function GET(request: NextRequest) {
                 const fetched = await fetchAndSaveInverterDayCurve(targetInvSn, date);
                 if (fetched && fetched.length > 0) {
                   invCurveRes = await pool.query(`
+                    WITH normalized AS (
+                      SELECT 
+                        to_char(
+                          to_timestamp(
+                            floor(extract(epoch from (curve_date + time_str::time)) / 300) * 300
+                          ) AT TIME ZONE 'UTC',
+                          'HH24:MI'
+                        ) as time_slot,
+                        battery_power_kw,
+                        battery_soc
+                      FROM solis_inverter_day_curve
+                      WHERE inverter_sn = $1
+                        AND curve_date = $2::date
+                    )
                     SELECT 
-                      SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+                      time_slot as time_label,
                       ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
                       ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
-                    FROM solis_inverter_day_curve
-                    WHERE inverter_sn = $1
-                      AND curve_date = $2::date
-                    GROUP BY time_label
-                    ORDER BY time_label
+                    FROM normalized
+                    GROUP BY time_slot
+                    ORDER BY time_slot
                   `, [targetInvSn, date]);
                 }
               } catch (err) {
