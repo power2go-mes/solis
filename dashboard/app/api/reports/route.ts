@@ -321,6 +321,15 @@ export async function GET(request: NextRequest) {
           const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
           const isToday = date === todayStr;
 
+          // If querying today, purge any future points caused by timezone offset
+          if (isToday) {
+            const currentPkTime = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date());
+            await pool.query(
+              `DELETE FROM solis_inverter_day_curve WHERE curve_date = $1::date AND time_str > $2`,
+              [todayStr, currentPkTime]
+            );
+          }
+
           if (targetInvSn) {
             // Specific inverter / battery pack selected
             let invCurveRes = await pool.query(`

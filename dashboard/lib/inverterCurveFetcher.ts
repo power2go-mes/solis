@@ -127,8 +127,34 @@ export async function fetchAndSaveInverterDayCurve(invSn: string, dateStr: strin
       const seenTimes = new Set<string>();
       let pIdx = 1;
 
+      // Clean up previous records for this inverter and date to prevent duplicate offsets
+      await pool.query(
+        `DELETE FROM solis_inverter_day_curve WHERE inverter_sn = $1 AND curve_date = $2::date`,
+        [invSn, dateStr]
+      );
+
       for (const item of rows) {
-        const timeStr = item.time || (item.timeStr ? item.timeStr.split(" ")[1] : "00:00:00");
+        // SolisCloud's internal chart API delivers timestamps and timeStr in China Standard Time (UTC+8).
+        // Since Pakistan is UTC+5, there is a fixed 3-hour difference (UTC+8 -> UTC+5 = minus 3 hours).
+        let timeStr = "00:00:00";
+        if (item.time) {
+          const parts = item.time.split(":");
+          if (parts.length >= 2) {
+            let h = parseInt(parts[0], 10) - 3;
+            // If subtracting 3 hours rolls backward into yesterday (< 0), skip it for today's curve!
+            if (h < 0) {
+              continue;
+            }
+            const hh = String(h).padStart(2, "0");
+            timeStr = `${hh}:${parts[1]}:${parts[2] || "00"}`;
+          }
+        } else if (item.dataTimestamp) {
+          const ts = Number(item.dataTimestamp);
+          if (!isNaN(ts) && ts > 0) {
+            timeStr = new Date(ts).toLocaleTimeString("en-GB", { timeZone: "Asia/Karachi", hour12: false });
+          }
+        }
+
         if (seenTimes.has(timeStr)) continue;
         seenTimes.add(timeStr);
 
