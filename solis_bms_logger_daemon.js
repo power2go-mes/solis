@@ -30,16 +30,25 @@ if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
-// Single-instance protection via heartbeat file (Windows-safe; avoids PID reuse false-positives)
+// Single-instance protection via process check + heartbeat
 if (fs.existsSync(HEARTBEAT_FILE)) {
   try {
     const hb = JSON.parse(fs.readFileSync(HEARTBEAT_FILE, "utf8").trim());
+    let isAlive = false;
+    if (hb.pid) {
+      try {
+        process.kill(hb.pid, 0);
+        isAlive = true;
+      } catch (e) {
+        isAlive = false;
+      }
+    }
     const ageMs = Date.now() - hb.ts;
-    if (ageMs < HEARTBEAT_MAX_AGE_MS) {
-      console.log(`[SingleInstance] BMS Logger heartbeat is fresh (${Math.round(ageMs/1000)}s ago, PID ${hb.pid}). Another instance is running. Exiting.`);
+    if (isAlive && ageMs < HEARTBEAT_MAX_AGE_MS) {
+      console.log(`[SingleInstance] BMS Logger is actively running (PID ${hb.pid}). Exiting.`);
       process.exit(0);
     } else {
-      console.log(`[SingleInstance] Stale heartbeat (${Math.round(ageMs/60000)}m old). Previous instance is dead. Taking over.`);
+      console.log(`[SingleInstance] Previous process (PID ${hb.pid}) is not running. Taking over.`);
     }
   } catch (e) {
     // Corrupted heartbeat — ignore and continue

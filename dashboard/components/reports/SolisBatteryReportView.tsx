@@ -12,6 +12,10 @@ import {
   ChevronDown,
   FileSpreadsheet,
   FileText,
+  AlertTriangle,
+  Bell,
+  CheckCircle,
+  Filter,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excelExport";
 import { exportBatteryReportToPdf } from "@/lib/pdfReportExport";
@@ -52,69 +56,6 @@ interface BatteryReportRecord {
   sohPct: number;
 }
 
-const DEFAULT_BATTERIES: BatteryReportRecord[] = [
-  {
-    sn: "1053050255210107BAT01",
-    plantName: "P2G 50KW",
-    nominalCapacity: "26 kWh",
-    dailyChargeKwh: 49.8,
-    dailyDischargeKwh: 12.4,
-    socPct: 100,
-    packVoltageV: 512.4,
-    cellDeltaMv: 8,
-    cycles: 27,
-    sohPct: 100,
-  },
-  {
-    sn: "1053050255210107BAT02",
-    plantName: "P2G 50KW",
-    nominalCapacity: "26 kWh",
-    dailyChargeKwh: 30.6,
-    dailyDischargeKwh: 10.2,
-    socPct: 36,
-    packVoltageV: 498.2,
-    cellDeltaMv: 11,
-    cycles: 24,
-    sohPct: 100,
-  },
-  {
-    sn: "1053050258180057BAT01",
-    plantName: "36 Chenab",
-    nominalCapacity: "52 kWh",
-    dailyChargeKwh: 18.1,
-    dailyDischargeKwh: 7.1,
-    socPct: 68,
-    packVoltageV: 524,
-    cellDeltaMv: 6,
-    cycles: 42,
-    sohPct: 100,
-  },
-  {
-    sn: "1053050258180112BAT01",
-    plantName: "Towfiq chinoy",
-    nominalCapacity: "52 kWh",
-    dailyChargeKwh: 34.5,
-    dailyDischargeKwh: 16.2,
-    socPct: 85,
-    packVoltageV: 518.5,
-    cellDeltaMv: 7,
-    cycles: 35,
-    sohPct: 100,
-  },
-  {
-    sn: "1053050258110159BAT01",
-    plantName: "OPL Residence",
-    nominalCapacity: "52 kWh",
-    dailyChargeKwh: 80.4,
-    dailyDischargeKwh: 53.0,
-    socPct: 100,
-    packVoltageV: 532.1,
-    cellDeltaMv: 5,
-    cycles: 68,
-    sohPct: 100,
-  },
-];
-
 interface SolisBatteryReportViewProps {
   onSelectBattery?: (sn: string) => void;
 }
@@ -122,10 +63,16 @@ interface SolisBatteryReportViewProps {
 export default function SolisBatteryReportView({ onSelectBattery }: SolisBatteryReportViewProps) {
   const [activeDateTab, setActiveDateTab] = useState<"Day" | "Month" | "Year">("Day");
   const [selectedSn, setSelectedSn] = useState<string>("All");
+  const [selectedPlant, setSelectedPlant] = useState<string>("All");
   const [reportDate, setReportDate] = useState("2026-11-20");
   const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>([]);
   const [curveData, setCurveData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Selected Battery Alarms & Alerts
+  const [batteryAlarms, setBatteryAlarms] = useState<any[]>([]);
+  const [batteryIncidents, setBatteryIncidents] = useState<any[]>([]);
+  const [loadingAlarms, setLoadingAlarms] = useState(false);
 
   // Fetch real data on period, sn, or date change
   useEffect(() => {
@@ -168,12 +115,48 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     return () => {
       active = false;
     };
-  }, [activeDateTab, selectedSn, reportDate]);
+  }, [activeDateTab, reportDate]);
 
+  // Fetch alarms & alerts for the selected battery pack
+  useEffect(() => {
+    if (selectedSn === "All") {
+      setBatteryAlarms([]);
+      setBatteryIncidents([]);
+      return;
+    }
+    setLoadingAlarms(true);
+    fetch(`/api/bms/alarms?batterySn=${encodeURIComponent(selectedSn)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setBatteryAlarms(data.alarms || []);
+          setBatteryIncidents(data.incidents || []);
+        } else {
+          setBatteryAlarms([]);
+          setBatteryIncidents([]);
+        }
+      })
+      .catch((err) => console.error("Error loading battery alarms:", err))
+      .finally(() => setLoadingAlarms(false));
+  }, [selectedSn]);
+
+  // Unique plants list for plant-level filtering
+  const uniquePlants = useMemo(() => {
+    const set = new Set<string>();
+    batteryRows.forEach((r) => {
+      if (r.plantName) set.add(r.plantName);
+    });
+    return Array.from(set).sort();
+  }, [batteryRows]);
+
+  // Filtered records by Plant and Battery
   const filteredRecords = useMemo(() => {
-    if (selectedSn === "All") return batteryRows;
-    return batteryRows.filter((r) => r.sn === selectedSn);
-  }, [selectedSn, batteryRows]);
+    return batteryRows.filter((r) => {
+      const matchPlant = selectedPlant === "All" || r.plantName === selectedPlant;
+      const matchSn = selectedSn === "All" || r.sn === selectedSn;
+      return matchPlant && matchSn;
+    });
+  }, [selectedPlant, selectedSn, batteryRows]);
 
   // Compute KPIs
   const kpiData = useMemo(() => {
@@ -298,7 +281,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           name: "kW",
           axisLine: { show: false },
           splitLine: { lineStyle: { color: "#f8fafc", type: "solid" } },
-          axisLabel: { color: "#94a3b8", fontSize: 11 },
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: isMobile ? 9 : 10,
+            formatter: "{value}",
+          },
         },
         {
           type: "value",
@@ -307,7 +294,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           max: 100,
           axisLine: { show: false },
           splitLine: { show: false },
-          axisLabel: { color: "#94a3b8", fontSize: 11 },
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: isMobile ? 9 : 10,
+            formatter: "{value}%",
+          },
         },
       ],
       series: [
@@ -315,69 +306,67 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           name: "Battery Power (Charge + / Discharge - kW)",
           type: "bar",
           yAxisIndex: 0,
-          barWidth: 18,
-          itemStyle: {
-            color: (params: any) => (params.value >= 0 ? "#15803d" : "#0284c7"), // Exact Charge (#15803d Dark Green) vs Discharge (#0284c7 Sky Blue)
-            borderRadius: [2, 2, 2, 2],
-          },
           data: powerData,
+          itemStyle: {
+            color: (params: any) => (params.value >= 0 ? "#10b981" : "#0284c7"),
+            borderRadius: [2, 2, 0, 0],
+          },
+          barMaxWidth: 12,
         },
         {
           name: "State of Charge (SOC %)",
           type: "line",
           yAxisIndex: 1,
-          smooth: true,
-          showSymbol: true,
-          symbol: "circle",
-          symbolSize: 6,
-          itemStyle: {
-            color: "#f5e026", // Exact Palette Yellow
-            borderColor: "#ffffff",
-            borderWidth: 2,
-          },
-          lineStyle: { color: "#f5e026", width: 2.5 },
           data: socData,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: "#f37021", width: 2 },
+          itemStyle: { color: "#f37021" },
         },
       ],
     };
 
-    chart.setOption(option, true);
-    chart.resize();
+    chart.setOption(option);
 
-    const handleResize = () => chart?.resize();
+    const handleResize = () => chart.resize();
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
-      chart?.dispose();
     };
-  }, [curveData, selectedSn, activeDateTab]);
+  }, [curveData]);
 
-  // Export to Professional Excel (.xlsx)
+  // Export Entire Fleet
   const handleExportExcel = () => {
-    const excelRows = filteredRecords.map((r) => ({
-      "Battery SN": r.sn,
-      "Plant Name": r.plantName,
-      "Nominal Capacity": r.nominalCapacity,
-      "Period": activeDateTab,
-      "Report Date": reportDate,
-      [`Daily Charge (${activeDateTab === "Day" ? "kWh" : "kWh / MWh"})`]: r.dailyChargeKwh,
-      [`Daily Discharge (${activeDateTab === "Day" ? "kWh" : "kWh / MWh"})`]: r.dailyDischargeKwh,
-      "SOC (%)": `${r.socPct}%`,
-      "Pack Voltage (V)": r.packVoltageV,
-      "Cell Delta (mV)": r.cellDeltaMv,
-      "Cycles": r.cycles,
-      "SOH (%)": `${r.sohPct}%`,
-    }));
-
     exportToExcel(
       [
-        { sheetName: "Battery Health", data: excelRows },
-        ...(curveData.length > 0
-          ? [{ sheetName: "Charge & SOC Curve", data: curveData }]
-          : []),
+        {
+          sheetName: "Battery Health",
+          data: filteredRecords.map((r) => ({
+            "Battery SN": r.sn,
+            "Plant Name": r.plantName,
+            "Nominal Capacity": r.nominalCapacity,
+            [`${activeDateTab} Charge (kWh)`]: r.dailyChargeKwh,
+            [`${activeDateTab} Discharge (kWh)`]: r.dailyDischargeKwh,
+            "SOC (%)": r.socPct,
+            "Pack Voltage (V)": r.packVoltageV,
+            "Cell Delta (mV)": r.cellDeltaMv,
+            Cycles: r.cycles,
+            "SOH (%)": r.sohPct,
+          })),
+        },
       ],
-      `P2G_CLOUD_Battery_Report_${activeDateTab}_${reportDate}`
+      `Battery_Report_${activeDateTab}_${reportDate}`
     );
+  };
+
+  // Export Specific Single Battery Pack
+  const handleExportSinglePack = (packSn: string) => {
+    const link = document.createElement("a");
+    link.href = `/api/reports/export-battery-pack-excel?batterySn=${encodeURIComponent(packSn)}&hours=24`;
+    link.download = `${packSn}_24h_telemetry.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Export to Professional PDF
@@ -422,7 +411,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
               Battery Storage &amp; Health Report
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Round-trip efficiency, daily throughput cycles, pack state of health, and cell voltage balancing.
+              Round-trip efficiency, 5-minute BMS telemetry, pack state of health, cell voltage balancing, and pack alarms.
             </p>
           </div>
         </div>
@@ -435,10 +424,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
               <button
                 key={tab}
                 onClick={() => setActiveDateTab(tab)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeDateTab === tab
-                  ? "bg-white text-slate-800 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-700"
-                  }`}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  activeDateTab === tab
+                    ? "bg-white text-slate-800 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
               >
                 {tab}
               </button>
@@ -461,7 +451,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-700 hover:bg-emerald-50 active:scale-95 transition-all shadow-2xs"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span>Export Excel</span>
+            <span>Export Fleet Excel</span>
           </button>
 
           <button
@@ -562,28 +552,72 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         </div>
       </div>
 
-      {/* 3. Battery Charge/Discharge Profile & SOC % Card */}
+      {/* 3. Battery Filters & Charge/Discharge Profile & SOC % Card */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h2 className="text-sm font-bold text-slate-800 tracking-tight">
-            Battery Charge/Discharge Profile &amp; SOC % (Unit: {selectedSn === "All" ? "1053050255210107BAT01" : selectedSn})
-          </h2>
+          <div>
+            <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+              Battery Charge/Discharge Profile &amp; SOC %
+            </h2>
+            <p className="text-xs text-slate-400">
+              {selectedSn === "All"
+                ? `Showing fleet aggregate (${filteredRecords.length} units)`
+                : `Active Pack: ${selectedSn} (${filteredRecords[0]?.plantName || ""})`}
+            </p>
+          </div>
 
-          <div className="relative">
-            <select
-              aria-label="Filter battery unit"
-              value={selectedSn}
-              onChange={(e) => setSelectedSn(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-slate-700 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
-            >
-              <option value="All">All Batteries (Fleet View)</option>
-              {batteryRows.map((b) => (
-                <option key={b.sn} value={b.sn}>
-                  {b.sn} ({b.plantName})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Plant Level Filter */}
+            <div className="relative">
+              <select
+                aria-label="Filter Plant"
+                value={selectedPlant}
+                onChange={(e) => {
+                  setSelectedPlant(e.target.value);
+                  setSelectedSn("All");
+                }}
+                className="appearance-none pl-3 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-slate-700 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
+              >
+                <option value="All">All Plants</option>
+                {uniquePlants.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* Individual Battery Unit Filter */}
+            <div className="relative">
+              <select
+                aria-label="Filter battery unit"
+                value={selectedSn}
+                onChange={(e) => setSelectedSn(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-orange-200 rounded-lg text-xs font-semibold text-orange-700 hover:border-orange-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all cursor-pointer shadow-2xs"
+              >
+                <option value="All">All Batteries (Fleet View)</option>
+                {batteryRows
+                  .filter((b) => selectedPlant === "All" || b.plantName === selectedPlant)
+                  .map((b) => (
+                    <option key={b.sn} value={b.sn}>
+                      {b.sn} — {b.plantName}
+                    </option>
+                  ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-orange-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* Direct Excel Export Button for Selected Battery Pack */}
+            {selectedSn !== "All" && (
+              <button
+                onClick={() => handleExportSinglePack(selectedSn)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-bold text-emerald-700 hover:bg-emerald-100 active:scale-95 transition-all shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Export Pack Log</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -591,27 +625,93 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         <div ref={chartRef} className="w-full h-80" />
       </div>
 
-      {/* 4. BMS Cell Temperature History — from our own 5-min logger */}
+      {/* 4. Alarms & Alerts Box for Selected Battery Pack (Shows when single pack is chosen or alerts exist) */}
+      {selectedSn !== "All" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden transition-all">
+          <div className="p-4 border-b border-gray-100 bg-amber-50/40 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">
+                  Alarms &amp; Operational Alerts for Pack: <span className="font-mono text-orange-600">{selectedSn}</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Hardware fault protections, under-voltage trips, and BMS communication logs.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-amber-200 rounded-full text-amber-800">
+                {batteryAlarms.length} Alarms Logged
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4">
+            {loadingAlarms ? (
+              <div className="py-6 text-center text-xs text-slate-400">Loading battery alarms &amp; alerts...</div>
+            ) : batteryAlarms.length === 0 ? (
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-xs">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <span className="font-semibold">Normal Operation:</span> Zero active or historic alarms flagged for this battery rack.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {batteryAlarms.slice(0, 5).map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs gap-2"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`px-2 py-0.5 rounded-md font-bold uppercase text-[10px] ${
+                          a.level === "Critical"
+                            ? "bg-red-100 text-red-700 border border-red-200"
+                            : "bg-amber-100 text-amber-700 border border-amber-200"
+                        }`}
+                      >
+                        Code {a.alarmCode}
+                      </span>
+                      <span className="font-bold text-slate-800">{a.alarmMsg}</span>
+                      <span className="text-slate-400">({a.state})</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-slate-500">
+                      <span>Trigger: {a.beginTime}</span>
+                      {a.duration && <span className="text-slate-400">| Duration: {a.duration}</span>}
+                      {a.advice && <span className="text-slate-600 font-medium bg-white px-2 py-0.5 rounded border border-gray-200">Advice: {a.advice}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5. BMS Cell Temperature History — from our own 5-min logger */}
       <BmsTempHistoryChart
         stationId="1298491919450797504"
         plantName="All Plants"
         availableInverters={ALL_INVERTERS}
       />
 
-      {/* 5. BMS Collector Health (full panel) */}
+      {/* 6. BMS Collector Health (5-minute continuous status) */}
       <BmsCollectorHealth
         inverterLabels={INVERTER_LABELS}
         refreshIntervalSeconds={60}
       />
 
-      {/* 4. Battery Technical Specification Table */}
+      {/* 7. Battery Technical Specification Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">
             Battery Technical Specification Table
           </h3>
           <span className="text-xs text-slate-400 font-medium">
-            Total {filteredRecords.length} Battery Units
+            Showing {filteredRecords.length} Battery Units
           </span>
         </div>
 
@@ -629,7 +729,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                 <th className="py-3 px-3">Cell Delta</th>
                 <th className="py-3 px-3">Cycles</th>
                 <th className="py-3 px-3">SOH</th>
-                <th className="py-3 px-4 text-center">Action</th>
+                <th className="py-3 px-4 text-center">Export / View</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -670,12 +770,25 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                     {row.sohPct}%
                   </td>
                   <td className="py-3.5 px-4 text-center">
-                    <button
-                      onClick={() => onSelectBattery && onSelectBattery(row.sn)}
-                      className="px-3 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-slate-700 hover:text-[#f37021] hover:border-orange-300 active:scale-95 transition-all shadow-2xs"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        title="Export 24h Excel for this pack"
+                        onClick={() => handleExportSinglePack(row.sn)}
+                        className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-md text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 active:scale-95 transition-all shadow-2xs flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Export</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedSn(row.sn);
+                          if (onSelectBattery) onSelectBattery(row.sn);
+                        }}
+                        className="px-2.5 py-1 bg-white border border-gray-200 rounded-md text-[11px] font-semibold text-slate-700 hover:text-[#f37021] hover:border-orange-300 active:scale-95 transition-all shadow-2xs"
+                      >
+                        Filter Pack
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
