@@ -37,8 +37,10 @@ interface CoverageInfo {
 }
 
 interface BmsTempHistoryChartProps {
-  stationId: string;
+  stationId?: string;
   plantName?: string;
+  inverterSn?: string;
+  batterySn?: string;
   availableInverters?: { sn: string; label: string }[];
 }
 
@@ -74,7 +76,13 @@ const CustomTooltip = ({ active, payload, label, granularity }: any) => {
   );
 };
 
-export default function BmsTempHistoryChart({ stationId, plantName, availableInverters }: BmsTempHistoryChartProps) {
+export default function BmsTempHistoryChart({
+  stationId,
+  plantName,
+  inverterSn,
+  batterySn,
+  availableInverters,
+}: BmsTempHistoryChartProps) {
   const [data, setData] = useState<BmsTempPoint[]>([]);
   const [coverage, setCoverage] = useState<CoverageInfo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,22 +94,35 @@ export default function BmsTempHistoryChart({ stationId, plantName, availableInv
   const [dateFrom, setDateFrom] = useState(sevenDaysAgo);
   const [dateTo, setDateTo] = useState(today);
   const [granularity, setGranularity] = useState<"5min" | "hourly" | "daily">("hourly");
-  const [selectedInverter, setSelectedInverter] = useState<string>("all");
+  const [selectedInverter, setSelectedInverter] = useState<string>(inverterSn || "all");
   const [showMin, setShowMin] = useState(true);
   const [showAvg, setShowAvg] = useState(true);
   const [showMax, setShowMax] = useState(true);
+
+  // Sync selectedInverter with inverterSn prop if changed externally
+  useEffect(() => {
+    if (inverterSn) setSelectedInverter(inverterSn);
+  }, [inverterSn]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
-        stationId,
         granularity,
         dateFrom,
         dateTo,
       });
-      if (selectedInverter !== "all") params.set("inverterSn", selectedInverter);
+      if (batterySn && batterySn !== "All") {
+        params.set("batterySn", batterySn);
+      } else {
+        const inv = selectedInverter !== "all" ? selectedInverter : inverterSn;
+        if (inv && inv !== "All" && inv !== "all") {
+          params.set("inverterSn", inv);
+        } else if (stationId && stationId !== "All") {
+          params.set("stationId", stationId);
+        }
+      }
 
       const res = await fetch(`/api/bms/temperature-history?${params.toString()}`);
       const json = await res.json();
@@ -113,7 +134,7 @@ export default function BmsTempHistoryChart({ stationId, plantName, availableInv
     } finally {
       setLoading(false);
     }
-  }, [stationId, granularity, dateFrom, dateTo, selectedInverter]);
+  }, [stationId, plantName, inverterSn, batterySn, granularity, dateFrom, dateTo, selectedInverter]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

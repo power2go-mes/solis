@@ -9,20 +9,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const stationId = searchParams.get("stationId");
     const inverterSn = searchParams.get("inverterSn");
+    const batterySn = searchParams.get("batterySn");
     const dateFrom = searchParams.get("dateFrom"); // ISO date string, e.g. "2026-11-18"
     const dateTo = searchParams.get("dateTo");     // ISO date string, e.g. "2026-11-25"
     const granularity = searchParams.get("granularity") || "5min"; // "5min" | "hourly" | "daily"
 
-    if (!stationId) {
-      return NextResponse.json({ success: false, error: "stationId is required" }, { status: 400 });
-    }
+    const params: any[] = [];
+    const conditions: string[] = ["avg_temp_c IS NOT NULL"];
 
-    const params: any[] = [stationId];
-    const conditions: string[] = ["station_id = $1", "avg_temp_c IS NOT NULL"];
-
-    if (inverterSn) {
+    if (batterySn && batterySn !== "All" && batterySn !== "all") {
+      params.push(batterySn);
+      conditions.push(`battery_sn = $${params.length}`);
+    } else if (inverterSn && inverterSn !== "All" && inverterSn !== "all") {
       params.push(inverterSn);
       conditions.push(`inverter_sn = $${params.length}`);
+    } else if (stationId && stationId !== "All" && stationId !== "all") {
+      params.push(stationId);
+      conditions.push(`station_id = $${params.length}`);
     }
     if (dateFrom) {
       params.push(dateFrom);

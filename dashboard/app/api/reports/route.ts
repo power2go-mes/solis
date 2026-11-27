@@ -283,6 +283,14 @@ export async function GET(request: NextRequest) {
             COALESCE(b.soc_percent, 78) as soc_pct,
             COALESCE(b.soh_percent, 100) as soh_pct,
             COALESCE(b.avg_temp_c, 26) as temp_c,
+            COALESCE(b.min_temp_c, 24) as min_temp_c,
+            COALESCE(b.max_temp_c, 28) as max_temp_c,
+            COALESCE(b.min_temp_location, 'Cell 1') as min_temp_loc,
+            COALESCE(b.max_temp_location, 'Cell 16') as max_temp_loc,
+            ROUND(COALESCE(b.min_cell_voltage, 3.32)::numeric, 3) as min_cell_v,
+            ROUND(COALESCE(b.max_cell_voltage, 3.39)::numeric, 3) as max_cell_v,
+            COALESCE(b.min_cell_location, 'Cell 1') as min_cell_loc,
+            COALESCE(b.max_cell_location, 'Cell 16') as max_cell_loc,
             COALESCE(b.bms_power_kw, 0) as power_kw
           FROM solis_bms_telemetry b
           LEFT JOIN solis_telemetry_latest l ON l.station_id = b.station_id
@@ -415,6 +423,14 @@ export async function GET(request: NextRequest) {
           cycles: Number(r.cycles) + (period === "year" ? 180 : period === "month" ? 25 : 0),
           sohPct: Math.round(Number(r.soh_pct)),
           tempC: Number(r.temp_c || 26),
+          minTempC: Number(r.min_temp_c || 24),
+          maxTempC: Number(r.max_temp_c || 28),
+          minTempLoc: r.min_temp_loc || "Cell 1",
+          maxTempLoc: r.max_temp_loc || "Cell 16",
+          minCellV: Number(r.min_cell_v || 3.32),
+          maxCellV: Number(r.max_cell_v || 3.39),
+          minCellLoc: r.min_cell_loc || "Cell 1",
+          maxCellLoc: r.max_cell_loc || "Cell 16",
         };
       });
 

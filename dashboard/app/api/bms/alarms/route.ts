@@ -7,20 +7,36 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const batterySn = searchParams.get("batterySn");
+    const inverterSn = searchParams.get("inverterSn");
+    const stationId = searchParams.get("stationId");
 
-    if (!batterySn) {
-      return NextResponse.json({ success: false, error: "batterySn is required" }, { status: 400 });
+    let invSn = inverterSn || "";
+    let stId = stationId || "";
+
+    if (batterySn && batterySn !== "All") {
+      const bmsInfo = await pool.query(`
+        SELECT inverter_sn, station_id FROM solis_bms_telemetry WHERE battery_sn = $1 LIMIT 1
+      `, [batterySn]);
+      if (bmsInfo.rows[0]?.inverter_sn) invSn = bmsInfo.rows[0].inverter_sn;
+      if (bmsInfo.rows[0]?.station_id) stId = bmsInfo.rows[0].station_id;
     }
 
-    // 1. Get connected inverter and station
-    const bmsInfo = await pool.query(`
-      SELECT inverter_sn, station_id FROM solis_bms_telemetry WHERE battery_sn = $1 LIMIT 1
-    `, [batterySn]);
+    const whereClauses: string[] = [];
+    const params: any[] = [];
 
-    const invSn = bmsInfo.rows[0]?.inverter_sn || "";
-    const stId = bmsInfo.rows[0]?.station_id || "";
+    if (invSn && invSn !== "All") {
+      params.push(invSn);
+      whereClauses.push(`device_sn = $${params.length}`);
+    } else if (stId && stId !== "All") {
+      params.push(stId);
+      whereClauses.push(`station_id = $${params.length}`);
+    }
 
-    // 2. Query alarms from solis_alarm_logs for this device or station mentioning battery
+    const whereSql = whereClauses.length > 0 
+      ? `WHERE (${whereClauses.join(" AND ")}) AND (concat_ws(' ', alarm_msg, protection_category, protection_desc) ILIKE '%battery%' OR alarm_code IN ('1054', '1055', '107D', '1056'))`
+      : `WHERE (concat_ws(' ', alarm_msg, protection_category, protection_desc) ILIKE '%battery%' OR alarm_code IN ('1054', '1055', '107D', '1056'))`;
+
+    // 2. Query alarms from solis_alarm_logs
     const alarms = await pool.query(`
       SELECT 
         id,
@@ -36,17 +52,16 @@ export async function GET(request: NextRequest) {
         advice,
         protection_category
       FROM solis_alarm_logs
-      WHERE (device_sn = $1 OR station_id = $2)
-        AND (
-          device_sn = $1 
-          OR concat_ws(' ', alarm_msg, protection_category, protection_desc) ILIKE '%battery%'
-          OR alarm_code IN ('1054', '1055', '107D', '1056')
-        )
+      ${whereSql}
       ORDER BY alarm_begin_time DESC
       LIMIT 100
-    `, [invSn, stId]);
+    `, params);
 
-    // 3. Query NOC alerts for this station
+    // 3. Query NOC alerts
+    const nocWhereSql = stId && stId !== "All"
+      ? `WHERE station_id = '${stId}' AND (category ILIKE '%battery%' OR title ILIKE '%battery%' OR category ILIKE '%hardware%')`
+      : `WHERE (category ILIKE '%battery%' OR title ILIKE '%battery%' OR category ILIKE '%hardware%')`;
+
     const incidents = await pool.query(`
       SELECT 
         id,
@@ -59,10 +74,10 @@ export async function GET(request: NextRequest) {
         created_at AT TIME ZONE 'Asia/Karachi' as created_at_pkt,
         resolved_at AT TIME ZONE 'Asia/Karachi' as resolved_at_pkt
       FROM noc_incidents
-      WHERE station_id = $1 AND (category ILIKE '%battery%' OR title ILIKE '%battery%' OR category ILIKE '%hardware%')
+      ${nocWhereSql}
       ORDER BY created_at DESC
       LIMIT 20
-    `, [stId]);
+    `);
 
     return NextResponse.json({
       success: true,

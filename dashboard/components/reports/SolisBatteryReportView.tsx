@@ -57,6 +57,14 @@ interface BatteryReportRecord {
   cycles: number;
   sohPct: number;
   tempC?: number;
+  minTempC?: number;
+  maxTempC?: number;
+  minTempLoc?: string;
+  maxTempLoc?: string;
+  minCellV?: number;
+  maxCellV?: number;
+  minCellLoc?: string;
+  maxCellLoc?: string;
 }
 
 interface SolisBatteryReportViewProps {
@@ -104,6 +112,14 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
               cycles: r.cycles,
               sohPct: r.sohPct,
               tempC: r.tempC || 26,
+              minTempC: r.minTempC,
+              maxTempC: r.maxTempC,
+              minTempLoc: r.minTempLoc,
+              maxTempLoc: r.maxTempLoc,
+              minCellV: r.minCellV,
+              maxCellV: r.maxCellV,
+              minCellLoc: r.minCellLoc,
+              maxCellLoc: r.maxCellLoc,
             }))
           );
         } else {
@@ -125,14 +141,20 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     };
   }, [activeDateTab, reportDate, selectedSn]);
 
-  // Fetch alarms & alerts for the selected battery pack
+  // Fetch alarms & alerts for the selected battery pack, inverter, or plant
   useEffect(() => {
-    if (selectedSn === "All") {
-      setBatteryAlarms([]);
-      return;
-    }
     setLoadingAlarms(true);
-    fetch(`/api/bms/alarms?batterySn=${encodeURIComponent(selectedSn)}`)
+    const params = new URLSearchParams();
+    if (selectedSn !== "All") {
+      params.set("batterySn", selectedSn);
+    } else if (selectedInverter !== "All") {
+      params.set("inverterSn", selectedInverter);
+    } else if (selectedPlant !== "All") {
+      const match = batteryRows.find((r) => r.plantName === selectedPlant);
+      if (match?.stationId) params.set("stationId", match.stationId);
+    }
+
+    fetch(`/api/bms/alarms?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -143,7 +165,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       })
       .catch((err) => console.error("Error loading battery alarms:", err))
       .finally(() => setLoadingAlarms(false));
-  }, [selectedSn]);
+  }, [selectedSn, selectedInverter, selectedPlant, batteryRows]);
 
   // Distinct plants list
   const uniquePlants = useMemo(() => {
@@ -684,77 +706,90 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         <div ref={chartRef} className="w-full h-80" />
       </div>
 
-      {/* 4. Alarms & Alerts Box for Selected Battery Pack */}
-      {selectedSn !== "All" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden transition-all">
-          <div className="p-4 border-b border-gray-100 bg-amber-50/40 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">
-                  Alarms &amp; Operational Alerts for Pack: <span className="font-mono text-orange-600">{selectedSn}</span>
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Hardware fault protections, under-voltage trips, and BMS communication logs.
-                </p>
-              </div>
+      {/* 4. Alarms & Alerts Box (Synced with Page Filter) */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden transition-all">
+        <div className="p-4 border-b border-gray-100 bg-amber-50/40 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-amber-200 rounded-full text-amber-800">
-                {batteryAlarms.length} Alarms Logged
-              </span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">
+                Alarms &amp; Operational Alerts:{" "}
+                <span className="font-mono text-orange-600">
+                  {selectedSn !== "All"
+                    ? selectedSn
+                    : selectedInverter !== "All"
+                    ? INVERTER_LABELS[selectedInverter] || selectedInverter
+                    : selectedPlant !== "All"
+                    ? selectedPlant
+                    : "Entire Fleet"}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                Hardware fault protections, under-voltage trips, and BMS communication logs for selected scope.
+              </p>
             </div>
           </div>
-
-          <div className="p-4">
-            {loadingAlarms ? (
-              <div className="py-6 text-center text-xs text-slate-400">Loading battery alarms &amp; alerts...</div>
-            ) : batteryAlarms.length === 0 ? (
-              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-xs">
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <span className="font-semibold">Normal Operation:</span> Zero active or historic alarms flagged for this battery rack.
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {batteryAlarms.slice(0, 5).map((a) => (
-                  <div
-                    key={a.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs gap-2"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`px-2 py-0.5 rounded-md font-bold uppercase text-[10px] ${
-                          a.level === "Critical"
-                            ? "bg-red-100 text-red-700 border border-red-200"
-                            : "bg-amber-100 text-amber-700 border border-amber-200"
-                        }`}
-                      >
-                        Code {a.alarmCode}
-                      </span>
-                      <span className="font-bold text-slate-800">{a.alarmMsg}</span>
-                      <span className="text-slate-400">({a.state})</span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-slate-500">
-                      <span>Trigger: {a.beginTime}</span>
-                      {a.duration && <span className="text-slate-400">| Duration: {a.duration}</span>}
-                      {a.advice && <span className="text-slate-600 font-medium bg-white px-2 py-0.5 rounded border border-gray-200">Advice: {a.advice}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-amber-200 rounded-full text-amber-800">
+              {batteryAlarms.length} Alarms Logged
+            </span>
           </div>
         </div>
-      )}
 
-      {/* 5. BMS Cell Temperature History — from our own 5-min logger */}
+        <div className="p-4">
+          {loadingAlarms ? (
+            <div className="py-6 text-center text-xs text-slate-400">Loading alarms &amp; alerts...</div>
+          ) : batteryAlarms.length === 0 ? (
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-xs">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold">Normal Operation:</span> Zero active or historic alarms flagged for this selection.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {batteryAlarms.slice(0, 5).map((a) => (
+                <div
+                  key={a.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs gap-2"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-bold uppercase text-[10px] ${
+                        a.level === "Critical"
+                          ? "bg-red-100 text-red-700 border border-red-200"
+                          : "bg-amber-100 text-amber-700 border border-amber-200"
+                      }`}
+                    >
+                      Code {a.alarmCode}
+                    </span>
+                    <span className="font-bold text-slate-800">{a.alarmMsg}</span>
+                    <span className="text-slate-400">({a.state})</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-slate-500">
+                    <span>Trigger: {a.beginTime}</span>
+                    {a.duration && <span className="text-slate-400">| Duration: {a.duration}</span>}
+                    {a.advice && <span className="text-slate-600 font-medium bg-white px-2 py-0.5 rounded border border-gray-200">Advice: {a.advice}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 5. BMS Cell Temperature History — Synced with unified filter */}
       <BmsTempHistoryChart
-        stationId="1298491919450797504"
-        plantName="All Plants"
-        availableInverters={ALL_INVERTERS}
+        stationId={
+          selectedPlant !== "All"
+            ? batteryRows.find((r) => r.plantName === selectedPlant)?.stationId || "1298491919450797504"
+            : "1298491919450797504"
+        }
+        plantName={selectedPlant !== "All" ? selectedPlant : "All Plants"}
+        inverterSn={selectedInverter !== "All" ? selectedInverter : undefined}
+        batterySn={selectedSn !== "All" ? selectedSn : undefined}
+        availableInverters={availableInverters.length > 0 ? availableInverters : ALL_INVERTERS}
       />
 
       {/* 6. BMS Collector Health (5-minute continuous status) */}
@@ -791,7 +826,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                 <th className="py-3 px-3">{activeDateTab} Discharge</th>
                 <th className="py-3 px-3">SOC</th>
                 <th className="py-3 px-3">Pack Voltage</th>
+                <th className="py-3 px-3">Min / Max Cell V</th>
                 <th className="py-3 px-3">Cell Delta</th>
+                <th className="py-3 px-3">Min / Max Cell Temp</th>
                 <th className="py-3 px-3">Cycles</th>
                 <th className="py-3 px-3">SOH</th>
                 <th className="py-3 px-4 text-center">Export / View</th>
@@ -825,11 +862,23 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                   <td className="py-3.5 px-3 font-bold text-slate-900">
                     {row.socPct}%
                   </td>
-                  <td className="py-3.5 px-3 text-slate-600">
+                  <td className="py-3.5 px-3 text-slate-600 font-medium">
                     {row.packVoltageV} V
                   </td>
                   <td className="py-3.5 px-3 text-slate-600">
+                    <span className="font-mono text-blue-600">{row.minCellV ?? 3.32}V</span>
+                    <span className="text-slate-300 mx-1">/</span>
+                    <span className="font-mono text-red-500">{row.maxCellV ?? 3.39}V</span>
+                    <div className="text-[10px] text-slate-400">{row.minCellLoc || "Cell 1"} ↔ {row.maxCellLoc || "Cell 16"}</div>
+                  </td>
+                  <td className="py-3.5 px-3 text-slate-600 font-medium">
                     {row.cellDeltaMv} mV
+                  </td>
+                  <td className="py-3.5 px-3 text-slate-600">
+                    <span className="font-mono text-blue-600">{row.minTempC ?? 23}°C</span>
+                    <span className="text-slate-300 mx-1">/</span>
+                    <span className="font-mono text-orange-500">{row.maxTempC ?? 28}°C</span>
+                    <div className="text-[10px] text-slate-400">{row.minTempLoc || "Cell 1"} ↔ {row.maxTempLoc || "Cell 16"}</div>
                   </td>
                   <td className="py-3.5 px-3 text-slate-600">
                     {row.cycles}
