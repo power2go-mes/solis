@@ -360,7 +360,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             color: (params: any) => (params.value >= 0 ? "#10b981" : "#0284c7"),
             borderRadius: [2, 2, 0, 0],
           },
-          barMaxWidth: 12,
+          barMaxWidth: 10,
         },
         {
           name: "State of Charge (SOC %)",
@@ -368,8 +368,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
           yAxisIndex: 1,
           data: socData,
           smooth: true,
+          connectNulls: true,
           showSymbol: false,
-          lineStyle: { color: "#f37021", width: 2 },
+          lineStyle: { color: "#f37021", width: 2.5 },
           itemStyle: { color: "#f37021" },
         },
       ],
@@ -792,13 +793,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         availableInverters={availableInverters.length > 0 ? availableInverters : ALL_INVERTERS}
       />
 
-      {/* 6. BMS Collector Health (5-minute continuous status) */}
-      <BmsCollectorHealth
-        inverterLabels={INVERTER_LABELS}
-        refreshIntervalSeconds={60}
-      />
-
-      {/* 7. Battery Technical Specification Table */}
+      {/* 6. Battery Technical Specification Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <div>
