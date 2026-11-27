@@ -137,7 +137,8 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
     let active = true;
     setLoading(true);
     const periodParam = activeDateTab.toLowerCase();
-    fetch(`/api/reports?type=plant&period=${periodParam}&date=${reportDate}`)
+    const stParam = selectedFleetFilter !== "All" ? `&stationId=${encodeURIComponent(selectedFleetFilter)}` : "";
+    fetch(`/api/reports?type=plant&period=${periodParam}&date=${reportDate}${stParam}`)
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
@@ -175,7 +176,7 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
     return () => {
       active = false;
     };
-  }, [activeDateTab, reportDate]);
+  }, [activeDateTab, reportDate, selectedFleetFilter]);
 
   const filteredStations = useMemo(() => {
     if (selectedFleetFilter === "All") return stationRows;

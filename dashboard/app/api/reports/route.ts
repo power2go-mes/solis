@@ -128,6 +128,15 @@ export async function GET(request: NextRequest) {
     if (type === "inverter") {
       const invFilter = deviceSn && deviceSn !== "All" ? `AND t.inverter_sn = '${deviceSn}'` : "";
 
+      // Find station_id for this inverter if deviceSn given
+      let invStationFilter = "";
+      if (deviceSn && deviceSn !== "All") {
+        const stRes = await pool.query(`SELECT station_id FROM solis_telemetry WHERE inverter_sn = $1 LIMIT 1`, [deviceSn]);
+        if (stRes.rows[0]?.station_id) {
+          invStationFilter = `AND station_id = '${stRes.rows[0].station_id}'`;
+        }
+      }
+
       const [invRows, curveResult] = await Promise.all([
         pool.query(`
           SELECT 
@@ -156,7 +165,7 @@ export async function GET(request: NextRequest) {
                 ROUND(AVG(COALESCE(solar_power_kw, 0)), 1) as ac_power_kw,
                 ROUND(AVG(COALESCE(solar_power_kw * 0.4 + 25, 35)), 1) as temp_c
               FROM solis_battery_power_curve
-              WHERE curve_date = $1::date
+              WHERE curve_date = $1::date ${invStationFilter}
               GROUP BY time_label
               ORDER BY time_label
             `, [date])
@@ -166,7 +175,7 @@ export async function GET(request: NextRequest) {
                 ROUND(AVG(COALESCE(solar_pv_kwh, 0)), 1) as ac_power_kw,
                 ROUND(AVG(36.5), 1) as temp_c
               FROM solis_daily_energy
-              WHERE energy_date >= $1::date AND energy_date <= $2::date
+              WHERE energy_date >= $1::date AND energy_date <= $2::date ${invStationFilter}
               GROUP BY energy_date
               ORDER BY energy_date
             `, [fromDate, toDate])
@@ -205,8 +214,6 @@ export async function GET(request: NextRequest) {
     // 3. BATTERY REPORT
     // ==========================================
     if (type === "battery") {
-      const batFilter = deviceSn && deviceSn !== "All" ? `AND b.battery_sn = '${deviceSn}'` : "";
-
       // Look up station_id if deviceSn is provided
       let specificStationId = "";
       if (deviceSn && deviceSn !== "All") {
@@ -242,7 +249,7 @@ export async function GET(request: NextRequest) {
               COALESCE(b.bms_power_kw, 0) as power_kw
             FROM solis_bms_telemetry b
             LEFT JOIN solis_telemetry_latest l ON l.station_id = b.station_id
-            WHERE 1=1 ${batFilter}
+            WHERE 1=1
             ORDER BY b.battery_sn, b.recorded_at DESC
           )
           SELECT * FROM latest_bms

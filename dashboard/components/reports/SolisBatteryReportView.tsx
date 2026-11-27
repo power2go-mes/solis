@@ -582,7 +582,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
 
       {/* 3. Hierarchical Filtration Bar: Plant -> Inverter -> Battery Pack */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
               <BatteryCharging className="w-4 h-4 text-orange-500" />
@@ -595,12 +595,12 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             </p>
           </div>
 
-          {/* Three-Tier Cascading Filter */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Three-Tier Cascading Filter aligned neatly */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* 1. First by Plant */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              <div className="relative">
+            <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 px-3 py-1.5 rounded-xl transition-colors">
+              <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+              <div className="relative flex items-center">
                 <select
                   aria-label="Filter Plant"
                   value={selectedPlant}
@@ -609,23 +609,23 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                     setSelectedInverter("All");
                     setSelectedSn("All");
                   }}
-                  className="appearance-none bg-transparent pr-6 text-xs font-bold text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
+                  className="appearance-none bg-transparent pr-5 text-xs font-bold text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
                 >
-                  <option value="All">1. All Plants ({uniquePlants.length})</option>
+                  <option value="All">All Plants ({uniquePlants.length})</option>
                   {uniquePlants.map((p) => (
                     <option key={p} value={p}>
                       {p}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3 h-3 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
             {/* 2. Second by Connected Inverter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
-              <Cpu className="w-3.5 h-3.5 text-slate-400" />
-              <div className="relative">
+            <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 px-3 py-1.5 rounded-xl transition-colors">
+              <Cpu className="w-4 h-4 text-slate-500 shrink-0" />
+              <div className="relative flex items-center">
                 <select
                   aria-label="Filter Inverter"
                   value={selectedInverter}
@@ -633,37 +633,37 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
                     setSelectedInverter(e.target.value);
                     setSelectedSn("All");
                   }}
-                  className="appearance-none bg-transparent pr-6 text-xs font-bold text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
+                  className="appearance-none bg-transparent pr-5 text-xs font-bold text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
                 >
-                  <option value="All">2. All Inverters ({availableInverters.length})</option>
+                  <option value="All">All Inverters ({availableInverters.length})</option>
                   {availableInverters.map((inv) => (
                     <option key={inv.sn} value={inv.sn}>
                       {inv.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3 h-3 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
             {/* 3. Third by Specific Battery Pack */}
-            <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-lg">
-              <BatteryCharging className="w-3.5 h-3.5 text-orange-500" />
-              <div className="relative">
+            <div className="flex items-center gap-2 bg-orange-50 hover:bg-orange-100/70 border border-orange-200 px-3 py-1.5 rounded-xl transition-colors">
+              <BatteryCharging className="w-4 h-4 text-orange-600 shrink-0" />
+              <div className="relative flex items-center">
                 <select
                   aria-label="Filter Battery Pack"
                   value={selectedSn}
                   onChange={(e) => setSelectedSn(e.target.value)}
-                  className="appearance-none bg-transparent pr-6 text-xs font-bold text-orange-700 hover:text-orange-900 focus:outline-none cursor-pointer"
+                  className="appearance-none bg-transparent pr-5 text-xs font-bold text-orange-800 hover:text-orange-950 focus:outline-none cursor-pointer"
                 >
-                  <option value="All">3. All Packs ({availableBatteryPacks.length})</option>
+                  <option value="All">All Packs ({availableBatteryPacks.length})</option>
                   {availableBatteryPacks.map((b) => (
                     <option key={b.sn} value={b.sn}>
                       {b.sn.slice(-5)} ({INVERTER_LABELS[b.inverterSn || ""] || b.plantName})
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3 h-3 text-orange-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-orange-500 pointer-events-none" />
               </div>
             </div>
 
@@ -671,7 +671,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             {selectedSn !== "All" && (
               <button
                 onClick={() => handleExportSinglePack(selectedSn)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 active:scale-95 transition-all shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 active:scale-95 transition-all shadow-2xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Pack Log</span>
