@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { fetchAndSaveInverterDayCurve } from "@/lib/inverterCurveFetcher";
 
 export const dynamic = "force-dynamic";
 
@@ -161,7 +162,7 @@ export async function GET(request: NextRequest) {
         period === "day"
           ? (async () => {
               if (deviceSn && deviceSn !== "All") {
-                const invDayRes = await pool.query(`
+                let invDayRes = await pool.query(`
                   SELECT 
                     SUBSTRING(time_str FROM 1 FOR 5) as time_label,
                     ROUND(AVG(COALESCE(pac_kw, 0)), 1) as ac_power_kw,
@@ -172,8 +173,26 @@ export async function GET(request: NextRequest) {
                   GROUP BY time_label
                   ORDER BY time_label
                 `, [deviceSn, date]);
+
                 if (invDayRes.rows.length >= 5) {
                   return invDayRes;
+                }
+
+                // On-demand fetch from SolisCloud
+                const fetched = await fetchAndSaveInverterDayCurve(deviceSn, date);
+                if (fetched && fetched.length > 0) {
+                  invDayRes = await pool.query(`
+                    SELECT 
+                      SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+                      ROUND(AVG(COALESCE(pac_kw, 0)), 1) as ac_power_kw,
+                      ROUND(AVG(COALESCE(inverter_temp_c, 35)), 1) as temp_c
+                    FROM solis_inverter_day_curve
+                    WHERE inverter_sn = $1
+                      AND curve_date = $2::date
+                    GROUP BY time_label
+                    ORDER BY time_label
+                  `, [deviceSn, date]);
+                  if (invDayRes.rows.length >= 5) return invDayRes;
                 }
               }
               return pool.query(`
@@ -288,7 +307,7 @@ export async function GET(request: NextRequest) {
           const invSn = invLookup.rows[0]?.inverter_sn || (deviceSn.length >= 16 ? deviceSn.slice(0, 16) : deviceSn);
 
           // Check if solis_inverter_day_curve has 5-minute points for this inverter and date
-          const invCurveRes = await pool.query(`
+          let invCurveRes = await pool.query(`
             SELECT 
               SUBSTRING(time_str FROM 1 FOR 5) as time_label,
               ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
@@ -302,6 +321,25 @@ export async function GET(request: NextRequest) {
 
           if (invCurveRes.rows.length >= 5) {
             return invCurveRes;
+          }
+
+          // On-demand fetch from SolisCloud for this inverter and date!
+          const fetched = await fetchAndSaveInverterDayCurve(invSn, date);
+          if (fetched && fetched.length > 0) {
+            invCurveRes = await pool.query(`
+              SELECT 
+                SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+                ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
+                ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
+              FROM solis_inverter_day_curve
+              WHERE inverter_sn = $1
+                AND curve_date = $2::date
+              GROUP BY time_label
+              ORDER BY time_label
+            `, [invSn, date]);
+            if (invCurveRes.rows.length >= 5) {
+              return invCurveRes;
+            }
           }
 
           // Fallback to solis_bms_telemetry points
