@@ -87,59 +87,68 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
   const [batteryAlarms, setBatteryAlarms] = useState<any[]>([]);
   const [loadingAlarms, setLoadingAlarms] = useState(false);
 
-  // Fetch real data on period, sn, or date change
+  // Fetch real data on period, sn, or date change with 2-minute auto-refresh
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    const periodParam = activeDateTab.toLowerCase();
-    const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
+    const fetchData = (showLoading = true) => {
+      if (showLoading) setLoading(true);
+      const periodParam = activeDateTab.toLowerCase();
+      const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
 
-    fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!active) return;
-        if (data.success && Array.isArray(data.rows)) {
-          setBatteryRows(
-            data.rows.map((r: any) => ({
-              sn: r.sn,
-              inverterSn: r.inverterSn || "",
-              stationId: r.stationId || "",
-              plantName: r.plantName || "Unknown",
-              nominalCapacity: r.nominalCapacity || "45 kWh",
-              dailyChargeKwh: r.dailyChargeKwh,
-              dailyDischargeKwh: r.dailyDischargeKwh,
-              socPct: r.socPct,
-              packVoltageV: r.packVoltageV,
-              cellDeltaMv: r.cellDeltaMv,
-              cycles: r.cycles,
-              sohPct: r.sohPct,
-              tempC: r.tempC || 26,
-              minTempC: r.minTempC,
-              maxTempC: r.maxTempC,
-              minTempLoc: r.minTempLoc,
-              maxTempLoc: r.maxTempLoc,
-              minCellV: r.minCellV,
-              maxCellV: r.maxCellV,
-              minCellLoc: r.minCellLoc,
-              maxCellLoc: r.maxCellLoc,
-            }))
-          );
-        } else {
-          setBatteryRows([]);
-        }
-        if (data.success && Array.isArray(data.curve)) {
-          setCurveData(data.curve);
-        } else {
-          setCurveData([]);
-        }
-      })
-      .catch((err) => console.error("Error fetching battery report:", err))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!active) return;
+          if (data.success && Array.isArray(data.rows)) {
+            setBatteryRows(
+              data.rows.map((r: any) => ({
+                sn: r.sn,
+                inverterSn: r.inverterSn || "",
+                stationId: r.stationId || "",
+                plantName: r.plantName || "Unknown",
+                nominalCapacity: r.nominalCapacity || "45 kWh",
+                dailyChargeKwh: r.dailyChargeKwh,
+                dailyDischargeKwh: r.dailyDischargeKwh,
+                socPct: r.socPct,
+                packVoltageV: r.packVoltageV,
+                cellDeltaMv: r.cellDeltaMv,
+                cycles: r.cycles,
+                sohPct: r.sohPct,
+                tempC: r.tempC || 26,
+                minTempC: r.minTempC,
+                maxTempC: r.maxTempC,
+                minTempLoc: r.minTempLoc,
+                maxTempLoc: r.maxTempLoc,
+                minCellV: r.minCellV,
+                maxCellV: r.maxCellV,
+                minCellLoc: r.minCellLoc,
+                maxCellLoc: r.maxCellLoc,
+              }))
+            );
+          } else {
+            setBatteryRows([]);
+          }
+          if (data.success && Array.isArray(data.curve)) {
+            setCurveData(data.curve);
+          } else {
+            setCurveData([]);
+          }
+        })
+        .catch((err) => console.error("Error fetching battery report:", err))
+        .finally(() => {
+          if (active && showLoading) setLoading(false);
+        });
+    };
+
+    fetchData(true);
+    // Auto-refresh every 2 minutes (120,000 ms)
+    const interval = setInterval(() => {
+      fetchData(false);
+    }, 120000);
 
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, [activeDateTab, reportDate, selectedSn]);
 

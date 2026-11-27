@@ -132,49 +132,59 @@ export default function SolisPlantReportView({ onSelectPlant }: SolisPlantReport
   const [chartTimeline, setChartTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch real aggregated data whenever date, period, or station changes
+  // Fetch real aggregated data whenever date, period, or station changes with 2-minute auto-refresh
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    const periodParam = activeDateTab.toLowerCase();
-    const stParam = selectedFleetFilter !== "All" ? `&stationId=${encodeURIComponent(selectedFleetFilter)}` : "";
-    fetch(`/api/reports?type=plant&period=${periodParam}&date=${reportDate}${stParam}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!active) return;
-        if (data.success && Array.isArray(data.rows)) {
-          setStationRows(
-            data.rows.map((r: any) => ({
-              id: r.id,
-              name: r.name,
-              capacityKwp: r.capacityKwp,
-              dailyYieldKwh: r.yieldKwh,
-              monthlyTotalMwh: r.monthlyTotalMwh,
-              chargeKwh: r.chargeKwh || 0,
-              dischargeKwh: r.dischargeKwh || 0,
-              consumptionKwh: r.consumptionKwh || 0,
-              gridSoldKwh: r.gridSoldKwh,
-              gridPurchasedKwh: r.gridPurchasedKwh,
-              selfConsumptionPct: r.selfConsumptionPct,
-              specificYieldH: r.specificYieldH,
-            }))
-          );
-        } else {
-          setStationRows([]);
-        }
-        if (data.success && Array.isArray(data.chartData)) {
-          setChartTimeline(data.chartData);
-        } else {
-          setChartTimeline([]);
-        }
-      })
-      .catch((err) => console.error("Error fetching plant report:", err))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const fetchData = (showLoading = true) => {
+      if (showLoading) setLoading(true);
+      const periodParam = activeDateTab.toLowerCase();
+      const stParam = selectedFleetFilter !== "All" ? `&stationId=${encodeURIComponent(selectedFleetFilter)}` : "";
+
+      fetch(`/api/reports?type=plant&period=${periodParam}&date=${reportDate}${stParam}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!active) return;
+          if (data.success && Array.isArray(data.rows)) {
+            setStationRows(
+              data.rows.map((r: any) => ({
+                id: r.id,
+                name: r.name,
+                capacityKwp: r.capacityKwp,
+                dailyYieldKwh: r.yieldKwh,
+                monthlyTotalMwh: r.monthlyTotalMwh,
+                chargeKwh: r.chargeKwh || 0,
+                dischargeKwh: r.dischargeKwh || 0,
+                consumptionKwh: r.consumptionKwh || 0,
+                gridSoldKwh: r.gridSoldKwh,
+                gridPurchasedKwh: r.gridPurchasedKwh,
+                selfConsumptionPct: r.selfConsumptionPct,
+                specificYieldH: r.specificYieldH,
+              }))
+            );
+          } else {
+            setStationRows([]);
+          }
+          if (data.success && Array.isArray(data.chartData)) {
+            setChartTimeline(data.chartData);
+          } else {
+            setChartTimeline([]);
+          }
+        })
+        .catch((err) => console.error("Error fetching plant report:", err))
+        .finally(() => {
+          if (active && showLoading) setLoading(false);
+        });
+    };
+
+    fetchData(true);
+    // Auto-refresh every 2 minutes (120,000 ms)
+    const interval = setInterval(() => {
+      fetchData(false);
+    }, 120000);
 
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, [activeDateTab, reportDate, selectedFleetFilter]);
 

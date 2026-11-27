@@ -118,47 +118,57 @@ export default function SolisInverterReportView({ onSelectInverter }: SolisInver
   const [curveData, setCurveData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch real data on filter change
+  // Fetch real data on filter change with 2-minute auto-refresh
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    const periodParam = activeDateTab.toLowerCase();
-    const invParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
-    fetch(`/api/reports?type=inverter&period=${periodParam}&date=${reportDate}${invParam}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!active) return;
-        if (data.success && Array.isArray(data.rows)) {
-          setInverterRows(
-            data.rows.map((r: any) => ({
-              sn: r.sn,
-              plantName: r.plantName,
-              model: r.model,
-              ratedPowerKw: r.ratedPowerKw,
-              dailyYieldKwh: r.yieldKwh,
-              pv1Voltage: r.pv1Voltage,
-              pv2Voltage: r.pv2Voltage,
-              temperatureC: r.tempC,
-              efficiencyPct: r.efficiencyPct,
-              status: r.status,
-            }))
-          );
-        } else {
-          setInverterRows([]);
-        }
-        if (data.success && Array.isArray(data.curve)) {
-          setCurveData(data.curve);
-        } else {
-          setCurveData([]);
-        }
-      })
-      .catch((err) => console.error("Error fetching inverter report:", err))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const fetchData = (showLoading = true) => {
+      if (showLoading) setLoading(true);
+      const periodParam = activeDateTab.toLowerCase();
+      const invParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
+
+      fetch(`/api/reports?type=inverter&period=${periodParam}&date=${reportDate}${invParam}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!active) return;
+          if (data.success && Array.isArray(data.rows)) {
+            setInverterRows(
+              data.rows.map((r: any) => ({
+                sn: r.sn,
+                plantName: r.plantName,
+                model: r.model,
+                ratedPowerKw: r.ratedPowerKw,
+                dailyYieldKwh: r.yieldKwh,
+                pv1Voltage: r.pv1Voltage,
+                pv2Voltage: r.pv2Voltage,
+                temperatureC: r.tempC,
+                efficiencyPct: r.efficiencyPct,
+                status: r.status,
+              }))
+            );
+          } else {
+            setInverterRows([]);
+          }
+          if (data.success && Array.isArray(data.curve)) {
+            setCurveData(data.curve);
+          } else {
+            setCurveData([]);
+          }
+        })
+        .catch((err) => console.error("Error fetching inverter report:", err))
+        .finally(() => {
+          if (active && showLoading) setLoading(false);
+        });
+    };
+
+    fetchData(true);
+    // Auto-refresh every 2 minutes (120,000 ms)
+    const interval = setInterval(() => {
+      fetchData(false);
+    }, 120000);
 
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, [activeDateTab, selectedSn, reportDate]);
 
