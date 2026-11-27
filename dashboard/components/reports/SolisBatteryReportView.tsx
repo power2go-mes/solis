@@ -76,7 +76,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
   const [selectedPlant, setSelectedPlant] = useState<string>("All");
   const [selectedInverter, setSelectedInverter] = useState<string>("All");
   const [selectedSn, setSelectedSn] = useState<string>("All");
-  const [reportDate, setReportDate] = useState("2026-11-26"); // Default to recent active date with full 5-min curves
+  const [reportDate, setReportDate] = useState(() => {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date());
+  });
   const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>([]);
   const [curveData, setCurveData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
