@@ -230,55 +230,71 @@ export async function GET(request: NextRequest) {
         ? `AND station_id = '${specificStationId}'`
         : "";
 
-      const [batRows, curveResult] = await Promise.all([
-        pool.query(`
-          WITH latest_bms AS (
-            SELECT DISTINCT ON (b.battery_sn)
-              b.battery_sn,
-              b.inverter_sn,
-              b.station_id,
-              COALESCE(l.station_name, b.station_id) AS plant_name,
-              COALESCE(b.battery_type, 'PYLON_HV') AS model,
-              COALESCE(b.rated_kwh, 45) AS capacity_kwh,
-              ROUND(COALESCE(b.battery_voltage, 512)::numeric, 1) as pack_voltage_v,
-              ROUND(COALESCE(b.cell_voltage_delta_mv, 7)::numeric, 0) as cell_delta_mv,
-              COALESCE(b.loop_cycles, 35) as cycles,
-              COALESCE(b.soc_percent, 78) as soc_pct,
-              COALESCE(b.soh_percent, 100) as soh_pct,
-              COALESCE(b.avg_temp_c, 26) as temp_c,
-              COALESCE(b.bms_power_kw, 0) as power_kw
-            FROM solis_bms_telemetry b
-            LEFT JOIN solis_telemetry_latest l ON l.station_id = b.station_id
-            WHERE 1=1
-            ORDER BY b.battery_sn, b.recorded_at DESC
-          )
-          SELECT * FROM latest_bms
-          ORDER BY plant_name, inverter_sn, battery_sn
-        `),
+      // 1. Fetch Latest Battery Rows for Specs Table & KPIs
+      const batRowsPromise = pool.query(`
+        WITH latest_bms AS (
+          SELECT DISTINCT ON (b.battery_sn)
+            b.battery_sn,
+            b.inverter_sn,
+            b.station_id,
+            COALESCE(l.station_name, b.station_id) AS plant_name,
+            COALESCE(b.battery_type, 'PYLON_HV') AS model,
+            COALESCE(b.rated_kwh, 45) AS capacity_kwh,
+            ROUND(COALESCE(b.battery_voltage, 512)::numeric, 1) as pack_voltage_v,
+            ROUND(COALESCE(b.cell_voltage_delta_mv, 7)::numeric, 0) as cell_delta_mv,
+            COALESCE(b.loop_cycles, 35) as cycles,
+            COALESCE(b.soc_percent, 78) as soc_pct,
+            COALESCE(b.soh_percent, 100) as soh_pct,
+            COALESCE(b.avg_temp_c, 26) as temp_c,
+            COALESCE(b.bms_power_kw, 0) as power_kw
+          FROM solis_bms_telemetry b
+          LEFT JOIN solis_telemetry_latest l ON l.station_id = b.station_id
+          WHERE 1=1
+          ORDER BY b.battery_sn, b.recorded_at DESC
+        )
+        SELECT * FROM latest_bms
+        ORDER BY plant_name, inverter_sn, battery_sn
+      `);
 
-        // Real battery power and SOC curve
-        period === "day"
-          ? pool.query(`
-              SELECT 
-                SUBSTRING(time_str FROM 1 FOR 5) as time_label,
-                ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
-                ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
-              FROM solis_battery_power_curve
-              WHERE curve_date = $1::date ${curveStationFilter}
-              GROUP BY time_label
-              ORDER BY time_label
-            `, [date])
-          : pool.query(`
-              SELECT 
-                TO_CHAR(energy_date, 'YYYY-MM-DD') as time_label,
-                ROUND(SUM(COALESCE(battery_charge_kwh, 0)), 1) as power_kw,
-                ROUND(AVG(78), 0) as soc_pct
-              FROM solis_daily_energy
-              WHERE energy_date >= $1::date AND energy_date <= $2::date ${curveStationFilter}
-              GROUP BY energy_date
-              ORDER BY energy_date
-            `, [fromDate, toDate])
-      ]);
+      // 2. Fetch Curve Data: If a specific battery pack is selected, fetch its EXACT individual BMS telemetry
+      let curvePromise;
+      if (deviceSn && deviceSn !== "All" && period === "day") {
+        curvePromise = pool.query(`
+          SELECT 
+            TO_CHAR(recorded_at AT TIME ZONE 'Asia/Karachi', 'HH24:MI') as time_label,
+            ROUND(AVG(COALESCE(bms_power_kw, 0)), 1) as power_kw,
+            ROUND(AVG(COALESCE(soc_percent, 50)), 0) as soc_pct
+          FROM solis_bms_telemetry
+          WHERE battery_sn = $1
+            AND (recorded_at AT TIME ZONE 'Asia/Karachi')::date = $2::date
+          GROUP BY time_label
+          ORDER BY time_label
+        `, [deviceSn, date]);
+      } else if (period === "day") {
+        curvePromise = pool.query(`
+          SELECT 
+            SUBSTRING(time_str FROM 1 FOR 5) as time_label,
+            ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
+            ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
+          FROM solis_battery_power_curve
+          WHERE curve_date = $1::date ${curveStationFilter}
+          GROUP BY time_label
+          ORDER BY time_label
+        `, [date]);
+      } else {
+        curvePromise = pool.query(`
+          SELECT 
+            TO_CHAR(energy_date, 'YYYY-MM-DD') as time_label,
+            ROUND(SUM(COALESCE(battery_charge_kwh, 0)), 1) as power_kw,
+            ROUND(AVG(78), 0) as soc_pct
+          FROM solis_daily_energy
+          WHERE energy_date >= $1::date AND energy_date <= $2::date ${curveStationFilter}
+          GROUP BY energy_date
+          ORDER BY energy_date
+        `, [fromDate, toDate]);
+      }
+
+      const [batRows, curveResult] = await Promise.all([batRowsPromise, curvePromise]);
 
       const multiplier = period === "year" ? 365 : period === "month" ? 30 : 1;
       const rows = batRows.rows.map((r, idx) => {

@@ -208,7 +208,13 @@ async function collectBmsTelemetryCycle() {
     for (const plant of FLEET_PLANTS) {
       for (const sn of plant.inverters) {
         try {
-          const invRes = await solisPost("/api/inverter/detail", { sn });
+          let invRes = await solisPost("/api/inverter/detail", { sn });
+          if (!invRes.data || invRes.code !== "0") {
+            // Token may have expired or rate-limited; re-login and retry once
+            await ensureLogin();
+            await new Promise((r) => setTimeout(r, 600));
+            invRes = await solisPost("/api/inverter/detail", { sn });
+          }
           const bList = invRes.data?.batteryList || [];
 
           for (const b of bList) {
@@ -286,6 +292,8 @@ async function collectBmsTelemetryCycle() {
             totalRacksLogged++;
             console.log(`  ✓ Logged: ${plant.name} | Rack: ${b.batterySn || sn} | Min: ${b.bmsMinTemp}°C (${b.bmsMintempLocStr}) | Max: ${b.bmsMaxTemp}°C (${b.bmsMaxtempLocStr}) | Avg: ${b.bmsTemp}°C`);
           }
+          // Gentle 300ms pacing between inverters to avoid Cloudflare/gateway throttling
+          await new Promise((r) => setTimeout(r, 300));
         } catch (invErr) {
           console.error(`  ✗ Error querying inverter ${sn} for ${plant.name}:`, invErr.message);
         }
