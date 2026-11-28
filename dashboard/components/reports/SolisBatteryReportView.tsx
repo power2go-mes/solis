@@ -39,6 +39,11 @@ const PLANT_INVERTER_MAP: Record<string, { sn: string; label: string }[]> = {
 
 const ALL_INVERTERS = Object.values(PLANT_INVERTER_MAP).flat();
 
+function packColor(index: number) {
+  const palette = ["#15803d", "#2563eb", "#ea580c"];
+  return palette[index] ?? `hsl(${(index * 137 + 212) % 360}, 68%, 40%)`;
+}
+
 const INVERTER_LABELS: Record<string, string> = Object.fromEntries(
   ALL_INVERTERS.map(({ sn, label }) => [sn, label])
 );
@@ -81,6 +86,17 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
   });
   const [batteryRows, setBatteryRows] = useState<BatteryReportRecord[]>([]);
   const [curveData, setCurveData] = useState<any[]>([]);
+  const comparing = activeDateTab === "Day" && selectedSn === "All" && (selectedPlant !== "All" || selectedInverter !== "All");
+  const station = batteryRows.find(row => row.plantName === selectedPlant)?.stationId || "";
+  const scope = new URLSearchParams();
+  if (comparing && station) scope.set("compareStation", station);
+  if (comparing && selectedInverter !== "All") scope.set("compareInverter", selectedInverter);
+  const scopeQuery = scope.toString();
+  const scopeKey = reportDate + scopeQuery;
+  const [comparison, setComparison] = useState<{key: string; points: {
+    inverter_sn: string; battery_sn: string; slot: number; power_kw: number | string | null; soc_pct: number | string | null
+  }[]} | null>(null);
+  const [metrics, setMetrics] = useState({ SOC: true, Charge: false, Discharge: false });
   const [loading, setLoading] = useState(false);
 
   // Selected Battery Alarms & Alerts
@@ -95,10 +111,11 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       const periodParam = activeDateTab.toLowerCase();
       const snParam = selectedSn !== "All" ? `&deviceSn=${encodeURIComponent(selectedSn)}` : "";
 
-      fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}`)
+      fetch(`/api/reports?type=battery&period=${periodParam}&date=${reportDate}${snParam}&${scopeQuery}`)
         .then((res) => res.json())
         .then((data) => {
           if (!active) return;
+          setComparison(Array.isArray(data.comparison) ? {key: scopeKey, points: data.comparison} : null);
           if (data.success && Array.isArray(data.rows)) {
             setBatteryRows(
               data.rows.map((r: any) => ({
@@ -150,7 +167,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       active = false;
       clearInterval(interval);
     };
-  }, [activeDateTab, reportDate, selectedSn]);
+  }, [activeDateTab, reportDate, selectedSn, scopeQuery, scopeKey]);
 
   // Fetch alarms & alerts for the selected battery pack, inverter, or plant
   useEffect(() => {
@@ -251,22 +268,9 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
     }
     chartInstance.current = chart;
 
-    let timeLabels: string[] = [];
-    let powerData: number[] = [];
-    let socData: number[] = [];
-
-    if (curveData.length > 0) {
-      timeLabels = curveData.map((c) => c.time_label);
-      powerData = curveData.map((c) => Number(c.power_kw) || 0);
-      socData = curveData.map((c) => Number(c.soc_pct) || 75);
-    } else {
-      timeLabels = [
-        "00:00", "02:00", "04:00", "06:00", "08:00", "10:00",
-        "12:00", "14:00", "16:00", "18:00", "20:00", "22:00",
-      ];
-      powerData = [-1.8, -1.8, -1.5, 0, 5.2, 11.8, 15.5, 9.4, 3.1, -2.0, -3.5, -2.2];
-      socData = [45, 42, 38, 35, 58, 84, 98, 100, 100, 92, 80, 68];
-    }
+    const timeLabels = curveData.map(c => c.time_label);
+    const powerData = curveData.map(c => c.power_kw == null ? null : Number(c.power_kw));
+    const socData = curveData.map(c => c.soc_pct == null ? null : Number(c.soc_pct));
 
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -387,14 +391,77 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       ],
     };
 
-    chart.setOption(option);
+    if (comparing) {
+      const points = comparison?.key === scopeKey ? comparison.points : [];
+      const count = points.reduce((n, p) => Math.max(n, p.slot + 1), 0);
+      const slots = Array.from({ length: count }, (_, i) => i);
+      const labels = slots.map(i => [Math.floor(i / 12), i % 12 * 5].map(v => String(v).padStart(2, "0")).join(":"));
+      const samples = new Map(points.map(p => [JSON.stringify([p.inverter_sn, p.battery_sn, p.slot]), p]));
+      const series: echarts.LineSeriesOption[] = [];
+      filteredRecords.forEach((pack, index) => {
+        const color = packColor(index);
+        const values = slots.map(i => samples.get(JSON.stringify([pack.inverterSn, pack.sn, i])));
+        const inverter = pack.inverterSn || "";
+        const label = `${INVERTER_LABELS[inverter] || inverter} · ${pack.sn.replace(inverter, "") || pack.sn}`;
+        for (const metric of ["SOC", "Charge", "Discharge"] as const) {
+          if (!metrics[metric]) continue;
+          series.push({
+            name: `${label} · ${metric}`, type: "line", yAxisIndex: metric === "SOC" ? 1 : 0,
+            showSymbol: false, connectNulls: true, itemStyle: {color},
+            lineStyle: {color, width: 2.5, type: "solid"},
+            emphasis: {focus: "series"},
+            tooltip: {valueFormatter: value => value == null ? "—" : `${value} ${metric === "SOC" ? "%" : "kW"}`},
+            data: values.map(p => {
+              if (metric === "SOC") return p?.soc_pct == null ? null : Number(p.soc_pct);
+              if (p?.power_kw == null) return null;
+              const kw = Number(p.power_kw);
+              if (kw === 0) return 0;
+              return metric === "Charge" ? Math.max(kw, 0) : Math.min(kw, 0);
+            }),
+          });
+        }
+      });
+      option.xAxis = {...option.xAxis, data: labels} as echarts.XAXisComponentOption;
+      // Draw coincident traces as nested solid strokes on the same coordinates.
+      const coincident = new Map<string, echarts.LineSeriesOption[]>();
+      for (const trace of series) {
+        const key = JSON.stringify([trace.yAxisIndex, trace.data]);
+        const group = coincident.get(key);
+        if (group) group.push(trace);
+        else coincident.set(key, [trace]);
+      }
+      for (const group of coincident.values()) {
+        if (group.length < 2) continue;
+        group.forEach((trace, i) => {
+          trace.lineStyle = {...trace.lineStyle, width: 2.5 + 3 * (group.length - 1 - i)};
+          trace.z = 3 + i;
+        });
+      }
+      option.series = series;
+      if (Array.isArray(option.yAxis)) {
+        option.yAxis[0].show = metrics.Charge || metrics.Discharge;
+        option.yAxis[1].show = metrics.SOC;
+      }
+      option.legend = {show: false};
+      option.grid = {...option.grid, bottom: 12};
+      option.tooltip = {
+        trigger: "axis", confine: true, renderMode: "richText",
+        formatter: (items: any) => {
+          if (!Array.isArray(items) || !items.length) return "";
+          const rows = items.filter(item => item.value != null && item.value !== "-");
+          return [items[0].axisValue, ...(!rows.length ? ["No recorded reading"] : rows.map(item =>
+            `${item.marker} ${item.seriesName}: ${item.value} ${item.seriesName.endsWith("SOC") ? "%" : "kW"}`))].join("\n");
+        },
+      };
+    }
+    chart.setOption(option, {notMerge: true});
 
     const handleResize = () => chart.resize();
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [curveData]);
+  }, [curveData, comparing, comparison, scopeKey, metrics, filteredRecords]);
 
   // Export Entire Fleet
   const handleExportExcel = () => {
@@ -624,7 +691,7 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               {selectedSn === "All"
-                ? `Fleet Aggregate Scope (${filteredRecords.length} packs)`
+                ? comparing ? `Battery comparison (${filteredRecords.length} packs)` : `Fleet Aggregate Scope (${filteredRecords.length} packs)`
                 : `Active Pack: ${selectedSn} — ${filteredRecords[0]?.plantName || ""} (${INVERTER_LABELS[filteredRecords[0]?.inverterSn || ""] || filteredRecords[0]?.inverterSn || ""})`}
             </p>
           </div>
@@ -715,6 +782,20 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
         </div>
 
         {/* EChart Canvas */}
+        {comparing && <div className="inline-flex gap-1 rounded-lg bg-slate-100 p-1" role="group" aria-label="Comparison metrics">
+          {(["SOC", "Charge", "Discharge"] as const).map(metric =>
+            <button type="button" key={metric} aria-pressed={metrics[metric]}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${metrics[metric] ? "bg-slate-800 text-white" : "text-slate-600 hover:bg-white"}`}
+              onClick={() => setMetrics(prev => ({...prev, [metric]: !prev[metric]}))}>
+              {metric}
+            </button>)}
+        </div>}
+        {comparing && <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-600">
+          {filteredRecords.map((pack, index) => <span key={pack.sn} className="inline-flex items-center gap-1.5">
+            <span className="h-0.5 w-5 rounded-full" style={{backgroundColor: packColor(index)}} />
+            {INVERTER_LABELS[pack.inverterSn || ""] || pack.inverterSn} · {pack.sn.replace(pack.inverterSn || "", "") || pack.sn}
+          </span>)}
+        </div>}
         <div ref={chartRef} className="w-full h-80" />
       </div>
 
@@ -792,17 +873,17 @@ export default function SolisBatteryReportView({ onSelectBattery }: SolisBattery
       </div>
 
       {/* 5. BMS Cell Temperature History — Synced with unified filter */}
-      <BmsTempHistoryChart
-        stationId={
-          selectedPlant !== "All"
-            ? batteryRows.find((r) => r.plantName === selectedPlant)?.stationId || "1298491919450797504"
-            : "1298491919450797504"
-        }
-        plantName={selectedPlant !== "All" ? selectedPlant : "All Plants"}
-        inverterSn={selectedInverter !== "All" ? selectedInverter : undefined}
-        batterySn={selectedSn !== "All" ? selectedSn : undefined}
-        availableInverters={availableInverters.length > 0 ? availableInverters : ALL_INVERTERS}
-      />
+      {(["cell", "inverter"] as const).map(source => (
+        <BmsTempHistoryChart
+          key={source}
+          source={source}
+          plantName={selectedPlant === "All" ? "All Plants" : selectedPlant}
+          inverterSn={selectedSn !== "All" ? filteredRecords[0]?.inverterSn : selectedInverter !== "All" ? selectedInverter : undefined}
+          batterySn={selectedSn !== "All" ? selectedSn : undefined}
+          batteries={availableBatteryPacks}
+          availableInverters={availableInverters}
+        />
+      ))}
 
       {/* 6. Battery Technical Specification Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">

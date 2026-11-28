@@ -14,6 +14,49 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get("dateTo");     // ISO date string, e.g. "2026-11-25"
     const granularity = searchParams.get("granularity") || "5min"; // "5min" | "hourly" | "daily"
 
+    const source = searchParams.get("source");
+    if (source === "cell" || source === "inverter") {
+      if (!dateFrom || !dateTo || dateFrom > dateTo) {
+        return NextResponse.json({ success: false, error: "Invalid date range" }, { status: 400 });
+      }
+      const cell = source === "cell";
+      const inverterScope = searchParams.getAll("sn");
+      const input = cell ? `
+        SELECT recorded_at AT TIME ZONE 'Asia/Karachi' AS local_time, inverter_sn, battery_sn,
+               min_temp_c AS low, NULL::numeric AS typical, max_temp_c AS high, min_temp_location, max_temp_location
+        FROM solis_bms_telemetry
+        WHERE recorded_at >= ($1::date::timestamp AT TIME ZONE 'Asia/Karachi')
+          AND recorded_at < (($2::date + 1)::timestamp AT TIME ZONE 'Asia/Karachi')
+          AND ($4::text IS NULL OR battery_sn = $4)
+          AND (min_temp_c IS NOT NULL OR max_temp_c IS NOT NULL)
+      ` : `
+        SELECT curve_date + time_str::time AS local_time, inverter_sn,
+               inverter_temp_c AS low, inverter_temp_c AS typical, inverter_temp_c AS high
+        FROM solis_inverter_day_curve
+        WHERE curve_date BETWEEN $1::date AND $2::date AND inverter_temp_c IS NOT NULL
+      `;
+      const bucket = granularity === "daily" ? "date_trunc('day', local_time)"
+        : granularity === "hourly" ? "date_trunc('hour', local_time)"
+        : "date_bin(interval '5 minutes', local_time, timestamp '2000-01-01')";
+      const args = [dateFrom, dateTo, inverterScope, ...(cell ? [batterySn] : [])];
+      const result = await pool.query(`
+        WITH readings AS (${input})
+        SELECT ${bucket} AT TIME ZONE 'Asia/Karachi' AS bucket, inverter_sn, ${cell ? "battery_sn," : ""}
+               ${cell ? `
+                 (array_agg(min_temp_location ORDER BY low ASC NULLS LAST, local_time DESC, min_temp_location)
+                   FILTER (WHERE low IS NOT NULL))[1] AS min_temp_location,
+                 (array_agg(max_temp_location ORDER BY high DESC NULLS LAST, local_time DESC, max_temp_location)
+                   FILTER (WHERE high IS NOT NULL))[1] AS max_temp_location,
+               ` : ""}
+               MIN(low)::float AS min_temp_c, AVG(typical)::float AS avg_temp_c,
+               MAX(high)::float AS max_temp_c, COUNT(*)::int AS sample_count
+        FROM readings
+        WHERE inverter_sn = ANY($3::text[]) AND local_time <= CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Karachi'
+        GROUP BY bucket, inverter_sn ${cell ? ", battery_sn" : ""} ORDER BY bucket, inverter_sn
+      `, args);
+      return NextResponse.json({success: true, data: result.rows});
+    }
+
     const params: any[] = [];
     const conditions: string[] = ["avg_temp_c IS NOT NULL"];
 

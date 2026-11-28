@@ -304,113 +304,50 @@ export async function GET(request: NextRequest) {
 
       // 2. Fetch Curve Data: If a specific battery pack or inverter is selected, fetch 5-min curves
       let curvePromise;
-      if (period === "day") {
+      const compareStation = params.get("compareStation") || "";
+      const compareInverter = params.get("compareInverter") || "";
+      const comparing = period === "day" && !deviceSn && (compareStation || compareInverter);
+      const inverterOnly = !comparing && (!deviceSn || deviceSn === "All") && inverterSn && inverterSn !== "All";
+      if (period === "day" && (comparing || inverterOnly || (deviceSn && deviceSn !== "All"))) {
+        // Both views project the same stored curve for each selected pack.
+        curvePromise = pool.query(`
+          WITH packs AS (
+            SELECT DISTINCT ON (battery_sn) battery_sn, inverter_sn, station_id
+            FROM solis_bms_telemetry
+            WHERE ($2::text = '' OR battery_sn = $2)
+            ORDER BY battery_sn, recorded_at DESC
+          ), scoped AS (
+            SELECT * FROM packs
+            WHERE ($3::text = '' OR station_id::text = $3)
+              AND ($4::text = '' OR inverter_sn = $4)
+          ), inv AS (
+            SELECT inverter_sn, FLOOR(EXTRACT(EPOCH FROM time_str::time) / 300)::int AS slot,
+                   ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) AS power_kw,
+                   ROUND(AVG(COALESCE(battery_soc, 50)), 0) AS soc_pct,
+                   COUNT(*) OVER (PARTITION BY inverter_sn) AS slots
+            FROM solis_inverter_day_curve
+            WHERE curve_date = $1::date AND inverter_sn IN (SELECT inverter_sn FROM scoped)
+              AND curve_date + time_str::time <= CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Karachi'
+            GROUP BY inverter_sn, slot
+          ), readings AS (
+            SELECT s.battery_sn, s.inverter_sn, i.slot, i.power_kw, i.soc_pct
+            FROM scoped s JOIN inv i USING (inverter_sn) WHERE i.slots >= 5
+            UNION ALL
+            SELECT s.battery_sn, s.inverter_sn,
+                   FLOOR(EXTRACT(EPOCH FROM (b.recorded_at AT TIME ZONE 'Asia/Karachi')::time) / 300)::int AS slot,
+                   ROUND(AVG(b.bms_power_kw)::numeric, 1), ROUND(AVG(b.soc_percent)::numeric)
+            FROM scoped s JOIN solis_bms_telemetry b USING (battery_sn, inverter_sn, station_id)
+            WHERE NOT EXISTS (SELECT 1 FROM inv WHERE inv.inverter_sn = s.inverter_sn AND slots >= 5)
+              AND b.recorded_at >= ($1::date::timestamp AT TIME ZONE 'Asia/Karachi')
+              AND b.recorded_at < (($1::date + 1)::timestamp AT TIME ZONE 'Asia/Karachi')
+              AND b.recorded_at <= CURRENT_TIMESTAMP
+            GROUP BY s.battery_sn, s.inverter_sn, slot
+          )
+          SELECT ${inverterOnly ? "slot, AVG(power_kw) AS power_kw, AVG(soc_pct) AS soc_pct" : "*"}, TO_CHAR(TIME '00:00' + slot * INTERVAL '5 minutes', 'HH24:MI') AS time_label
+          FROM readings ${inverterOnly ? "GROUP BY slot ORDER BY slot" : "ORDER BY slot, battery_sn"}
+        `, [date, deviceSn === "All" ? "" : deviceSn, compareStation, inverterOnly ? inverterSn : compareInverter]);
+      } else if (period === "day") {
         curvePromise = (async () => {
-          let targetInvSn = "";
-
-          if (deviceSn && deviceSn !== "All") {
-            const invLookup = await pool.query(
-              `SELECT inverter_sn FROM solis_bms_telemetry WHERE battery_sn = $1 LIMIT 1`,
-              [deviceSn]
-            );
-            targetInvSn = invLookup.rows[0]?.inverter_sn || (deviceSn.length >= 16 ? deviceSn.slice(0, 16) : deviceSn);
-          } else if (inverterSn && inverterSn !== "All") {
-            targetInvSn = inverterSn;
-          }
-
-          const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-          const isToday = date === todayStr;
-
-          // If querying today, purge any future points caused by timezone offset
-          if (isToday) {
-            const currentPkTime = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date());
-            await pool.query(
-              `DELETE FROM solis_inverter_day_curve WHERE curve_date = $1::date AND time_str > $2`,
-              [todayStr, currentPkTime]
-            );
-          }
-
-          if (targetInvSn) {
-            // Specific inverter / battery pack selected
-            let invCurveRes = await pool.query(`
-              WITH normalized AS (
-                SELECT 
-                  to_char(
-                    to_timestamp(
-                      floor(extract(epoch from (curve_date + time_str::time)) / 300) * 300
-                    ) AT TIME ZONE 'UTC',
-                    'HH24:MI'
-                  ) as time_slot,
-                  battery_power_kw,
-                  battery_soc
-                FROM solis_inverter_day_curve
-                WHERE inverter_sn = $1
-                  AND curve_date = $2::date
-              )
-              SELECT 
-                time_slot as time_label,
-                ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
-                ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
-              FROM normalized
-              GROUP BY time_slot
-              ORDER BY time_slot
-            `, [targetInvSn, date]);
-
-            if (invCurveRes.rows.length < 5 || isToday) {
-              try {
-                const fetched = await fetchAndSaveInverterDayCurve(targetInvSn, date);
-                if (fetched && fetched.length > 0) {
-                  invCurveRes = await pool.query(`
-                    WITH normalized AS (
-                      SELECT 
-                        to_char(
-                          to_timestamp(
-                            floor(extract(epoch from (curve_date + time_str::time)) / 300) * 300
-                          ) AT TIME ZONE 'UTC',
-                          'HH24:MI'
-                        ) as time_slot,
-                        battery_power_kw,
-                        battery_soc
-                      FROM solis_inverter_day_curve
-                      WHERE inverter_sn = $1
-                        AND curve_date = $2::date
-                    )
-                    SELECT 
-                      time_slot as time_label,
-                      ROUND(AVG(COALESCE(battery_power_kw, 0)), 1) as power_kw,
-                      ROUND(AVG(COALESCE(battery_soc, 50)), 0) as soc_pct
-                    FROM normalized
-                    GROUP BY time_slot
-                    ORDER BY time_slot
-                  `, [targetInvSn, date]);
-                }
-              } catch (err) {
-                console.warn("fetchAndSaveInverterDayCurve auto-refresh error:", err);
-              }
-            }
-
-            if (invCurveRes.rows.length >= 5) {
-              return invCurveRes;
-            }
-
-            // Fallback to solis_bms_telemetry points
-            const bmsCurveRes = await pool.query(`
-              SELECT 
-                TO_CHAR(recorded_at AT TIME ZONE 'Asia/Karachi', 'HH24:MI') as time_label,
-                ROUND(AVG(COALESCE(bms_power_kw, 0)), 1) as power_kw,
-                ROUND(AVG(COALESCE(soc_percent, 50)), 0) as soc_pct
-              FROM solis_bms_telemetry
-              WHERE battery_sn = $1
-                AND (recorded_at AT TIME ZONE 'Asia/Karachi')::date = $2::date
-              GROUP BY time_label
-              ORDER BY time_label
-            `, [deviceSn || targetInvSn, date]);
-
-            if (bmsCurveRes.rows.length > 0) {
-              return bmsCurveRes;
-            }
-          }
-
           // Entire Fleet or Plant Aggregate:
           // Inverters poll at slightly different minutes (e.g. 00:01, 00:02, 00:03).
           // We MUST bucket them into standard 5-minute intervals (00:00, 00:05, 00:10...)
@@ -491,7 +428,8 @@ export async function GET(request: NextRequest) {
         fromDate,
         toDate,
         rows,
-        curve: curveResult.rows,
+        curve: comparing ? [] : curveResult.rows,
+        comparison: comparing ? curveResult.rows : undefined,
       });
     }
 
